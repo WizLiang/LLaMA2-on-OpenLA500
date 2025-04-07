@@ -1,7 +1,11 @@
 #ignore dir
 /doc/
 /sdk/
+/vivado24.2/
+/rtl/ip/PLL_2019_2/
+/fpga/
 
 #ignoring files
 *.log
 *.tmp
+
