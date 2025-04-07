@@ -477,6 +477,7 @@ axi_ram_sp_ext u_axi_ram_sp_ext (
     .axi_bready     ( ram_bready ),
     
     //BaseRAM signals
+    .base_ram_data  ( base_ram_data  ),
     .base_ram_addr  ( base_ram_addr ),
     .base_ram_be_n  ( base_ram_be_n  ),
     .base_ram_ce_n  ( base_ram_ce_n  ),
@@ -489,9 +490,10 @@ axi_ram_sp_ext u_axi_ram_sp_ext (
     .ext_ram_ce_n   ( ext_ram_ce_n   ),
     .ext_ram_oe_n   ( ext_ram_oe_n   ),
     .ext_ram_we_n   ( ext_ram_we_n   ),
-    .base_ram_data  ( base_ram_data  ),
     .ext_ram_data   ( ext_ram_data   )
 );
+
+
 
 // Wire declarations for AXI Slave 1 (UART)
 wire         uart_awvalid;
@@ -533,6 +535,69 @@ wire  [31:0] uart_rdata;
 wire  [4:0]  uart_rid;
 wire  [1:0]  uart_rresp;
 wire         uart_rlast;
+
+
+
+
+
+// AXI Slave 2 (Output) signals
+wire         axiOut_2_awvalid;
+wire         axiOut_2_awready;
+wire [31:0]  axiOut_2_awaddr;
+wire [4:0]   axiOut_2_awid;
+wire [7:0]   axiOut_2_awlen;
+wire [2:0]   axiOut_2_awsize;
+wire [1:0]   axiOut_2_awburst;
+wire [0:0]   axiOut_2_awlock;
+wire [3:0]   axiOut_2_awcache;
+wire [2:0]   axiOut_2_awprot;
+
+wire         axiOut_2_wvalid;
+wire         axiOut_2_wready;
+wire [31:0]  axiOut_2_wdata;
+wire [3:0]   axiOut_2_wstrb;
+wire         axiOut_2_wlast;
+
+wire         axiOut_2_bvalid;
+wire         axiOut_2_bready;
+wire [4:0]   axiOut_2_bid;
+wire [1:0]   axiOut_2_bresp;
+
+wire         axiOut_2_arvalid;
+wire         axiOut_2_arready;
+wire [31:0]  axiOut_2_araddr;
+wire [4:0]   axiOut_2_arid;
+wire [7:0]   axiOut_2_arlen;
+wire [2:0]   axiOut_2_arsize;
+wire [1:0]   axiOut_2_arburst;
+wire [0:0]   axiOut_2_arlock;
+wire [3:0]   axiOut_2_arcache;
+wire [2:0]   axiOut_2_arprot;
+
+wire         axiOut_2_rvalid;
+wire         axiOut_2_rready;
+wire [31:0]  axiOut_2_rdata;
+wire [4:0]   axiOut_2_rid;
+wire [1:0]   axiOut_2_rresp;
+wire         axiOut_2_rlast;
+
+//Dummy Slave Output (Slave -> Cross Bus)
+assign axiOut_2_awready = 1'b1;
+assign axiOut_2_wready  = 1'b1;
+
+assign axiOut_2_bvalid  = 1'b0;
+assign axiOut_2_bid     = 5'b0;
+assign axiOut_2_bresp   = 2'b0;
+
+assign axiOut_2_arready = 1'b1;
+
+assign axiOut_2_rvalid  = 1'b0;
+assign axiOut_2_rid     = 5'b0;
+assign axiOut_2_rdata   = 32'b0;
+assign axiOut_2_rresp   = 2'b0;
+assign axiOut_2_rlast   = 1'b0;
+
+
 
 
 // ConfReg AXI interface (Slave 3)
@@ -717,49 +782,49 @@ AxiCrossbar_1x4 u_axi_crossbar (
     .axiOut_1_rlast   (uart_rlast),
 
     // AXI Slave 2 (Output) - Write Address Channel
-    .axiOut_2_awvalid (),
-    .axiOut_2_awready (),
-    .axiOut_2_awaddr  (),
-    .axiOut_2_awid    (),
-    .axiOut_2_awlen   (),
-    .axiOut_2_awsize  (),
-    .axiOut_2_awburst (),
-    .axiOut_2_awlock  (),
-    .axiOut_2_awcache (),
-    .axiOut_2_awprot  (),
+    .axiOut_2_awvalid (axiOut_2_awvalid),
+    .axiOut_2_awready (axiOut_2_awready),
+    .axiOut_2_awaddr  (axiOut_2_awaddr),
+    .axiOut_2_awid    (axiOut_2_awid),
+    .axiOut_2_awlen   (axiOut_2_awlen),
+    .axiOut_2_awsize  (axiOut_2_awsize),
+    .axiOut_2_awburst (axiOut_2_awburst),
+    .axiOut_2_awlock  (axiOut_2_awlock),
+    .axiOut_2_awcache (axiOut_2_awcache),
+    .axiOut_2_awprot  (axiOut_2_awprot),
 
     // AXI Slave 2 (Output) - Write Data Channel
-    .axiOut_2_wvalid (),
-    .axiOut_2_wready (),
-    .axiOut_2_wdata  (),
-    .axiOut_2_wstrb  (),
-    .axiOut_2_wlast  (),
+    .axiOut_2_wvalid (axiOut_2_wvalid),
+    .axiOut_2_wready (axiOut_2_wready),
+    .axiOut_2_wdata  (axiOut_2_wdata),
+    .axiOut_2_wstrb  (axiOut_2_wstrb),
+    .axiOut_2_wlast  (axiOut_2_wlast),
 
     // AXI Slave 2 (Output) - Write Response Channel
-    .axiOut_2_bvalid (),
-    .axiOut_2_bready (),
-    .axiOut_2_bid    (),
-    .axiOut_2_bresp  (),
+    .axiOut_2_bvalid (axiOut_2_bvalid),
+    .axiOut_2_bready (axiOut_2_bready),
+    .axiOut_2_bid    (axiOut_2_bid),
+    .axiOut_2_bresp  (axiOut_2_bresp),
 
     // AXI Slave 2 (Output) - Read Address Channel
-    .axiOut_2_arvalid (),
-    .axiOut_2_arready (),
-    .axiOut_2_araddr  (),
-    .axiOut_2_arid    (),
-    .axiOut_2_arlen   (),
-    .axiOut_2_arsize  (),
-    .axiOut_2_arburst (),
-    .axiOut_2_arlock  (),
-    .axiOut_2_arcache (),
-    .axiOut_2_arprot  (),
+    .axiOut_2_arvalid (axiOut_2_arvalid),
+    .axiOut_2_arready (axiOut_2_arready),
+    .axiOut_2_araddr  (axiOut_2_araddr),
+    .axiOut_2_arid    (axiOut_2_arid),
+    .axiOut_2_arlen   (axiOut_2_arlen),
+    .axiOut_2_arsize  (axiOut_2_arsize),
+    .axiOut_2_arburst (axiOut_2_arburst),
+    .axiOut_2_arlock  (axiOut_2_arlock),
+    .axiOut_2_arcache (axiOut_2_arcache),
+    .axiOut_2_arprot  (axiOut_2_arprot),
 
     // AXI Slave 2 (Output) - Read Data Channel
-    .axiOut_2_rvalid (),
-    .axiOut_2_rready (),
-    .axiOut_2_rdata  (),
-    .axiOut_2_rid    (),
-    .axiOut_2_rresp  (),
-    .axiOut_2_rlast  (),
+    .axiOut_2_rvalid (axiOut_2_rvalid),
+    .axiOut_2_rready (axiOut_2_rready),
+    .axiOut_2_rdata  (axiOut_2_rdata),
+    .axiOut_2_rid    (axiOut_2_rid),
+    .axiOut_2_rresp  (axiOut_2_rresp),
+    .axiOut_2_rlast  (axiOut_2_rlast),
 
 
     // AXI Slave 3 (Output) - Write Address Channel (ConfReg)
