@@ -13,8 +13,8 @@
 
 ## 注意事项
 ### critcal warning
-soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，可能导致critical warning，但是我在第一次编译的时候并没有出现报这个warning，而在我将.xdc文件移位之后出现ip报错，重新升级之后才出现，故怀疑也可能是pll_ip的问题，故没有修改.xdc
-
+> soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，导致critical warning，但是我在第一次编译的时候并没有出现报这个warning，而在我将.xdc文件移位之后出现ip报错，重新升级之后才出现，故怀疑也可能是pll_ip的问题，故没有修改.xdc
+解决办法：重新创建vivado工程，升级ip
 ### IP core
 由于clk_pll不再跟踪，所以第一次创建工程的时候可能需要使用先前版本的xci
 
