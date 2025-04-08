@@ -1,3 +1,23 @@
+# Dev_soc
+大部分按照demo完成了soc_top的连接。跑完了Helloword以及Coremark
+![Screenshot from 2025-04-08 10-08-24](https://github.com/user-attachments/assets/0864f55d-5077-4077-84f8-3ef0180d349e)
+
+## 代码修改
+### .gitnore添加了
+/vivado24.2/ #这是我自己的vivado启动目录，结果他运行.tcl脚本之后，project创建在/fpga/中，所以需要将/fpga/也加进去
+/rtl/ip/PLL_2019_2/#避免了vivado版本问题，
+/fpga/
+
+### rtl/ip/confreg/confreg.v
+注释 无用信号input [4 :0] s_wid,
+
+## 注意事项
+### critcal warning
+soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，可能导致critical warning，但是我在第一次编译的时候并没有出现报这个warning，而在我将.xdc文件移位之后出现ip报错，重新升级之后才出现，故怀疑也可能是pll_ip的问题，故没有修改.xdc
+
+### IP core
+由于clk_pll不再跟踪，所以第一次创建工程的时候可能需要使用先前版本的xci
+
 # Github Tips
 ## 更新本地仓库
 
