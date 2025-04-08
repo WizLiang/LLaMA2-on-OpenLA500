@@ -44,9 +44,9 @@ soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，可能导致critica
 定期同步远程更新
 如果开发周期较长，建议定期将主分支上的最新改动合并到你的分支上，以避免日后合并时出现较大的冲突：
 
-`git pull origin main  # 拉取主分支最新代码`(这里main 可能是master,具体需要看看git branch）
+`git pull origin master  # 拉取主分支最新代码`
 
-`git merge main       # 将主分支合并到当前分支`
+`git merge master       # 将主分支合并到当前分支`
 
 ## 推送分支并创建 Pull Request
 开发完成后，将你的分支推送到远程仓库：
