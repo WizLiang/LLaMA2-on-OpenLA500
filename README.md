@@ -24,7 +24,7 @@
 定期同步远程更新
 如果开发周期较长，建议定期将主分支上的最新改动合并到你的分支上，以避免日后合并时出现较大的冲突：
 
-`git pull origin main  # 拉取主分支最新代码`
+`git pull origin main  # 拉取主分支最新代码`(这里main 可能是master,具体需要看看git branch）
 
 `git merge main       # 将主分支合并到当前分支`
 
