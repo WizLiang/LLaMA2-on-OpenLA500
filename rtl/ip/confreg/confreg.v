@@ -57,7 +57,7 @@ module confreg #(
     input  [2 :0]   s_awprot,
     input           s_awvalid,
     output          s_awready,
-    input  [4 :0]   s_wid,
+    //input  [4 :0]   s_wid,
     input  [31:0]   s_wdata,
     input  [3 :0]   s_wstrb,
     input           s_wlast,
