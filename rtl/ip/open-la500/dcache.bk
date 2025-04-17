@@ -306,7 +306,6 @@ end
 assign req_or_inst_valid = valid || dcacop_op_en || preld_en;
 
 //state change condition, write hit cache block write do not conflict with lookup read and cacop
-//write_state_is_full means write back?  write and read occur in different sram is permitted
 assign main_idle2lookup   = !(write_state_is_full && ((write_buffer_offset[3:2] == offset[3:2]) || dcacop_op_en));
 
 assign dcache_empty = main_state_is_idle;
@@ -335,7 +334,6 @@ generate for(i=0;i<2;i=i+1) begin:gen_way_data
 	assign way_load_word[i] = way_data[i][request_buffer_offset[3:2]*32 +: 32];
 end endgenerate
 
-//select word
 assign load_res = {32{way_hit[0]}} & way_load_word[0] |
                   {32{way_hit[1]}} & way_load_word[1] ;
 
@@ -345,7 +343,7 @@ assign uncache_wr = request_uncache_en && request_buffer_op && !cacop_op_mode1 &
 //data_ok logic
 
 decoder_2_4 dec_rand_way (.in({1'b0,random_val[0]}),.out(chosen_way));
-//LSB first encoder
+
 one_valid_n #(2) sel_one_invalid (.in(~{way_tagv_douta[1][0],way_tagv_douta[0][0]}),.out(invalid_way),.nozero(has_invalid_way));
 
 assign rand_repl_way = has_invalid_way ? invalid_way : chosen_way[1:0]; //chose invalid way first.
@@ -355,9 +353,7 @@ decoder_2_4 dec_cacop_way (.in({1'b0,request_buffer_offset[0]}),.out(cacop_chose
 assign replace_way = {2{cacop_op_mode0 || cacop_op_mode1}} & cacop_chose_way[1:0] |
                      {2{cacop_op_mode2}}                   & way_hit              |
                      {2{!request_buffer_dcacop}}           & rand_repl_way;
-// merge persistance dirty bit with with the in‑flight write operations
-//in-flight  haven't yet been written into way_d_reg.
-//instant dirty state
+
 assign way_d = way_d_reg[request_buffer_index] |
 	           {2{(write_buffer_index==request_buffer_index)&&write_state_is_full}}&write_buffer_way;
 
