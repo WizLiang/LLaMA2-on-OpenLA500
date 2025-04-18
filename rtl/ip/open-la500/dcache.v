@@ -40,7 +40,7 @@ module dcache
     output              cache_miss   
 );
 
-reg [1:0] way_d_reg [255:0];
+reg [3:0] way_d_reg [255:0];
 
 wire        request_uncache_en        ;
 reg         request_buffer_op         ;
@@ -55,37 +55,37 @@ reg         request_buffer_uncache_en ;
 reg         request_buffer_dcacop     ;
 reg [ 1:0]  request_buffer_cacop_op_mode;
 
-reg  [ 1:0]  miss_buffer_replace_way ;
+reg  [ 3:0]  miss_buffer_replace_way ;
 reg  [ 1:0]  miss_buffer_ret_num     ;
 wire [ 1:0]  ret_num_add_one         ;
 
 reg [ 7:0]  write_buffer_index      ;
 reg [ 3:0]  write_buffer_wstrb      ;
 reg [31:0]  write_buffer_wdata      ;
-reg [ 1:0]  write_buffer_way        ;
+reg [ 3:0]  write_buffer_way        ;
 reg [ 3:0]  write_buffer_offset     ;
  
-wire [ 7:0] way_bank_addra [1:0][3:0];
-wire [31:0] way_bank_dina  [1:0][3:0];
-wire [31:0] way_bank_douta [1:0][3:0];
-wire        way_bank_ena   [1:0][3:0];
-wire [ 3:0] way_bank_wea   [1:0][3:0];
+wire [ 7:0] way_bank_addra [3:0][3:0];
+wire [31:0] way_bank_dina  [3:0][3:0];
+wire [31:0] way_bank_douta [3:0][3:0];
+wire        way_bank_ena   [3:0][3:0];
+wire [ 3:0] way_bank_wea   [3:0][3:0];
 
-wire [ 7:0] way_tagv_addra [1:0];
-wire [20:0] way_tagv_dina  [1:0];
-wire [20:0] way_tagv_douta [1:0];
-wire        way_tagv_ena   [1:0];
-wire        way_tagv_wea   [1:0];
+wire [ 7:0] way_tagv_addra [3:0];
+wire [20:0] way_tagv_dina  [3:0];
+wire [20:0] way_tagv_douta [3:0];
+wire        way_tagv_ena   [3:0];
+wire        way_tagv_wea   [3:0];
 
-wire 		wr_match_way_bank[1:0][3:0];
+wire 		wr_match_way_bank[3:0][3:0];
 
-wire [ 1:0] way_d       ;
+wire [ 3:0] way_d       ;
 
-wire [ 1:0] way_hit     ;
+wire [ 3:0] way_hit     ;
 wire        cache_hit   ;
 
-wire [31:0]  way_load_word [1:0];
-wire [127:0] way_data      [1:0];
+wire [31:0]  way_load_word [3:0];
+wire [127:0] way_data      [3:0];
 wire [31:0]  load_res           ;
  
 wire [127:0] replace_data    ;
@@ -94,10 +94,10 @@ wire         replace_v       ;
 wire [19:0]  replace_tag     ;
 wire [ 1:0]  random_val      ;
 wire [ 3:0]  chosen_way      ;
-wire [ 1:0]  replace_way     ;
-wire [ 1:0]  invalid_way     ;
+wire [ 3:0]  replace_way     ;
+wire [ 3:0]  invalid_way     ;
 wire         has_invalid_way ;
-wire [ 1:0]  rand_repl_way   ;
+wire [ 3:0]  rand_repl_way   ;
 wire [ 3:0]  cacop_chose_way ;
 
 wire         main_idle2lookup  ;
@@ -116,7 +116,7 @@ wire         uncache_wr     ;
 reg          uncache_wr_buffer;
 wire [ 2:0]  uncache_wr_type;
 
-wire [ 1:0]  way_wr_en;
+wire [ 3:0]  way_wr_en;
 
 wire [31:0]  refill_data;
 wire [31:0]  write_in;
@@ -134,7 +134,7 @@ wire         preld_ld_st_en;
 
 wire         req_or_inst_valid;
 
-reg [1:0]    lookup_way_hit_buffer;
+reg [3:0]    lookup_way_hit_buffer;//not use
 
 localparam main_idle    = 5'b00001;
 localparam main_lookup  = 5'b00010;
@@ -174,7 +174,7 @@ always @(posedge clk) begin
         request_buffer_cacop_op_mode <= 2'b0;
         request_buffer_dcacop        <= 1'b0;
 
-        miss_buffer_replace_way <= 2'b0;
+        miss_buffer_replace_way <= 4'b0;
 
 		wr_req <= 1'b0;
     end
@@ -270,7 +270,7 @@ always @(posedge clk) begin
         write_buffer_wstrb  <= 4'b0;
         write_buffer_wdata  <= 32'b0;
         write_buffer_offset <= 4'b0;
-        write_buffer_way    <= 2'b0;
+        write_buffer_way    <= 4'b0;
     end
     else case (write_buffer_state)
         write_buffer_idle: begin
@@ -315,7 +315,7 @@ assign dcache_empty = main_state_is_idle;
 /*===================================main state lookup======================================*/
 
 //tag compare
-generate for(i=0;i<2;i=i+1) begin:gen_way_hit
+generate for(i=0;i<4;i=i+1) begin:gen_way_hit
 	assign way_hit[i] = way_tagv_douta[i][0] && (tag == way_tagv_douta[i][20:1]); //this signal will not maintain
 end endgenerate
 
@@ -329,7 +329,7 @@ assign main_lookup2lookup = !(write_state_is_full && ((write_buffer_offset[3:2] 
 assign addr_ok = (main_state_is_idle && main_idle2lookup) || (main_state_is_lookup && main_lookup2lookup); //request can be get
 
 //data select
-generate for(i=0;i<2;i=i+1) begin:gen_way_data
+generate for(i=0;i<4;i=i+1) begin:gen_way_data
 	assign way_data[i] = {way_bank_douta[i][3],way_bank_douta[i][2],way_bank_douta[i][1],way_bank_douta[i][0]};
 
 	assign way_load_word[i] = way_data[i][request_buffer_offset[3:2]*32 +: 32];
@@ -337,40 +337,46 @@ end endgenerate
 
 //select word
 assign load_res = {32{way_hit[0]}} & way_load_word[0] |
-                  {32{way_hit[1]}} & way_load_word[1] ;
+                  {32{way_hit[1]}} & way_load_word[1] |
+                  {32{way_hit[2]}} & way_load_word[2] |
+                  {32{way_hit[3]}} & way_load_word[3] ;
 
 assign request_uncache_en = (uncache_en && !request_buffer_dcacop);
 
 assign uncache_wr = request_uncache_en && request_buffer_op && !cacop_op_mode1 && !cacop_op_mode2_hit_wr;
 //data_ok logic
 
-decoder_2_4 dec_rand_way (.in({1'b0,random_val[0]}),.out(chosen_way));
+decoder_2_4 dec_rand_way (.in(random_val),.out(chosen_way));
 //LSB first encoder
-one_valid_n #(2) sel_one_invalid (.in(~{way_tagv_douta[1][0],way_tagv_douta[0][0]}),.out(invalid_way),.nozero(has_invalid_way));
+one_valid_n #(4) sel_one_invalid (.in(~{way_tagv_douta[3][0],way_tagv_douta[2][0],way_tagv_douta[1][0],way_tagv_douta[0][0]}),.out(invalid_way),.nozero(has_invalid_way));
 
-assign rand_repl_way = has_invalid_way ? invalid_way : chosen_way[1:0]; //chose invalid way first.
+assign rand_repl_way = has_invalid_way ? invalid_way : chosen_way; //chose invalid way first.
 
-decoder_2_4 dec_cacop_way (.in({1'b0,request_buffer_offset[0]}),.out(cacop_chose_way));
+decoder_2_4 dec_cacop_way (.in(request_buffer_offset[1:0]),.out(cacop_chose_way));
 
-assign replace_way = {2{cacop_op_mode0 || cacop_op_mode1}} & cacop_chose_way[1:0] |
-                     {2{cacop_op_mode2}}                   & way_hit              |
-                     {2{!request_buffer_dcacop}}           & rand_repl_way;
+assign replace_way = {4{cacop_op_mode0 || cacop_op_mode1}} & cacop_chose_way      |
+                     {4{cacop_op_mode2}}                   & way_hit              |
+                     {4{!request_buffer_dcacop}}           & rand_repl_way;
 // merge persistance dirty bit with with the in‑flight write operations
 //in-flight  haven't yet been written into way_d_reg.
 //instant dirty state
 assign way_d = way_d_reg[request_buffer_index] |
-	           {2{(write_buffer_index==request_buffer_index)&&write_state_is_full}}&write_buffer_way;
+	           {4{(write_buffer_index==request_buffer_index)&&write_state_is_full}}&write_buffer_way;
 
 assign replace_d    = |(replace_way & way_d);
-assign replace_v    = |(replace_way & {way_tagv_douta[1][0],way_tagv_douta[0][0]});
+assign replace_v    = |(replace_way & {way_tagv_douta[3][0],way_tagv_douta[2][0],way_tagv_douta[1][0],way_tagv_douta[0][0]});
 
 /*====================================main state miss=======================================*/
 
 assign replace_tag  = {20{miss_buffer_replace_way[0]}} & way_tagv_douta[0][20:1] |
-					  {20{miss_buffer_replace_way[1]}} & way_tagv_douta[1][20:1] ;
+					  {20{miss_buffer_replace_way[1]}} & way_tagv_douta[1][20:1] |
+                      {20{miss_buffer_replace_way[2]}} & way_tagv_douta[2][20:1] |
+                      {20{miss_buffer_replace_way[3]}} & way_tagv_douta[3][20:1];
 
 assign replace_data = {128{miss_buffer_replace_way[0]}} & way_data[0] | 
-				      {128{miss_buffer_replace_way[1]}} & way_data[1] ;
+				      {128{miss_buffer_replace_way[1]}} & way_data[1] |
+                      {128{miss_buffer_replace_way[2]}} & way_data[2] |
+                      {128{miss_buffer_replace_way[3]}} & way_data[3];
 
 assign wr_type  = uncache_wr_buffer ? uncache_wr_type : 3'b100;     //replace cache line
 assign wr_addr  = uncache_wr_buffer ? {request_buffer_tag, request_buffer_index, request_buffer_offset} :
@@ -404,7 +410,7 @@ assign write_in = {(request_buffer_wstrb[3] ? request_buffer_wdata[31:24] : ret_
 
 assign refill_data = (request_buffer_op && (request_buffer_offset[3:2] == miss_buffer_ret_num)) ? write_in : ret_data; 
 
-assign way_wr_en = miss_buffer_replace_way & {2{ret_valid}};  //when rd_req is not set, ret_valid and ret_last will not be set. block will not be wr also.
+assign way_wr_en = miss_buffer_replace_way & {4{ret_valid}};  //when rd_req is not set, ret_valid and ret_last will not be set. block will not be wr also.
 
 assign cache_miss = main_state_is_refill && ret_last && !(request_buffer_uncache_en || request_buffer_dcacop || request_buffer_preld);  
 
@@ -431,6 +437,8 @@ always @(posedge clk) begin
     if (main_state_is_refill && ((ret_valid && ret_last) || !rd_req_buffer) && (!(request_buffer_uncache_en || cacop_op_mode0))) begin
 		way_d_reg[request_buffer_index][0] <= miss_buffer_replace_way[0] ? request_buffer_op : way_d_reg[request_buffer_index][0];
 		way_d_reg[request_buffer_index][1] <= miss_buffer_replace_way[1] ? request_buffer_op : way_d_reg[request_buffer_index][1];
+        way_d_reg[request_buffer_index][2] <= miss_buffer_replace_way[2] ? request_buffer_op : way_d_reg[request_buffer_index][2];
+        way_d_reg[request_buffer_index][3] <= miss_buffer_replace_way[3] ? request_buffer_op : way_d_reg[request_buffer_index][3];
     end
     else if (write_state_is_full) begin
 		way_d_reg[write_buffer_index] <= way_d_reg[write_buffer_index] | write_buffer_way;
@@ -449,7 +457,7 @@ assign rdata = {32{main_state_is_lookup}} & load_res |
                {32{main_state_is_refill}} & ret_data ;
 
 generate 
-for(i=0;i<2;i=i+1) begin:gen_data_way
+for(i=0;i<4;i=i+1) begin:gen_data_way
 	for(j=0;j<4;j=j+1) begin:gen_data_bank
 /*===============================bank addra logic==============================*/
 
@@ -476,7 +484,7 @@ end
 endgenerate
 
 generate
-for(i=0;i<2;i=i+1) begin:gen_tagv_way
+for(i=0;i<4;i=i+1) begin:gen_tagv_way
 /*===============================tagv addra logic=================================*/
 
 assign way_tagv_addra[i] = {8{addr_ok }} & index                |
@@ -499,7 +507,7 @@ endgenerate
 /*==============================================================================*/
 
 generate
-for(i=0;i<2;i=i+1) begin:data_ram_way
+for(i=0;i<4;i=i+1) begin:data_ram_way
 	for(j=0;j<4;j=j+1) begin:data_ram_bank
 		data_bank_sram u(
     		.addra      (way_bank_addra[i][j]),
@@ -514,7 +522,7 @@ end
 endgenerate
 
 generate
-for(i=0;i<2;i=i+1) begin:tagv_ram_way
+for(i=0;i<4;i=i+1) begin:tagv_ram_way
 	//[20:1] tag     [0:0] v
 	tagv_sram u( 
 	    .addra      (way_tagv_addra[i]),

@@ -1,6 +1,7 @@
 #ignore dir
 /doc/
-/sdk/
+/sdk/toolchains
+/sdk/software/examples
 /vivado24.2/
 /rtl/ip/PLL_2019_2/
 /fpga/
@@ -8,4 +9,6 @@
 #ignoring files
 *.log
 *.tmp
+*.bin
+*.mif
 
