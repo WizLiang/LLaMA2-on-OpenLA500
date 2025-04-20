@@ -5,6 +5,7 @@
 /vivado24.2/
 /rtl/ip/PLL_2019_2/
 /fpga/
+/sim/module_sim/
 
 #ignoring files
 *.log
