@@ -389,6 +389,88 @@ Axi_CDC u_axi_cdc (
     .axiOut_rlast    (cpu_sync_rlast)
 );
 
+//-----------------------------------------------------------------------------
+// Dummy Master 接口信号声明（axiIn1）
+//-----------------------------------------------------------------------------
+
+// Write Address Channel
+wire          axiIn1_aw_valid;
+wire          axiIn1_aw_ready;
+wire  [31:0]  axiIn1_aw_payload_addr;
+wire  [3:0]   axiIn1_aw_payload_id;
+wire  [7:0]   axiIn1_aw_payload_len;
+wire  [2:0]   axiIn1_aw_payload_size;
+wire  [1:0]   axiIn1_aw_payload_burst;
+wire          axiIn1_aw_payload_lock;
+wire  [3:0]   axiIn1_aw_payload_cache;
+wire  [2:0]   axiIn1_aw_payload_prot;
+
+// Write Data Channel
+wire          axiIn1_w_valid;
+wire          axiIn1_w_ready;
+wire  [31:0]  axiIn1_w_payload_data;
+wire  [3:0]   axiIn1_w_payload_strb;
+wire          axiIn1_w_payload_last;
+
+// Write Response Channel
+wire          axiIn1_b_valid;
+wire          axiIn1_b_ready;
+wire  [3:0]   axiIn1_b_payload_id;
+wire  [1:0]   axiIn1_b_payload_resp;
+
+// Read Address Channel
+wire          axiIn1_ar_valid;
+wire          axiIn1_ar_ready;
+wire  [31:0]  axiIn1_ar_payload_addr;
+wire  [3:0]   axiIn1_ar_payload_id;
+wire  [7:0]   axiIn1_ar_payload_len;
+wire  [2:0]   axiIn1_ar_payload_size;
+wire  [1:0]   axiIn1_ar_payload_burst;
+wire          axiIn1_ar_payload_lock;
+wire  [3:0]   axiIn1_ar_payload_cache;
+wire  [2:0]   axiIn1_ar_payload_prot;
+
+// Read Data Channel
+wire          axiIn1_r_valid;
+wire          axiIn1_r_ready;
+wire  [31:0]  axiIn1_r_payload_data;
+wire  [3:0]   axiIn1_r_payload_id;
+wire  [1:0]   axiIn1_r_payload_resp;
+wire          axiIn1_r_payload_last;
+
+
+// Dummy-master tie-off：axiIn1 永不发起事务，接收通道 always idle
+assign axiIn1_aw_valid             = 1'b0;
+assign axiIn1_aw_payload_addr      = 32'b0;
+assign axiIn1_aw_payload_id        = 4'b0;
+assign axiIn1_aw_payload_len       = 8'b0;
+assign axiIn1_aw_payload_size      = 3'b0;
+assign axiIn1_aw_payload_burst     = 2'b0;
+assign axiIn1_aw_payload_lock      = 1'b0;
+assign axiIn1_aw_payload_cache     = 4'b0;
+assign axiIn1_aw_payload_prot      = 3'b0;
+
+assign axiIn1_w_valid              = 1'b0;
+assign axiIn1_w_payload_data       = 32'b0;
+assign axiIn1_w_payload_strb       = 4'b0;
+assign axiIn1_w_payload_last       = 1'b0;
+
+// 响应通道不用发 ready，直接 tie-off
+assign axiIn1_b_ready              = 1'b0;
+
+assign axiIn1_ar_valid             = 1'b0;
+assign axiIn1_ar_payload_addr      = 32'b0;
+assign axiIn1_ar_payload_id        = 4'b0;
+assign axiIn1_ar_payload_len       = 8'b0;
+assign axiIn1_ar_payload_size      = 3'b0;
+assign axiIn1_ar_payload_burst     = 2'b0;
+assign axiIn1_ar_payload_lock      = 1'b0;
+assign axiIn1_ar_payload_cache     = 4'b0;
+assign axiIn1_ar_payload_prot      = 3'b0;
+
+assign axiIn1_r_ready              = 1'b0;
+
+
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;
 wire         ram_awready;
@@ -810,55 +892,102 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
 
 
 
-AxiCrossbar_1x4 u_axi_crossbar (
+AxiCrossbar_2x4 u_axi_crossbar (
     //clock signal
     .clk(sys_clk),
     .resetn(sys_resetn),
 
     // AXI Master (Input) - Write Address Channel
-    .axiIn_aw_valid    (cpu_sync_awvalid),
-    .axiIn_aw_ready    (cpu_sync_awready),
-    .axiIn_aw_payload_addr     (cpu_sync_awaddr),
-    .axiIn_aw_payload_id       (cpu_sync_awid),
-    .axiIn_aw_payload_len      (cpu_sync_awlen),
-    .axiIn_aw_payload_size     (cpu_sync_awsize),
-    .axiIn_aw_payload_burst    (cpu_sync_awburst),
-    .axiIn_aw_payload_lock     (cpu_sync_awlock),
-    .axiIn_aw_payload_cache    (cpu_sync_awcache),
-    .axiIn_aw_payload_prot     (cpu_sync_awprot),
+    .axiIn0_aw_valid    (cpu_sync_awvalid),
+    .axiIn0_aw_ready    (cpu_sync_awready),
+    .axiIn0_aw_payload_addr     (cpu_sync_awaddr),
+    .axiIn0_aw_payload_id       (cpu_sync_awid),
+    .axiIn0_aw_payload_len      (cpu_sync_awlen),
+    .axiIn0_aw_payload_size     (cpu_sync_awsize),
+    .axiIn0_aw_payload_burst    (cpu_sync_awburst),
+    .axiIn0_aw_payload_lock     (cpu_sync_awlock),
+    .axiIn0_aw_payload_cache    (cpu_sync_awcache),
+    .axiIn0_aw_payload_prot     (cpu_sync_awprot),
 
     // AXI Master (Input) - Write Data Channel
-    .axiIn_w_valid     (cpu_sync_wvalid),
-    .axiIn_w_ready     (cpu_sync_wready),
-    .axiIn_w_payload_data      (cpu_sync_wdata),
-    .axiIn_w_payload_strb      (cpu_sync_wstrb),
-    .axiIn_w_payload_last      (cpu_sync_wlast),
+    .axiIn0_w_valid     (cpu_sync_wvalid),
+    .axiIn0_w_ready     (cpu_sync_wready),
+    .axiIn0_w_payload_data      (cpu_sync_wdata),
+    .axiIn0_w_payload_strb      (cpu_sync_wstrb),
+    .axiIn0_w_payload_last      (cpu_sync_wlast),
 
     // AXI Master (Input) - Write Response Channel
-    .axiIn_b_valid     (cpu_sync_bvalid),
-    .axiIn_b_ready     (cpu_sync_bready),
-    .axiIn_b_payload_id        (cpu_sync_bid),
-    .axiIn_b_payload_resp      (cpu_sync_bresp),
+    .axiIn0_b_valid     (cpu_sync_bvalid),
+    .axiIn0_b_ready     (cpu_sync_bready),
+    .axiIn0_b_payload_id        (cpu_sync_bid),
+    .axiIn0_b_payload_resp      (cpu_sync_bresp),
 
     // AXI Master (Input) - Read Address Channel
-    .axiIn_ar_valid    (cpu_sync_arvalid),
-    .axiIn_ar_ready    (cpu_sync_arready),
-    .axiIn_ar_payload_addr     (cpu_sync_araddr),
-    .axiIn_ar_payload_id       (cpu_sync_arid),
-    .axiIn_ar_payload_len      (cpu_sync_arlen),
-    .axiIn_ar_payload_size     (cpu_sync_arsize),
-    .axiIn_ar_payload_burst    (cpu_sync_arburst),
-    .axiIn_ar_payload_lock     (cpu_sync_arlock),
-    .axiIn_ar_payload_cache    (cpu_sync_arcache),
-    .axiIn_ar_payload_prot     (cpu_sync_arprot),
+    .axiIn0_ar_valid    (cpu_sync_arvalid),
+    .axiIn0_ar_ready    (cpu_sync_arready),
+    .axiIn0_ar_payload_addr     (cpu_sync_araddr),
+    .axiIn0_ar_payload_id       (cpu_sync_arid),
+    .axiIn0_ar_payload_len      (cpu_sync_arlen),
+    .axiIn0_ar_payload_size     (cpu_sync_arsize),
+    .axiIn0_ar_payload_burst    (cpu_sync_arburst),
+    .axiIn0_ar_payload_lock     (cpu_sync_arlock),
+    .axiIn0_ar_payload_cache    (cpu_sync_arcache),
+    .axiIn0_ar_payload_prot     (cpu_sync_arprot),
 
     // AXI Master (Input) - Read Data Channel
-    .axiIn_r_valid     (cpu_sync_rvalid),
-    .axiIn_r_ready     (cpu_sync_rready),
-    .axiIn_r_payload_data      (cpu_sync_rdata),
-    .axiIn_r_payload_id        (cpu_sync_rid),
-    .axiIn_r_payload_resp      (cpu_sync_rresp),
-    .axiIn_r_payload_last      (cpu_sync_rlast),
+    .axiIn0_r_valid     (cpu_sync_rvalid),
+    .axiIn0_r_ready     (cpu_sync_rready),
+    .axiIn0_r_payload_data      (cpu_sync_rdata),
+    .axiIn0_r_payload_id        (cpu_sync_rid),
+    .axiIn0_r_payload_resp      (cpu_sync_rresp),
+    .axiIn0_r_payload_last      (cpu_sync_rlast),
+
+
+    // --- AXI Master Input 1 (Dummy Master) ---
+    // Write Address Channel
+    .axiIn1_aw_valid           (axiIn1_aw_valid),
+    .axiIn1_aw_ready           (axiIn1_aw_ready),
+    .axiIn1_aw_payload_addr    (axiIn1_aw_payload_addr),
+    .axiIn1_aw_payload_id      (axiIn1_aw_payload_id),
+    .axiIn1_aw_payload_len     (axiIn1_aw_payload_len),
+    .axiIn1_aw_payload_size    (axiIn1_aw_payload_size),
+    .axiIn1_aw_payload_burst   (axiIn1_aw_payload_burst),
+    .axiIn1_aw_payload_lock    (axiIn1_aw_payload_lock),
+    .axiIn1_aw_payload_cache   (axiIn1_aw_payload_cache),
+    .axiIn1_aw_payload_prot    (axiIn1_aw_payload_prot),
+
+    // Write Data Channel
+    .axiIn1_w_valid            (axiIn1_w_valid),
+    .axiIn1_w_ready            (axiIn1_w_ready),
+    .axiIn1_w_payload_data     (axiIn1_w_payload_data),
+    .axiIn1_w_payload_strb     (axiIn1_w_payload_strb),
+    .axiIn1_w_payload_last     (axiIn1_w_payload_last),
+
+    // Write Response Channel
+    .axiIn1_b_valid            (axiIn1_b_valid),
+    .axiIn1_b_ready            (axiIn1_b_ready),
+    .axiIn1_b_payload_id       (axiIn1_b_payload_id),
+    .axiIn1_b_payload_resp     (axiIn1_b_payload_resp),
+
+    // Read Address Channel
+    .axiIn1_ar_valid           (axiIn1_ar_valid),
+    .axiIn1_ar_ready           (axiIn1_ar_ready),
+    .axiIn1_ar_payload_addr    (axiIn1_ar_payload_addr),
+    .axiIn1_ar_payload_id      (axiIn1_ar_payload_id),
+    .axiIn1_ar_payload_len     (axiIn1_ar_payload_len),
+    .axiIn1_ar_payload_size    (axiIn1_ar_payload_size),
+    .axiIn1_ar_payload_burst   (axiIn1_ar_payload_burst),
+    .axiIn1_ar_payload_lock    (axiIn1_ar_payload_lock),
+    .axiIn1_ar_payload_cache   (axiIn1_ar_payload_cache),
+    .axiIn1_ar_payload_prot    (axiIn1_ar_payload_prot),
+
+    // Read Data Channel
+    .axiIn1_r_valid            (axiIn1_r_valid),
+    .axiIn1_r_ready            (axiIn1_r_ready),
+    .axiIn1_r_payload_data     (axiIn1_r_payload_data),
+    .axiIn1_r_payload_id       (axiIn1_r_payload_id),
+    .axiIn1_r_payload_resp     (axiIn1_r_payload_resp),
+    .axiIn1_r_payload_last     (axiIn1_r_payload_last),
 
     // AXI Slave 0 (RAM) - Write Address Channel
     .axiOut_0_aw_valid          (ram_awvalid),
