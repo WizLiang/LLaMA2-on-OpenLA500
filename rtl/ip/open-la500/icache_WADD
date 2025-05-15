@@ -283,7 +283,7 @@ always @(posedge clk) begin
             if (cache_hit) begin 
                 hit_streak  <= hit_streak + 2'b1;
                 //miss_streak <= 2'b0;
-                if (hit_streak >= 2'd2) begin        
+                if (hit_streak >= 3'd4) begin        
                     candi_cnt  <= (candi_cnt > 3'b1 ? candi_cnt-3'b1 : 3'b1 );
                     hit_streak <= 2'b00;
                 end
