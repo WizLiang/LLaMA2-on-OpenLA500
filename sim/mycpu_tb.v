@@ -110,7 +110,7 @@ begin
 
 end
 
-soc_top  #(.SIMULATION(1'b1)) u_soc_top (
+soc_top  u_soc_top (
     .clk                     ( clk           ),
     .reset                   ( reset         ),
     .touch_btn               ( touch_btn     ),
@@ -146,28 +146,28 @@ soc_top  #(.SIMULATION(1'b1)) u_soc_top (
 );
 
 
-//模拟串口打印
-wire uart_display;
-wire [7:0] uart_data;
-wire uart_wen;
-assign uart_wen = (`UART_PSEL == 1'b1) &&  (`UART_PENBLE == 1'b1) && (`UART_PWRITE == 1'b1);
-assign uart_display = (uart_wen == 1'b1) && (`UART_WADDR == 8'h0);
-assign uart_data    = `UART_WDATA;
+// //模拟串口打印
+// wire uart_display;
+// wire [7:0] uart_data;
+// wire uart_wen;
+// assign uart_wen = (`UART_PSEL == 1'b1) &&  (`UART_PENBLE == 1'b1) && (`UART_PWRITE == 1'b1);
+// assign uart_display = (uart_wen == 1'b1) && (`UART_WADDR == 8'h0);
+// assign uart_data    = `UART_WDATA;
 
-always @(posedge clk)
-begin
-    if(uart_display)
-    begin
-        if(uart_data==8'hff)
-        begin
-            ;//$finish;
-        end
-        else
-        begin
-            $write("%c",uart_data);
-        end
-    end
-end
+// always @(posedge clk)
+// begin
+//     if(uart_display)
+//     begin
+//         if(uart_data==8'hff)
+//         begin
+//             ;//$finish;
+//         end
+//         else
+//         begin
+//             $write("%c",uart_data);
+//         end
+//     end
+// end
 
 sram_sp #(
     .AW        ( 18     ),
