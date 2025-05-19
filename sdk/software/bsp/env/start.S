@@ -103,6 +103,32 @@ _start:
 
 #endif
 
+	/* init UART */
+	la.local    t0, UART_BASE
+	ld.w        t1, t0, 0
+	#WRITE(li.wne,OFS_FIFO,FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_0);
+	li.w        t2, 0x07   
+	st.b        t2, t1, 2
+	#WRITE(li.wne,OFS_LINE_CONTROL, 0x80);
+	li.w        t2, 0x80
+	st.b        t2, t1, 3
+	#WRITE(li.wne,OFS_DIVISOR_MSB, (divisor & 0xff00) >> 8); 
+	li.w        t2, 0x00 
+	st.b        t2, t1, 1 
+	#WRITE(li.wne,OFS_DIVISOR_LSB, divisor & 0xff);
+    li.w        t3, 0xbf20f500
+    ld.w        t3, t3, 0
+    li.w        t2, 0x1b
+    beq         zero, t3, 1f
+    li.w        t2, 0x1
+1:
+	st.b     t2, t1, 0 
+	#WRITE(li.wne,OFS_DATA_FORMAT, data | parity | stop);
+	li.w       t2, 0x3 
+	st.b     t2, t1, 3
+	#WRITE(li.wne,OFS_MODEM_CONTROL,0);
+	li.w       t2, 0x0 
+	st.b     t2, t1, 4 
 
     /* init exception */
 #ifdef RTThread
