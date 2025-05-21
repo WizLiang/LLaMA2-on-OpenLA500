@@ -283,7 +283,7 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 create_generated_clock -name cpu_clk [get_pins pll_clk.u_clk_pll/inst/plle2_adv_inst/CLKOUT0]
 create_generated_clock -name sys_clk [get_pins pll_clk.u_clk_pll/inst/plle2_adv_inst/CLKOUT1]
 
-set_clock_groups -asynchronous -group [get_clocks cpu_clk] -group [get_clocks sys_clk]
+#set_clock_groups -asynchronous -group [get_clocks cpu_clk] -group [get_clocks sys_clk]
 
 set_input_delay -clock sys_clk -max 5   [get_ports {base_ram_data[*]}]
 set_input_delay -clock sys_clk -min 3   [get_ports {base_ram_data[*]}]

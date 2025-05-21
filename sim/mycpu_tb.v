@@ -76,7 +76,7 @@ begin
     clk = 1'b0;
     reset = 1'b1;
     dip_sw = 32'h0;
-    #2000;
+    #3000;
     reset = 1'b0;
 end
 always #10 clk=~clk;
