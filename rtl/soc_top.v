@@ -585,7 +585,7 @@ wire  [4:0]  uart_awid;
 wire  [7:0]  uart_awlen;
 wire  [2:0]  uart_awsize;
 wire  [1:0]  uart_awburst;
-wire  [1:0]  uart_awlock;
+wire  [0:0]  uart_awlock;
 wire  [3:0]  uart_awcache;
 wire  [2:0]  uart_awprot;
 
@@ -608,7 +608,7 @@ wire  [4:0]  uart_arid;
 wire  [7:0]  uart_arlen;
 wire  [2:0]  uart_arsize;
 wire  [1:0]  uart_arburst;
-wire  [1:0]  uart_arlock;
+wire  [0:0]  uart_arlock;
 wire  [3:0]  uart_arcache;
 wire  [2:0]  uart_arprot;
 
@@ -657,158 +657,19 @@ assign uart0_ri_i  = UART_RI;
 
 
 
-// -----------------------------------------------------------------------------
-// AXI4 Master → UART (AXI-4) interface signal declarations
-// -----------------------------------------------------------------------------
-wire        uart_o_awvalid;
-wire        uart_o_awready;
-wire [0:0]  uart_o_awid;
-wire [31:0] uart_o_awaddr;
-wire [7:0]  uart_o_awlen;
-wire [2:0]  uart_o_awsize;
-wire [1:0]  uart_o_awburst;
-wire        uart_o_awlock;
-wire [3:0]  uart_o_awcache;
-wire [2:0]  uart_o_awprot;
-wire [3:0]  uart_o_awqos;
 
-wire        uart_o_wvalid;
-wire        uart_o_wready;
-wire [31:0] uart_o_wdata;
-wire [3:0]  uart_o_wstrb;
-wire        uart_o_wlast;
-
-wire        uart_o_bvalid;
-wire        uart_o_bready;
-wire [0:0]  uart_o_bid;
-wire [1:0]  uart_o_bresp;
-
-wire        uart_o_arvalid;
-wire        uart_o_arready;
-wire [0:0]  uart_o_arid;
-wire [31:0] uart_o_araddr;
-wire [7:0]  uart_o_arlen;
-wire [2:0]  uart_o_arsize;
-wire [1:0]  uart_o_arburst;
-wire        uart_o_arlock;
-wire [3:0]  uart_o_arcache;
-wire [2:0]  uart_o_arprot;
-wire [3:0]  uart_o_arqos;
-
-wire        uart_o_rvalid;
-wire        uart_o_rready;
-wire [0:0]  uart_o_rid;
-wire [31:0] uart_o_rdata;
-wire        uart_o_rlast;
-wire [1:0]  uart_o_rresp;
-
-axi32axi #(
-    .C_AXI_ID_WIDTH       (5),        // width of ID signals on both sides
-    .C_AXI_ADDR_WIDTH     (32),       // address bus width
-    .C_AXI_DATA_WIDTH     (32),       // data bus width
-    .OPT_REORDER_METHOD   (0),
-    .OPT_TRANSFORM_AXCACHE(1),
-    .OPT_LOWPOWER         (0),
-    .OPT_LOW_LATENCY      (0),
-    .WID_LGAWFIFO         (3),
-    .WID_LGWFIFO          (3)
-) u_axi32axi (
-    // Clock & reset
-    .S_AXI_ACLK      (sys_clk),        // slave-side clock
-    .S_AXI_ARESETN   (sys_resetn),     // slave-side reset (active low)
-
-    // Slave (AXI-3) interface
-    .S_AXI_AWVALID   (uart_awvalid),
-    .S_AXI_AWREADY   (uart_awready),
-    .S_AXI_AWID      (uart_awid),
-    .S_AXI_AWADDR    (uart_awaddr),
-    .S_AXI_AWLEN     (uart_awlen),    // 记得替换为你的信号
-    .S_AXI_AWSIZE    (uart_awsize),
-    .S_AXI_AWBURST   (uart_awburst),
-    .S_AXI_AWLOCK    (uart_awlock),
-    .S_AXI_AWCACHE   (uart_awcache),
-    .S_AXI_AWPROT    (uart_awprot),
-    .S_AXI_AWQOS     (uart_awqos),
-
-    // Slave W 通道
-    .S_AXI_WVALID    (uart_wvalid),
-    .S_AXI_WREADY    (uart_wready),
-    .S_AXI_WID       (uart_wid),
-    .S_AXI_WDATA     (uart_wdata),
-    .S_AXI_WSTRB     (uart_wstrb),
-    .S_AXI_WLAST     (uart_wlast),
-
-    // Slave B 通道
-    .S_AXI_BVALID    (uart_bvalid),
-    .S_AXI_BREADY    (uart_bready),
-    .S_AXI_BID       (uart_bid),
-    .S_AXI_BRESP     (uart_bresp),
-
-    // Slave AR 通道
-    .S_AXI_ARVALID   (uart_arvalid),
-    .S_AXI_ARREADY   (uart_arready),
-    .S_AXI_ARID      (uart_arid),
-    .S_AXI_ARADDR    (uart_araddr),
-    .S_AXI_ARLEN     (uart_arlen),
-    .S_AXI_ARSIZE    (uart_arsize),
-    .S_AXI_ARBURST   (uart_arburst),
-    .S_AXI_ARLOCK    (uart_arlock),
-    .S_AXI_ARCACHE   (uart_arcache),
-    .S_AXI_ARPROT    (uart_arprot),
-    .S_AXI_ARQOS     (uart_arqos),
-
-    // Slave R 通道
-    .S_AXI_RVALID    (uart_rvalid),
-    .S_AXI_RREADY    (uart_rready),
-    .S_AXI_RID       (uart_rid),
-    .S_AXI_RDATA     (uart_rdata),
-    .S_AXI_RLAST     (uart_rlast),
-    .S_AXI_RRESP     (uart_rresp),
-
-    // Master (AXI-4) interface
-    .M_AXI_AWVALID   (uart_o_awvalid),
-    .M_AXI_AWREADY   (uart_o_awready),
-    .M_AXI_AWID      (uart_o_awid),
-    .M_AXI_AWADDR    (uart_o_awaddr),
-    .M_AXI_AWLEN     (uart_o_awlen),
-    .M_AXI_AWSIZE    (uart_o_awsize),
-    .M_AXI_AWBURST   (uart_o_awburst),
-    .M_AXI_AWLOCK    (uart_o_awlock),
-    .M_AXI_AWCACHE   (uart_o_awcache),
-    .M_AXI_AWPROT    (uart_o_awprot),
-    .M_AXI_AWQOS     (uart_o_awqos),
-
-    .M_AXI_WVALID    (uart_o_wvalid),
-    .M_AXI_WREADY    (uart_o_wready),
-    .M_AXI_WDATA     (uart_o_wdata),
-    .M_AXI_WSTRB     (uart_o_wstrb),
-    .M_AXI_WLAST     (uart_o_wlast),
-
-    .M_AXI_BVALID    (uart_o_bvalid),
-    .M_AXI_BREADY    (uart_o_bready),
-    .M_AXI_BID       (uart_o_bid),
-    .M_AXI_BRESP     (uart_o_bresp),
-
-    .M_AXI_ARVALID   (uart_o_arvalid),
-    .M_AXI_ARREADY   (uart_o_arready),
-    .M_AXI_ARID      (uart_o_arid),
-    .M_AXI_ARADDR    (uart_o_araddr),
-    .M_AXI_ARLEN     (uart_o_arlen),
-    .M_AXI_ARSIZE    (uart_o_arsize),
-    .M_AXI_ARBURST   (uart_o_arburst),
-    .M_AXI_ARLOCK    (uart_o_arlock),
-    .M_AXI_ARCACHE   (uart_o_arcache),
-    .M_AXI_ARPROT    (uart_o_arprot),
-    .M_AXI_ARQOS     (uart_o_arqos),
-
-    .M_AXI_RVALID    (uart_o_rvalid),
-    .M_AXI_RREADY    (uart_o_rready),
-    .M_AXI_RID       (uart_o_rid),
-    .M_AXI_RDATA     (uart_o_rdata),
-    .M_AXI_RLAST     (uart_o_rlast),
-    .M_AXI_RRESP     (uart_o_rresp)
+fifo #(
+    .D_WIDTH(5))
+u_fifo_wid(
+    .clk(sys_clk),
+    .rst_n(sys_resetn),
+    .push(uart_awvalid & uart_awready),
+    .pop(uart_bvalid & uart_bready),
+    .din(uart_awid),
+    .dout(uart_wid),
+    .fifo_empty(),
+    .fifo_full()
 );
-
 
 
 // UART_CONTROLLER
@@ -823,12 +684,12 @@ axi_uart_controller u_axi_uart_controller
     .axi_s_awlen        (uart_awlen         ),
     .axi_s_awsize       (uart_awsize        ),
     .axi_s_awburst      (uart_awburst       ),
-    .axi_s_awlock       (uart_awlock        ),
+    .axi_s_awlock       ({1'b0 ,uart_awlock }          ),
     .axi_s_awcache      (uart_awcache       ),
     .axi_s_awprot       (uart_awprot        ),
     .axi_s_awvalid      (uart_awvalid       ),
     .axi_s_awready      (uart_awready       ),
-    .axi_s_wid          ( uart_wid          ),
+    .axi_s_wid          (uart_wid           ),
     .axi_s_wdata        (uart_wdata         ),
     .axi_s_wstrb        (uart_wstrb         ),
     .axi_s_wlast        (uart_wlast         ),
@@ -843,7 +704,7 @@ axi_uart_controller u_axi_uart_controller
     .axi_s_arlen        (uart_arlen         ),
     .axi_s_arsize       (uart_arsize        ),
     .axi_s_arburst      (uart_arburst       ),
-    .axi_s_arlock       (uart_arlock         ),
+    .axi_s_arlock       ({1'b0 ,uart_arlock}         ),
     .axi_s_arcache      (uart_arcache       ),
     .axi_s_arprot       (uart_arprot        ),
     .axi_s_arvalid      (uart_arvalid       ),
@@ -1192,49 +1053,49 @@ AxiCrossbar_2x4 u_axi_crossbar (
     .axiOut_0_r_payload_last    (ram_rlast),
 
     // AXI Slave 1 (Output) - Write Address Channel (UART)
-    .axiOut_1_aw_valid          (uart_o_awvalid),
-    .axiOut_1_aw_ready          (uart_o_awready),
-    .axiOut_1_aw_payload_addr   (uart_o_awaddr),
-    .axiOut_1_aw_payload_id     (uart_o_awid),
-    .axiOut_1_aw_payload_len    (uart_o_awlen),
-    .axiOut_1_aw_payload_size   (uart_o_awsize),
-    .axiOut_1_aw_payload_burst  (uart_o_awburst),
-    .axiOut_1_aw_payload_lock   (uart_o_awlock),
-    .axiOut_1_aw_payload_cache  (uart_o_awcache),
-    .axiOut_1_aw_payload_prot   (uart_o_awprot),
+    .axiOut_1_aw_valid          (uart_awvalid),
+    .axiOut_1_aw_ready          (uart_awready),
+    .axiOut_1_aw_payload_addr   (uart_awaddr),
+    .axiOut_1_aw_payload_id     (uart_awid),
+    .axiOut_1_aw_payload_len    (uart_awlen),
+    .axiOut_1_aw_payload_size   (uart_awsize),
+    .axiOut_1_aw_payload_burst  (uart_awburst),
+    .axiOut_1_aw_payload_lock   (uart_awlock),
+    .axiOut_1_aw_payload_cache  (uart_awcache),
+    .axiOut_1_aw_payload_prot   (uart_awprot),
 
     // AXI Slave 1 (Output) - Write Data Channel (UART)
-    .axiOut_1_w_valid           (uart_o_wvalid),
-    .axiOut_1_w_ready           (uart_o_wready),
-    .axiOut_1_w_payload_data    (uart_o_wdata),
-    .axiOut_1_w_payload_strb    (uart_o_wstrb),
-    .axiOut_1_w_payload_last    (uart_o_wlast),
+    .axiOut_1_w_valid           (uart_wvalid),
+    .axiOut_1_w_ready           (uart_wready),
+    .axiOut_1_w_payload_data    (uart_wdata),
+    .axiOut_1_w_payload_strb    (uart_wstrb),
+    .axiOut_1_w_payload_last    (uart_wlast),
 
     // AXI Slave 1 (Output) - Write Response Channel (UART)
-    .axiOut_1_b_valid           (uart_o_bvalid),
-    .axiOut_1_b_ready           (uart_o_bready),
-    .axiOut_1_b_payload_id      (uart_o_bid),
-    .axiOut_1_b_payload_resp    (uart_o_bresp),
+    .axiOut_1_b_valid           (uart_bvalid),
+    .axiOut_1_b_ready           (uart_bready),
+    .axiOut_1_b_payload_id      (uart_bid),
+    .axiOut_1_b_payload_resp    (uart_bresp),
 
     // AXI Slave 1 (Output) - Read Address Channel (UART)
-    .axiOut_1_ar_valid          (uart_o_arvalid),
-    .axiOut_1_ar_ready          (uart_o_arready),
-    .axiOut_1_ar_payload_addr   (uart_o_araddr),
-    .axiOut_1_ar_payload_id     (uart_o_arid),
-    .axiOut_1_ar_payload_len    (uart_o_arlen),
-    .axiOut_1_ar_payload_size   (uart_o_arsize),
-    .axiOut_1_ar_payload_burst  (uart_o_arburst),
-    .axiOut_1_ar_payload_lock   (uart_o_arlock),
-    .axiOut_1_ar_payload_cache  (uart_o_arcache),
-    .axiOut_1_ar_payload_prot   (uart_o_arprot),
+    .axiOut_1_ar_valid          (uart_arvalid),
+    .axiOut_1_ar_ready          (uart_arready),
+    .axiOut_1_ar_payload_addr   (uart_araddr),
+    .axiOut_1_ar_payload_id     (uart_arid),
+    .axiOut_1_ar_payload_len    (uart_arlen),
+    .axiOut_1_ar_payload_size   (uart_arsize),
+    .axiOut_1_ar_payload_burst  (uart_arburst),
+    .axiOut_1_ar_payload_lock   (uart_arlock),
+    .axiOut_1_ar_payload_cache  (uart_arcache),
+    .axiOut_1_ar_payload_prot   (uart_arprot),
 
     // AXI Slave 1 (Output) - Read Data Channel (UART)
-    .axiOut_1_r_valid           (uart_o_rvalid),
-    .axiOut_1_r_ready           (uart_o_rready),
-    .axiOut_1_r_payload_data    (uart_o_rdata),
-    .axiOut_1_r_payload_id      (uart_o_rid),
-    .axiOut_1_r_payload_resp    (uart_o_rresp),
-    .axiOut_1_r_payload_last    (uart_o_rlast),
+    .axiOut_1_r_valid           (uart_rvalid),
+    .axiOut_1_r_ready           (uart_rready),
+    .axiOut_1_r_payload_data    (uart_rdata),
+    .axiOut_1_r_payload_id      (uart_rid),
+    .axiOut_1_r_payload_resp    (uart_rresp),
+    .axiOut_1_r_payload_last    (uart_rlast),
 
     // AXI Slave 2 (Output) - Write Address Channel
     .axiOut_2_aw_valid          (axiOut_2_awvalid),
