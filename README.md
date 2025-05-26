@@ -1,12 +1,11 @@
-# circuir breaker 
+# Circuir Breaker 
 
 队伍编号：CICC0900647
 
-文件架构同初赛发布包裹，本次代码同步平台采用github，github仓库连接https://github.com/WizLiang/la32r_soc_ciciec/tree/master
+文件架构同初赛发布包裹，本次代码同步平台采用github，github仓库连接https://github.com/WizLiang/la32r_soc_ciciec
+
 建立为私人仓库，如有需要可以通过邮箱/钉钉联系。
-
 开发历史可以通过git log查看。
-
 当前处在dev_axi中。
 
 ## FPGA工程
@@ -21,3 +20,8 @@ FPGA工程采用的是AXI1X4的架构，目前2x4的进行功能仿真的时候�
 
 目前协处理器由于并未进入联调阶段，故暂未合并仓库
 
+# Tips of Dev
+
+1. 记得创建自己的分支，尽量有统一的命名规范
+1. 适当添加描述
+1. 注意git pull origin master
