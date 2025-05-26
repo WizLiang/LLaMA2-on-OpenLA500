@@ -117,6 +117,14 @@ reg [4:0] main_state;
 
 reg       rd_req_buffer;
 
+//way prediction
+reg [1:0] hit_streak;
+reg [1:0] miss_streak;
+reg       way_prediction;
+reg [2:0] candi_cnt;
+wire [1:0] Way_h_cnt [3:0]; 
+wire [3:0] way_en;
+
 genvar i,j;
 
 //state machine
@@ -224,6 +232,13 @@ assign icache_unbusy = main_state_is_idle;
 //tag compare
 generate for(i=0;i<4;i=i+1) begin:gen_way_hit
 	assign way_hit[i] = way_tagv_douta[i][0] && (real_tag == way_tagv_douta[i][20:1]); //this signal will not maintain
+    saturate_cnt_2bits u(
+        .clk(clk),
+        .reset(reset),
+        .en(|way_hit ),
+        .d(way_hit[i]),
+        .Q(Way_h_cnt[i])
+    );
 end endgenerate
 assign cache_hit = |way_hit && !(uncache_en || cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2);  //uncache road reuse
 //when cache inst op mode2 no hit, main state machine will still go a round. implement easy.
@@ -246,20 +261,72 @@ assign load_res  = {32{way_hit[0]}} & way_load_word[0] |
 
 //data_ok logic
 
+/*===============================way prediction regulator logic==============================*/
+
+selective_way_activator #(4) swa (
+  .way_cnt_flat( { Way_h_cnt[3],Way_h_cnt[2],Way_h_cnt[1],Way_h_cnt[0] } ),
+  .mru_flat    ( 8'd0 ),
+  .candi_cnt   (  way_prediction ? candi_cnt : 3'd4 ), 
+  .way_en      (  way_en)
+);
+
+//cache_hit can ignore icacop_op_en
+always @(posedge clk) begin
+    if (reset) begin
+        way_prediction <= 1'b0;
+        hit_streak     <= 3'b0;
+        miss_streak    <= 2'b0;
+        candi_cnt      <= 3'd4; 
+    end else if (main_state_is_lookup) begin
+    //    selected_way_hit = cache_hit && way_en[hit_way]
+        if (way_prediction) begin
+            if (cache_hit) begin 
+                hit_streak  <= hit_streak + 2'b1;
+                //miss_streak <= 2'b0;
+                if (hit_streak >= 3'd4) begin        
+                    candi_cnt  <= (candi_cnt > 3'b1 ? candi_cnt-3'b1 : 3'b1 );
+                    hit_streak <= 2'b00;
+                end
+            end 
+            else begin
+                miss_streak <= miss_streak + 2'b1;
+                hit_streak  <= 2'b0;
+                if (miss_streak == 2'b01) begin       
+                    candi_cnt   <= (candi_cnt < 3'd4 ? candi_cnt + 3'b1 : 3'd4 );
+                end
+            end
+            //turn off way_prediction
+            if (miss_streak == 2'b10 ) way_prediction <= 0;
+        end else begin
+                if (cache_hit) begin
+                    hit_streak <= hit_streak + 1;
+                    if (hit_streak == 2'd2) begin
+                        way_prediction <= 1'b1;
+                        candi_cnt      <= 3'd4;
+                        hit_streak     <= 2'b01;
+                        miss_streak    <= 2'b00;
+                    end
+                end
+                else  hit_streak <= 0;
+        end
+  end
+end
+
 /*====================================main state miss=======================================*/
 
 decoder_2_4 dec_rand_way (.in(random_val),.out(chosen_way));
-
-one_valid_n #(4) sel_one_invalid (.in(~{way_tagv_douta[3][0],way_tagv_douta[2][0],way_tagv_douta[1][0],way_tagv_douta[0][0]}),.out(invalid_way),.nozero(has_invalid_way));
-
-assign rand_repl_way = has_invalid_way ? invalid_way : chosen_way; //chose invalid way first.
+ 
+ wire [3:0] way_en_l;
+one_valid_n #(4) sel_one_invalid (.in(~{way_tagv_douta[3][0],way_tagv_douta[2][0],way_tagv_douta[1][0],way_tagv_douta[0][0]} & way_en ),.out(invalid_way),.nozero(has_invalid_way));
+one_valid_n #(4) w (.in(way_en),.out(way_en_l),.nozero());
+assign rand_repl_way = has_invalid_way ? invalid_way : way_en_l; //chose invalid way first.
 
 decoder_2_4 dec_cacop_way (.in(request_buffer_offset[1:0]),.out(cacop_chose_way));
 
 assign replace_way = {4{cacop_op_mode0 || cacop_op_mode1}} & cacop_chose_way      |
                      {4{cacop_op_mode2}}                   & way_hit              |
-                     {4{!request_buffer_icacop}}           & rand_repl_way;
-
+                     //{4{!request_buffer_icacop}}           & ((rand_repl_way & way_en) == 4'b0 ? way_en_l: rand_repl_way);
+                    {4{!request_buffer_icacop}}           & has_invalid_way ;
 /*==================================main state replace======================================*/
 
 assign rd_req  = main_state_is_replace && !(cacop_op_mode0 || cacop_op_mode1 || cacop_op_mode2);
@@ -355,7 +422,7 @@ for(i=0;i<4;i=i+1) begin:gen_tagv_way
 
 /*===============================tagv ena logic=================================*/
 
-	assign way_tagv_ena[i] = (!request_buffer_uncache_en) || main_state_is_idle || main_state_is_lookup;
+	assign way_tagv_ena[i] = ((!request_buffer_uncache_en) || main_state_is_idle || main_state_is_lookup) & way_en[i];
 
 /*===============================tagv wea logic=================================*/
 
@@ -408,5 +475,81 @@ assign main_state_is_idle    = main_state == main_idle   ;
 assign main_state_is_lookup  = main_state == main_lookup ;
 assign main_state_is_replace = main_state == main_replace;
 assign main_state_is_refill  = main_state == main_refill ;
+
+endmodule
+
+module saturate_cnt_2bits (
+    input clk,
+    input reset,
+    input en,
+    input d,
+    output reg [1:0] Q
+);
+    always @(clk) begin
+        if (reset) begin
+            Q <= 2'b00; 
+        end else if (en) begin
+            if (d) begin
+                if (Q < 2'b11) 
+                    Q <= Q + 1'b1;
+                else
+                    Q <= 2'b11; 
+            end else begin
+                if (Q > 2'b00) 
+                    Q <= Q - 1'b1;
+                else
+                    Q <= 2'b00;
+            end
+        end 
+            //else Q <= Q;
+    end
+endmodule
+
+module selective_way_activator #(
+  parameter WAYS = 4
+)(
+  //input  wire [1:0] way_cnt [WAYS-1 :0],   
+  input  [2*WAYS-1:0] way_cnt_flat,
+  input  [2*WAYS-1:0] mru_flat    ,    
+  input  [2:0] candi_cnt,            
+  output wire [WAYS-1:0] way_en   //reg?        
+);
+
+  genvar i,j;
+  // unpacked array
+  wire [1:0] way_cnt [WAYS-1 :0];
+  wire [1:0] mru     [WAYS-1 :0];
+  generate
+    for (i = 0; i < WAYS; i = i + 1) begin : UNPACK
+      assign way_cnt[i] = way_cnt_flat[2*i +: 2];
+      assign mru    [i] = mru_flat    [2*i +: 2];
+    end
+  endgenerate
+
+  //wire is_greater [j][i] set when way_cnt [j] larger 
+  wire is_greater[WAYS-1:0][WAYS-1:0];
+  wire [2:0] rank_value [WAYS-1 :0]; 
+
+  generate
+    for (i = 0; i < WAYS; i = i + 1) begin : GEN_RANK
+      for (j = 0; j < WAYS; j = j + 1) begin : GEN_CMP
+        if (i == j) begin
+          assign is_greater[j][i] = 1'b0;
+        end else begin
+          assign is_greater[j][i] =
+             (way_cnt[j] > way_cnt[i]) 
+           || ((way_cnt[j] == way_cnt[i]) && (mru[j] > mru[i]))
+           || ((way_cnt[j] == way_cnt[i]) && (mru[j] == mru[i]) && (j < i));
+        end
+      end
+      assign rank_value[i] = 
+             is_greater[0][i]
+           + is_greater[1][i]
+           + is_greater[2][i]
+           + is_greater[3][i];
+      // set activate when ranking < than candi_cnt
+      assign way_en[i] = (rank_value[i] < candi_cnt);
+    end 
+  endgenerate
 
 endmodule

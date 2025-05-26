@@ -1,4 +1,4 @@
-`timescale 1ns/100ps
+`timescale 1ns/1ps
 module sram_sp #(
     parameter AW = 16,
     parameter Init_File = "none"

@@ -1,55 +1,22 @@
-# Dev_soc
-大部分按照demo完成了soc_top的连接。跑完了Helloword以及Coremark
-![Screenshot from 2025-04-08 10-08-24](https://github.com/user-attachments/assets/0864f55d-5077-4077-84f8-3ef0180d349e)
+# circuir breaker 
 
-## 代码修改
-### .gitnore添加了
-/vivado24.2/ #这是我自己的vivado启动目录，结果他运行.tcl脚本之后，project创建在/fpga/中，所以需要将/fpga/也加进去
-/rtl/ip/PLL_2019_2/#避免了vivado版本问题，
-/fpga/
+队伍编号：CICC0900647
 
-### rtl/ip/confreg/confreg.v
-注释 无用信号input [4 :0] s_wid,
+文件架构同初赛发布包裹，本次代码同步平台采用github，github仓库连接https://github.com/WizLiang/la32r_soc_ciciec/tree/master。建立为私人仓库，如有需要可以通过邮箱/钉钉联系。
 
-## 注意事项
-### critcal warning
-soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，导致critical warning，但是我在第一次编译的时候并没有出现报这个warning，而在我将.xdc文件移位之后出现ip报错，重新升级之后才出现，故怀疑也可能是pll_ip的问题，故没有修改.xdc
-> 这个重建ip并没有解决，理论上.xdc只能约束顶层的io。可能是.xdc写多了
+开发历史可以通过git log查看。
 
-### IP core
-由于clk_pll不再跟踪，所以第一次创建工程的时候可能需要使用先前版本的xci
+当前处在dev_axi中。
 
-# Github Tips
-## 更新本地仓库
+## FPGA工程
 
-在开始任何新工作之前，先执行 `git pull`（或从远程仓库拉取最新代码）来确保你的本地仓库与远程仓库保持同步，避免因为代码版本差异而产生冲突。
+FPGA工程采用的是AXI1X4的架构，目前2x4的进行功能仿真的时候出现问题，而上板子调试仍可通过。（ 如需测试，将soc_top改用相同路径下soc_top.2x4run，生成bitstream即可。）
 
+## 软件部分
 
-`git pull origin main  # 或者你所在仓库使用的主分支名称`
+我们的软件代码放在/la32r_soc_ciciec/sdk/software/examples/runq中
 
-## 创建新分支
-为了保持主分支的稳定性，建议在本地创建一个新的分支来进行修改。创建分支的命令通常是：
+## 额外说明
 
-`git checkout -b feature/your-feature-name`
-这里的 feature/your-feature-name 可以根据你所要开发的功能或任务进行命名。这样可以让团队成员一眼看出该分支的目的。
+目前协处理器由于并未进入联调阶段，故暂未合并仓库
 
-## 开发和提交代码
-在新分支上进行开发，完成代码修改后，通过以下命令添加和提交改动：
-
-`git add .`
-
-`git commit -m "描述你的改动"`
-
-确保你的提交信息清晰、简洁地描述了改动的目的和内容，这有助于代码审核和后续维护。
-
-定期同步远程更新
-如果开发周期较长，建议定期将主分支上的最新改动合并到你的分支上，以避免日后合并时出现较大的冲突：
-
-`git pull origin master  # 拉取主分支最新代码`
-
-`git merge master       # 将主分支合并到当前分支`
-
-## 推送分支并创建 Pull Request
-开发完成后，将你的分支推送到远程仓库：
-`git push -u origin feature/your-feature-name`
-然后在 GitHub 上创建 Pull Request，让团队成员进行代码审核、讨论和确认合并。
