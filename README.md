@@ -2,7 +2,8 @@
 
 队伍编号：CICC0900647
 
-文件架构同初赛发布包裹，本次代码同步平台采用github，github仓库连接https://github.com/WizLiang/la32r_soc_ciciec/tree/master。建立为私人仓库，如有需要可以通过邮箱/钉钉联系。
+文件架构同初赛发布包裹，本次代码同步平台采用github，github仓库连接https://github.com/WizLiang/la32r_soc_ciciec/tree/master
+建立为私人仓库，如有需要可以通过邮箱/钉钉联系。
 
 开发历史可以通过git log查看。
 
