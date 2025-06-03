@@ -57,15 +57,15 @@ module confreg #(
     input  [2 :0]   s_awprot,
     input           s_awvalid,
     output          s_awready,
-    //input  [4 :0]   s_wid,
+    // input  [4 :0]   s_wid,
     input  [31:0]   s_wdata,
     input  [3 :0]   s_wstrb,
     input           s_wlast,
     input           s_wvalid,
-    output          s_wready,
+    output reg      s_wready,
     output [4 :0]   s_bid,
     output [1 :0]   s_bresp,
-    output          s_bvalid,
+    output reg      s_bvalid,
     input           s_bready,
     input  [4 :0]   s_arid,
     input  [31:0]   s_araddr,
@@ -78,10 +78,10 @@ module confreg #(
     input           s_arvalid,
     output          s_arready,
     output [4 :0]   s_rid,
-    output [31:0]   s_rdata,
+    output reg [31:0]   s_rdata,
     output [1 :0]   s_rresp,
-    output          s_rlast,
-    output          s_rvalid,
+    output reg      s_rlast,
+    output reg      s_rvalid,
     input           s_rready,
 
     output     [15:0] led,
@@ -109,7 +109,6 @@ reg [31:0] digital_data;
 
 
 reg busy,write,R_or_W;
-reg s_wready;
 
 wire ar_enter = s_arvalid & s_arready;
 wire r_retire = s_rvalid & s_rready & s_rlast;
@@ -125,7 +124,7 @@ always@(posedge aclk)
     else if(ar_enter|aw_enter) busy <= 1'b1;
     else if(r_retire|b_retire) busy <= 1'b0;
 
-reg [3 :0] buf_id;
+reg [4 :0] buf_id;
 reg [31:0] buf_addr;
 reg [7 :0] buf_len;
 reg [2 :0] buf_size;
@@ -169,9 +168,6 @@ always@(posedge aclk)
     else if(aw_enter) s_wready <= 1'b1;
     else if(w_enter & s_wlast) s_wready <= 1'b0;
 
-
-reg [31:0] s_rdata;
-reg s_rvalid,s_rlast;
 wire [31:0] rdata_d =   buf_addr[15:0] == (`CONFREG_INT_ADDR + 16'h0)     ? confreg_int_en        : 
                         buf_addr[15:0] == (`CONFREG_INT_ADDR + 16'h4)     ? confreg_int_edge      : 
                         buf_addr[15:0] == (`CONFREG_INT_ADDR + 16'h8)     ? confreg_int_pol       : 
@@ -205,7 +201,6 @@ always@(posedge aclk)
         s_rvalid <= 1'b0;
     end
 
-reg s_bvalid;
 always@(posedge aclk)   
     if(~aresetn) s_bvalid <= 1'b0;
     else if(w_enter) s_bvalid <= 1'b1;
@@ -338,5 +333,9 @@ begin
 end
 //---------------------------{simulation flag}end------------------------//
 
+//-------------------------------{int_ctrl}begin----------------------------//
+//TODO: add your code
+
+//--------------------------------{int_ctrl}end-----------------------------//
 
 endmodule

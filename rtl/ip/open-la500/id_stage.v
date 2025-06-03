@@ -309,6 +309,11 @@ wire        inst_need_rkd;
 wire [31:0] rj_value_forward_es;
 wire [31:0] rkd_value_forward_es;
 
+// difftest
+wire [7:0]  inst_ld_en;
+wire [7:0]  inst_st_en;
+wire        inst_csr_rstat_en;
+
 assign br_bus       = {btb_pre_error_flush,           //32:32
                        btb_pre_error_flush_target     //31:0
                       };
@@ -954,10 +959,6 @@ assign pipeline_no_empty = es_to_ds_valid || ms_to_ds_valid || ws_to_ds_valid ||
 assign dbar_stall = inst_dbar && pipeline_no_empty;
 assign ibar_stall = inst_ibar && pipeline_no_empty;
 
-// difftest
-wire [7:0]  inst_ld_en;
-wire [7:0]  inst_st_en;
-wire        inst_csr_rstat_en;
 
 // ll ldw ldhu ldh ldbu ldb
 assign inst_ld_en = {2'b0, inst_ll_w, inst_ld_w, inst_ld_hu, inst_ld_h, inst_ld_bu, inst_ld_b};

@@ -42,6 +42,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module tb_top( );
 reg reset;
 reg clk;
+wire clk_o;
 reg   [3:0]  touch_btn;
 reg   [31:0]  dip_sw;
 
@@ -113,16 +114,17 @@ end
 soc_top #(.SIMULATION(1'b1))  u_soc_top (
     .clk                     ( clk           ),
     .reset                   ( reset         ),
+    .clk_o                   (clk_o          ),
     .touch_btn               ( touch_btn     ),
     .dip_sw                  ( dip_sw        ),
 
-    .video_red               ( video_red     ),
-    .video_green             ( video_green   ),
-    .video_blue              ( video_blue    ),
-    .video_hsync             ( video_hsync   ),
-    .video_vsync             ( video_vsync   ),
-    .video_clk               ( video_clk     ),
-    .video_de                ( video_de      ),
+    // .video_red               ( video_red     ),
+    // .video_green             ( video_green   ),
+    // .video_blue              ( video_blue    ),
+    // .video_hsync             ( video_hsync   ),
+    // .video_vsync             ( video_vsync   ),
+    // .video_clk               ( video_clk     ),
+    // .video_de                ( video_de      ),
     .leds                    ( leds          ),
     .dpy0                    ( dpy0          ),
     .dpy1                    ( dpy1          ),

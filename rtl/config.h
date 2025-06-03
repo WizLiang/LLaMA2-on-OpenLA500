@@ -44,7 +44,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define Lawlen 8
 `define Lawsize 3
 `define Lawburst 2
-`define Lawlock 2
+`define Lawlock 1
 `define Lawcache 4
 `define Lawprot 3
 `define Lawvalid 1
@@ -66,7 +66,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define Larlen 8
 `define Larsize 3
 `define Larburst 2
-`define Larlock 2
+`define Larlock 1
 `define Larcache 4
 `define Larprot 3
 `define Larvalid 1

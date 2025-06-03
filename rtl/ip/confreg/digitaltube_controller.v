@@ -30,24 +30,27 @@ module digitaltube_controller(
     reg [6:0] seg_code [0:15]; // 存储 0-F 的编码
 
     // 初始化数码管段码
-    initial begin
-        seg_code[0] = 7'b1000000; // 0
-        seg_code[1] = 7'b1110110; // 1
-        seg_code[2] = 7'b0100001; // 2
-        seg_code[3] = 7'b0100100; // 3
-        seg_code[4] = 7'b0010110; // 4
-        seg_code[5] = 7'b0001100; // 5
-        seg_code[6] = 7'b0001000; // 6
-        seg_code[7] = 7'b1100110; // 7
-        seg_code[8] = 7'b0000000; // 8
-        seg_code[9] = 7'b0000110; // 9
-        seg_code[10] = 7'b0000010; // A
-        seg_code[11] = 7'b0011000; // B
-        seg_code[12] = 7'b1001001; // C
-        seg_code[13] = 7'b0110000; // D
-        seg_code[14] = 7'b0001001; // E
-        seg_code[15] = 7'b0001011; // F
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            seg_code[0] <= 7'b1000000; // 0
+            seg_code[1] <= 7'b1110110; // 1
+            seg_code[2] <= 7'b0100001; // 2
+            seg_code[3] <= 7'b0100100; // 3
+            seg_code[4] <= 7'b0010110; // 4
+            seg_code[5] <= 7'b0001100; // 5
+            seg_code[6] <= 7'b0001000; // 6
+            seg_code[7] <= 7'b1100110; // 7
+            seg_code[8] <= 7'b0000000; // 8
+            seg_code[9] <= 7'b0000110; // 9
+            seg_code[10] <= 7'b0000010; // A
+            seg_code[11] <= 7'b0011000; // B
+            seg_code[12] <= 7'b1001001; // C
+            seg_code[13] <= 7'b0110000; // D
+            seg_code[14] <= 7'b0001001; // E
+            seg_code[15] <= 7'b0001011; // F
+        end
     end
+
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin

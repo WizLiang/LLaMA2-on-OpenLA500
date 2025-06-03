@@ -32,22 +32,24 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ------------------------------------------------------------------------------*/
 
 `include "config.h"
+`include "iopad.svh"
 
 module soc_top #(parameter SIMULATION=1'b0)
 (
     input           clk,                //50MHz 时钟输入
+    output          clk_o,              //XTALO
     input           reset,              //BTN6手动复位按钮开关，带消抖电路，按下时为1
 
-    //图像输出信号
-    output [2:0]    video_red,          //红色像素，3位
-    output [2:0]    video_green,        //绿色像素，3位
-    output [1:0]    video_blue,         //蓝色像素，2位
-    output          video_hsync,        //行同步（水平同步）信号
-    output          video_vsync,        //场同步（垂直同步）信号
-    output          video_clk,          //像素时钟输出
-    output          video_de,           //行数据有效信号，用于区分消隐区
+    // //图像输出信号
+    // output [2:0]    video_red,          //红色像素，3位
+    // output [2:0]    video_green,        //绿色像素，3位
+    // output [1:0]    video_blue,         //蓝色像素，2位
+    // output          video_hsync,        //行同步（水平同步）信号
+    // output          video_vsync,        //场同步（垂直同步）信号
+    // output          video_clk,          //像素时钟输出
+    // output          video_de,           //行数据有效信号，用于区分消隐区
 
-    input           clock_btn,          //BTN5手动时钟按钮开关，带消抖电路，按下时为1
+    // input           clock_btn,          //BTN5手动时钟按钮开关，带消抖电路，按下时为1
     input  [3:0]    touch_btn,          //BTN1~BTN4，按钮开关，按下时为1
     input  [31:0]   dip_sw,             //32位拨码开关，拨到“ON”时为1
     output [15:0]   leds,               //16位LED，输出时1点亮
@@ -69,20 +71,44 @@ module soc_top #(parameter SIMULATION=1'b0)
     output          ext_ram_oe_n,       //ExtRAM读使能，低有效
     output          ext_ram_we_n,       //ExtRAM写使能，低有效
 
-    //Flash存储器信号，参考 JS28F640 芯片手册
-    output [22:0]   flash_a,            //Flash地址，a0仅在8bit模式有效，16bit模式无意义
-    inout  [15:0]   flash_d,            //Flash数据
-    output          flash_rp_n,         //Flash复位信号，低有效
-    output          flash_vpen,         //Flash写保护信号，低电平时不能擦除、烧写
-    output          flash_ce_n,         //Flash片选信号，低有效
-    output          flash_oe_n,         //Flash读使能信号，低有效
-    output          flash_we_n,         //Flash写使能信号，低有效
-    output          flash_byte_n,       //Flash 8bit模式选择，低有效。在使用flash的16位模式时请设为1
+    // //Flash存储器信号，参考 JS28F640 芯片手册
+    // output [22:0]   flash_a,            //Flash地址，a0仅在8bit模式有效，16bit模式无意义
+    // inout  [15:0]   flash_d,            //Flash数据
+    // output          flash_rp_n,         //Flash复位信号，低有效
+    // output          flash_vpen,         //Flash写保护信号，低电平时不能擦除、烧写
+    // output          flash_ce_n,         //Flash片选信号，低有效
+    // output          flash_oe_n,         //Flash读使能信号，低有效
+    // output          flash_we_n,         //Flash写使能信号，低有效
+    // output          flash_byte_n,       //Flash 8bit模式选择，低有效。在使用flash的16位模式时请设为1
 
     //------uart-------
     inout           UART_RX,            //串口RX接收
     inout           UART_TX             //串口TX发送
 );
+
+
+wire clk_i;
+PX3W PAD_CLK_IN (.XIN(clk), .XOUT(clk_o), .XC(clk_i));
+`IPADU_GEN_SIMPLE(reset)
+`IPAD_GEN_VEC_SIMPLE(touch_btn)
+`IPAD_GEN_VEC_SIMPLE(dip_sw)
+`OPAD_GEN_VEC_SIMPLE(leds)
+`OPAD_GEN_VEC_SIMPLE(dpy0)
+`OPAD_GEN_VEC_SIMPLE(dpy1)
+`IOPAD_GEN_VEC_SIMPLE(base_ram_data)
+`OPAD_GEN_VEC_SIMPLE(base_ram_addr)
+`OPAD_GEN_VEC_SIMPLE(base_ram_be_n)
+`OPAD_GEN_SIMPLE(base_ram_ce_n)
+`OPAD_GEN_SIMPLE(base_ram_oe_n)
+`OPAD_GEN_SIMPLE(base_ram_we_n)
+`IOPAD_GEN_VEC_SIMPLE(ext_ram_data)
+`OPAD_GEN_VEC_SIMPLE(ext_ram_addr)
+`OPAD_GEN_VEC_SIMPLE(ext_ram_be_n)
+`OPAD_GEN_SIMPLE(ext_ram_ce_n)
+`OPAD_GEN_SIMPLE(ext_ram_oe_n)
+`OPAD_GEN_SIMPLE(ext_ram_we_n)
+`IOPAD_GEN_SIMPLE(UART_RX)
+`IOPAD_GEN_SIMPLE(UART_TX)
 
 wire cpu_clk;
 wire cpu_resetn;
@@ -98,10 +124,10 @@ generate if(SIMULATION) begin: sim_clk
     always #15 clk_sim = ~clk_sim;
 
     assign cpu_clk = clk_sim;
-    assign sys_clk = clk;
+    assign sys_clk = clk_i;
     rst_sync u_rst_sys(
         .clk(sys_clk),
-        .rst_n_in(~reset),
+        .rst_n_in(~reset_i),
         .rst_n_out(sys_resetn)
     );
     rst_sync u_rst_cpu(
@@ -114,9 +140,9 @@ else begin: pll_clk
     clk_pll u_clk_pll(
         .cpu_clk    (cpu_clk),
         .sys_clk    (sys_clk),
-        .resetn     (~reset),
+        .resetn     (~reset_i),
         .locked     (pll_locked),
-        .clk_in1    (clk)
+        .clk_in1    (clk_i)
     );
     rst_sync u_rst_sys(
         .clk(sys_clk),
@@ -523,7 +549,7 @@ axi_wrap_ram_sp_ext u_axi_ram (
     .axi_arlen      ( ram_arlen  ),
     .axi_arsize     ( ram_arsize ),
     .axi_arburst    ( ram_arburst),
-    .axi_arlock     ( {1'b0 ,ram_arlock }  ),
+    .axi_arlock     ( ram_arlock ),
     .axi_arcache    ( ram_arcache),
     .axi_arprot     ( ram_arprot ),
     .axi_arvalid    ( ram_arvalid),
@@ -541,7 +567,7 @@ axi_wrap_ram_sp_ext u_axi_ram (
     .axi_awlen      ( ram_awlen  ),
     .axi_awsize     ( ram_awsize ),
     .axi_awburst    ( ram_awburst),
-    .axi_awlock     ( {1'b0 ,ram_awlock}  ),
+    .axi_awlock     ( ram_awlock ),
     .axi_awcache    ( ram_awcache),
     .axi_awprot     ( ram_awprot ),
     .axi_awvalid    ( ram_awvalid),
@@ -559,20 +585,27 @@ axi_wrap_ram_sp_ext u_axi_ram (
     .axi_bready     ( ram_bready ),
     
     //BaseRAM signals
-    .base_ram_data  ( base_ram_data  ),
-    .base_ram_addr  ( base_ram_addr ),
-    .base_ram_be_n  ( base_ram_be_n  ),
-    .base_ram_ce_n  ( base_ram_ce_n  ),
-    .base_ram_oe_n  ( base_ram_oe_n  ),
-    .base_ram_we_n  ( base_ram_we_n  ),
+    //.base_ram_data  ( base_ram_data  ),
+    .base_ram_addr  ( base_ram_addr_o),
+    .base_ram_be_n  ( base_ram_be_n_o),
+    .base_ram_ce_n  ( base_ram_ce_n_o),
+    .base_ram_oe_n  ( base_ram_oe_n_o),
+    .base_ram_we_n  ( base_ram_we_n_o),
+    .base_ram_data_i( base_ram_data_i),
+    .base_ram_data_o( base_ram_data_o),
+    .base_ram_data_oe(base_ram_data_oe),
 
     //ExtRAM signals
-    .ext_ram_addr   ( ext_ram_addr   ),
-    .ext_ram_be_n   ( ext_ram_be_n   ),
-    .ext_ram_ce_n   ( ext_ram_ce_n   ),
-    .ext_ram_oe_n   ( ext_ram_oe_n   ),
-    .ext_ram_we_n   ( ext_ram_we_n   ),
-    .ext_ram_data   ( ext_ram_data   )
+    .ext_ram_addr   ( ext_ram_addr_o ),
+    .ext_ram_be_n   ( ext_ram_be_n_o ),
+    .ext_ram_ce_n   ( ext_ram_ce_n_o ),
+    .ext_ram_oe_n   ( ext_ram_oe_n_o ),
+    .ext_ram_we_n   ( ext_ram_we_n_o ),
+    //.ext_ram_data   ( ext_ram_data   )
+    .ext_ram_data_i ( ext_ram_data_i ),
+    .ext_ram_data_o ( ext_ram_data_o ),
+    .ext_ram_data_oe( ext_ram_data_oe)
+
 );
 
 
@@ -644,12 +677,14 @@ wire uart0_dcd_i;
 wire uart0_dtr_o;
 wire uart0_ri_i;
 
-assign UART_RX     = uart0_rxd_oe ? 1'bz : uart0_rxd_o;
-assign UART_TX     = uart0_txd_oe ? 1'bz : uart0_txd_o;
-assign UART_RTS    = uart0_rts_o;
-assign UART_DTR    = uart0_dtr_o;
-assign uart0_txd_i = UART_TX;
-assign uart0_rxd_i = UART_RX;
+// assign UART_RX     = uart0_rxd_oe ? 1'bz : uart0_rxd_o;
+// assign UART_TX     = uart0_txd_oe ? 1'bz : uart0_txd_o;
+// assign UART_RTS    = uart0_rts_o;
+// assign UART_DTR    = uart0_dtr_o;
+// assign uart0_txd_i = UART_TX;
+// assign uart0_rxd_i = UART_RX;
+
+
 assign uart0_cts_i = UART_CTS;
 assign uart0_dcd_i = UART_DCD;
 assign uart0_dsr_i = UART_DSR;
@@ -684,7 +719,7 @@ axi_uart_controller u_axi_uart_controller
     .axi_s_awlen        (uart_awlen         ),
     .axi_s_awsize       (uart_awsize        ),
     .axi_s_awburst      (uart_awburst       ),
-    .axi_s_awlock       ({1'b0 ,uart_awlock }          ),
+    .axi_s_awlock       (uart_awlock        ),
     .axi_s_awcache      (uart_awcache       ),
     .axi_s_awprot       (uart_awprot        ),
     .axi_s_awvalid      (uart_awvalid       ),
@@ -704,7 +739,7 @@ axi_uart_controller u_axi_uart_controller
     .axi_s_arlen        (uart_arlen         ),
     .axi_s_arsize       (uart_arsize        ),
     .axi_s_arburst      (uart_arburst       ),
-    .axi_s_arlock       ({1'b0 ,uart_arlock}         ),
+    .axi_s_arlock       (uart_arlock        ),
     .axi_s_arcache      (uart_arcache       ),
     .axi_s_arprot       (uart_arprot        ),
     .axi_s_arvalid      (uart_arvalid       ),
@@ -731,12 +766,12 @@ axi_uart_controller u_axi_uart_controller
     .dma_ack_i          (1'b0               ),
 
     // UART0
-    .uart0_txd_i        (uart0_txd_i        ),
-    .uart0_txd_o        (uart0_txd_o        ),
-    .uart0_txd_oe       (uart0_txd_oe       ),
-    .uart0_rxd_i        (uart0_rxd_i        ),
-    .uart0_rxd_o        (uart0_rxd_o        ),
-    .uart0_rxd_oe       (uart0_rxd_oe       ),
+    .uart0_txd_i        (UART_TX_i          ),
+    .uart0_txd_o        (UART_TX_o          ),
+    .uart0_txd_oe       (UART_TX_oe         ),
+    .uart0_rxd_i        (UART_RX_i          ),
+    .uart0_rxd_o        (UART_RX_o          ),
+    .uart0_rxd_oe       (UART_RX_oe         ),
     .uart0_rts_o        (uart0_rts_o        ),
     .uart0_dtr_o        (uart0_dtr_o        ),
     .uart0_cts_i        (uart0_cts_i        ),
@@ -899,11 +934,11 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
     .s_rvalid       (confreg_rvalid     ),
     
     //board 
-    .switch         (dip_sw             ),
-    .touch_btn      (touch_btn          ),
-    .led            (leds               ),
-    .dpy0           (dpy0               ),
-    .dpy1           (dpy1               ),
+    .switch         (dip_sw_i           ),
+    .touch_btn      (touch_btn_i        ),
+    .led            (leds_o             ),
+    .dpy0           (dpy0_o             ),
+    .dpy1           (dpy1_o             ),
     .confreg_int    (                   )
 );
 
