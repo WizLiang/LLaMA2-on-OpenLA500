@@ -123,7 +123,8 @@ generate if(SIMULATION) begin: sim_clk
     end
     always #15 clk_sim = ~clk_sim;
 
-    assign cpu_clk = clk_sim;
+    //assign cpu_clk = clk_sim;
+    assign cpu_clk = clk_i;
     assign sys_clk = clk_i;
     rst_sync u_rst_sys(
         .clk(sys_clk),
@@ -136,14 +137,16 @@ generate if(SIMULATION) begin: sim_clk
         .rst_n_out(cpu_resetn)
     );
 end
-else begin: pll_clk
-    clk_pll u_clk_pll(
-        .cpu_clk    (cpu_clk),
-        .sys_clk    (sys_clk),
-        .resetn     (~reset_i),
-        .locked     (pll_locked),
-        .clk_in1    (clk_i)
-    );
+else begin: no_pll_clk
+    // clk_pll u_clk_pll(
+    //     .cpu_clk    (cpu_clk),
+    //     .sys_clk    (sys_clk),
+    //     .resetn     (~reset_i),
+    //     .locked     (pll_locked),
+    //     .clk_in1    (clk_i)
+    // );
+    assign cpu_clk = clk_i;
+    assign sys_clk = clk_i;
     rst_sync u_rst_sys(
         .clk(sys_clk),
         .rst_n_in(pll_locked),
@@ -277,143 +280,143 @@ core_top #(.TLBNUM(32)) u_core_top (
 
 
 
-// CDC output AXI signals (synchronized for axi_crossbar)
-wire         cpu_sync_awvalid;
-wire         cpu_sync_awready;
-wire  [31:0] cpu_sync_awaddr;
-wire  [3:0]  cpu_sync_awid;
-wire  [7:0]  cpu_sync_awlen;
-wire  [2:0]  cpu_sync_awsize;
-wire  [1:0]  cpu_sync_awburst;
-wire  [0:0]  cpu_sync_awlock;
-wire  [3:0]  cpu_sync_awcache;
-wire  [2:0]  cpu_sync_awprot;
+// // CDC output AXI signals (synchronized for axi_crossbar)
+// wire         cpu_sync_awvalid;
+// wire         cpu_sync_awready;
+// wire  [31:0] cpu_sync_awaddr;
+// wire  [3:0]  cpu_sync_awid;
+// wire  [7:0]  cpu_sync_awlen;
+// wire  [2:0]  cpu_sync_awsize;
+// wire  [1:0]  cpu_sync_awburst;
+// wire  [0:0]  cpu_sync_awlock;
+// wire  [3:0]  cpu_sync_awcache;
+// wire  [2:0]  cpu_sync_awprot;
 
-wire         cpu_sync_wvalid;
-wire         cpu_sync_wready;
-wire  [31:0] cpu_sync_wdata;
-wire  [3:0]  cpu_sync_wstrb;
-wire         cpu_sync_wlast;
+// wire         cpu_sync_wvalid;
+// wire         cpu_sync_wready;
+// wire  [31:0] cpu_sync_wdata;
+// wire  [3:0]  cpu_sync_wstrb;
+// wire         cpu_sync_wlast;
 
-wire         cpu_sync_bvalid;
-wire         cpu_sync_bready;
-wire  [3:0]  cpu_sync_bid;
-wire  [1:0]  cpu_sync_bresp;
+// wire         cpu_sync_bvalid;
+// wire         cpu_sync_bready;
+// wire  [3:0]  cpu_sync_bid;
+// wire  [1:0]  cpu_sync_bresp;
 
-wire         cpu_sync_arvalid;
-wire         cpu_sync_arready;
-wire  [31:0] cpu_sync_araddr;
-wire  [3:0]  cpu_sync_arid;
-wire  [7:0]  cpu_sync_arlen;
-wire  [2:0]  cpu_sync_arsize;
-wire  [1:0]  cpu_sync_arburst;
-wire  [0:0]  cpu_sync_arlock;
-wire  [3:0]  cpu_sync_arcache;
-wire  [2:0]  cpu_sync_arprot;
+// wire         cpu_sync_arvalid;
+// wire         cpu_sync_arready;
+// wire  [31:0] cpu_sync_araddr;
+// wire  [3:0]  cpu_sync_arid;
+// wire  [7:0]  cpu_sync_arlen;
+// wire  [2:0]  cpu_sync_arsize;
+// wire  [1:0]  cpu_sync_arburst;
+// wire  [0:0]  cpu_sync_arlock;
+// wire  [3:0]  cpu_sync_arcache;
+// wire  [2:0]  cpu_sync_arprot;
 
-wire         cpu_sync_rvalid;
-wire         cpu_sync_rready;
-wire  [31:0] cpu_sync_rdata;
-wire  [3:0]  cpu_sync_rid;
-wire  [1:0]  cpu_sync_rresp;
-wire         cpu_sync_rlast;
+// wire         cpu_sync_rvalid;
+// wire         cpu_sync_rready;
+// wire  [31:0] cpu_sync_rdata;
+// wire  [3:0]  cpu_sync_rid;
+// wire  [1:0]  cpu_sync_rresp;
+// wire         cpu_sync_rlast;
 
-Axi_CDC u_axi_cdc (
-    .axiInClk        (cpu_clk),         // CPU domain clock
-    .axiInRst        (cpu_resetn),         // CPU domain reset
-    .axiOutClk       (sys_clk),        // Synchronized domain clock
-    .axiOutRst       (sys_resetn),        // Synchronized domain reset
+// Axi_CDC u_axi_cdc (
+//     .axiInClk        (cpu_clk),         // CPU domain clock
+//     .axiInRst        (cpu_resetn),         // CPU domain reset
+//     .axiOutClk       (sys_clk),        // Synchronized domain clock
+//     .axiOutRst       (sys_resetn),        // Synchronized domain reset
 
-    // Write Address Channel (Input side)
-    .axiIn_awvalid   (cpu_awvalid),
-    .axiIn_awready   (cpu_awready),
-    .axiIn_awaddr    (cpu_awaddr),
-    .axiIn_awid      (cpu_awid),
-    .axiIn_awlen     (cpu_awlen),
-    .axiIn_awsize    (cpu_awsize),
-    .axiIn_awburst   (cpu_awburst),
-    .axiIn_awlock    (cpu_awlock[0]),
-    .axiIn_awcache   (cpu_awcache),
-    .axiIn_awprot    (cpu_awprot),
+//     // Write Address Channel (Input side)
+//     .axiIn_awvalid   (cpu_awvalid),
+//     .axiIn_awready   (cpu_awready),
+//     .axiIn_awaddr    (cpu_awaddr),
+//     .axiIn_awid      (cpu_awid),
+//     .axiIn_awlen     (cpu_awlen),
+//     .axiIn_awsize    (cpu_awsize),
+//     .axiIn_awburst   (cpu_awburst),
+//     .axiIn_awlock    (cpu_awlock[0]),
+//     .axiIn_awcache   (cpu_awcache),
+//     .axiIn_awprot    (cpu_awprot),
 
-    // Write Data Channel (Input side)
-    .axiIn_wvalid    (cpu_wvalid),
-    .axiIn_wready    (cpu_wready),
-    .axiIn_wdata     (cpu_wdata),
-    .axiIn_wstrb     (cpu_wstrb),
-    .axiIn_wlast     (cpu_wlast),
+//     // Write Data Channel (Input side)
+//     .axiIn_wvalid    (cpu_wvalid),
+//     .axiIn_wready    (cpu_wready),
+//     .axiIn_wdata     (cpu_wdata),
+//     .axiIn_wstrb     (cpu_wstrb),
+//     .axiIn_wlast     (cpu_wlast),
 
-    // Write Response Channel (Input side)
-    .axiIn_bvalid    (cpu_bvalid),
-    .axiIn_bready    (cpu_bready),
-    .axiIn_bid       (cpu_bid),
-    .axiIn_bresp     (cpu_bresp),
+//     // Write Response Channel (Input side)
+//     .axiIn_bvalid    (cpu_bvalid),
+//     .axiIn_bready    (cpu_bready),
+//     .axiIn_bid       (cpu_bid),
+//     .axiIn_bresp     (cpu_bresp),
 
-    // Read Address Channel (Input side)
-    .axiIn_arvalid   (cpu_arvalid),
-    .axiIn_arready   (cpu_arready),
-    .axiIn_araddr    (cpu_araddr),
-    .axiIn_arid      (cpu_arid),
-    .axiIn_arlen     (cpu_arlen),
-    .axiIn_arsize    (cpu_arsize),
-    .axiIn_arburst   (cpu_arburst),
-    .axiIn_arlock    (cpu_arlock[0]),
-    .axiIn_arcache   (cpu_arcache),
-    .axiIn_arprot    (cpu_arprot),
+//     // Read Address Channel (Input side)
+//     .axiIn_arvalid   (cpu_arvalid),
+//     .axiIn_arready   (cpu_arready),
+//     .axiIn_araddr    (cpu_araddr),
+//     .axiIn_arid      (cpu_arid),
+//     .axiIn_arlen     (cpu_arlen),
+//     .axiIn_arsize    (cpu_arsize),
+//     .axiIn_arburst   (cpu_arburst),
+//     .axiIn_arlock    (cpu_arlock[0]),
+//     .axiIn_arcache   (cpu_arcache),
+//     .axiIn_arprot    (cpu_arprot),
 
-    // Read Data Channel (Input side)
-    .axiIn_rvalid    (cpu_rvalid),
-    .axiIn_rready    (cpu_rready),
-    .axiIn_rdata     (cpu_rdata),
-    .axiIn_rid       (cpu_rid),
-    .axiIn_rresp     (cpu_rresp),
-    .axiIn_rlast     (cpu_rlast),
+//     // Read Data Channel (Input side)
+//     .axiIn_rvalid    (cpu_rvalid),
+//     .axiIn_rready    (cpu_rready),
+//     .axiIn_rdata     (cpu_rdata),
+//     .axiIn_rid       (cpu_rid),
+//     .axiIn_rresp     (cpu_rresp),
+//     .axiIn_rlast     (cpu_rlast),
 
-    // Write Address Channel (Output side - Synchronized)
-    .axiOut_awvalid  (cpu_sync_awvalid),
-    .axiOut_awready  (cpu_sync_awready),
-    .axiOut_awaddr   (cpu_sync_awaddr),
-    .axiOut_awid     (cpu_sync_awid),
-    .axiOut_awlen    (cpu_sync_awlen),
-    .axiOut_awsize   (cpu_sync_awsize),
-    .axiOut_awburst  (cpu_sync_awburst),
-    .axiOut_awlock   (cpu_sync_awlock),
-    .axiOut_awcache  (cpu_sync_awcache),
-    .axiOut_awprot   (cpu_sync_awprot),
+//     // Write Address Channel (Output side - Synchronized)
+//     .axiOut_awvalid  (cpu_sync_awvalid),
+//     .axiOut_awready  (cpu_sync_awready),
+//     .axiOut_awaddr   (cpu_sync_awaddr),
+//     .axiOut_awid     (cpu_sync_awid),
+//     .axiOut_awlen    (cpu_sync_awlen),
+//     .axiOut_awsize   (cpu_sync_awsize),
+//     .axiOut_awburst  (cpu_sync_awburst),
+//     .axiOut_awlock   (cpu_sync_awlock),
+//     .axiOut_awcache  (cpu_sync_awcache),
+//     .axiOut_awprot   (cpu_sync_awprot),
 
-    // Write Data Channel (Output side - Synchronized)
-    .axiOut_wvalid   (cpu_sync_wvalid),
-    .axiOut_wready   (cpu_sync_wready),
-    .axiOut_wdata    (cpu_sync_wdata),
-    .axiOut_wstrb    (cpu_sync_wstrb),
-    .axiOut_wlast    (cpu_sync_wlast),
+//     // Write Data Channel (Output side - Synchronized)
+//     .axiOut_wvalid   (cpu_sync_wvalid),
+//     .axiOut_wready   (cpu_sync_wready),
+//     .axiOut_wdata    (cpu_sync_wdata),
+//     .axiOut_wstrb    (cpu_sync_wstrb),
+//     .axiOut_wlast    (cpu_sync_wlast),
 
-    // Write Response Channel (Output side - Synchronized)
-    .axiOut_bvalid   (cpu_sync_bvalid),
-    .axiOut_bready   (cpu_sync_bready),
-    .axiOut_bid      (cpu_sync_bid),
-    .axiOut_bresp    (cpu_sync_bresp),
+//     // Write Response Channel (Output side - Synchronized)
+//     .axiOut_bvalid   (cpu_sync_bvalid),
+//     .axiOut_bready   (cpu_sync_bready),
+//     .axiOut_bid      (cpu_sync_bid),
+//     .axiOut_bresp    (cpu_sync_bresp),
 
-    // Read Address Channel (Output side - Synchronized)
-    .axiOut_arvalid  (cpu_sync_arvalid),
-    .axiOut_arready  (cpu_sync_arready),
-    .axiOut_araddr   (cpu_sync_araddr),
-    .axiOut_arid     (cpu_sync_arid),
-    .axiOut_arlen    (cpu_sync_arlen),
-    .axiOut_arsize   (cpu_sync_arsize),
-    .axiOut_arburst  (cpu_sync_arburst),
-    .axiOut_arlock   (cpu_sync_arlock),
-    .axiOut_arcache  (cpu_sync_arcache),
-    .axiOut_arprot   (cpu_sync_arprot),
+//     // Read Address Channel (Output side - Synchronized)
+//     .axiOut_arvalid  (cpu_sync_arvalid),
+//     .axiOut_arready  (cpu_sync_arready),
+//     .axiOut_araddr   (cpu_sync_araddr),
+//     .axiOut_arid     (cpu_sync_arid),
+//     .axiOut_arlen    (cpu_sync_arlen),
+//     .axiOut_arsize   (cpu_sync_arsize),
+//     .axiOut_arburst  (cpu_sync_arburst),
+//     .axiOut_arlock   (cpu_sync_arlock),
+//     .axiOut_arcache  (cpu_sync_arcache),
+//     .axiOut_arprot   (cpu_sync_arprot),
 
-    // Read Data Channel (Output side - Synchronized)
-    .axiOut_rvalid   (cpu_sync_rvalid),
-    .axiOut_rready   (cpu_sync_rready),
-    .axiOut_rdata    (cpu_sync_rdata),
-    .axiOut_rid      (cpu_sync_rid),
-    .axiOut_rresp    (cpu_sync_rresp),
-    .axiOut_rlast    (cpu_sync_rlast)
-);
+//     // Read Data Channel (Output side - Synchronized)
+//     .axiOut_rvalid   (cpu_sync_rvalid),
+//     .axiOut_rready   (cpu_sync_rready),
+//     .axiOut_rdata    (cpu_sync_rdata),
+//     .axiOut_rid      (cpu_sync_rid),
+//     .axiOut_rresp    (cpu_sync_rresp),
+//     .axiOut_rlast    (cpu_sync_rlast)
+// );
 
 //-----------------------------------------------------------------------------
 // Dummy Master 接口信号声明（axiIn1）
@@ -951,49 +954,49 @@ AxiCrossbar_2x4 u_axi_crossbar (
     .resetn(sys_resetn),
 
     // AXI Master (Input) - Write Address Channel
-    .axiIn0_aw_valid    (cpu_sync_awvalid),
-    .axiIn0_aw_ready    (cpu_sync_awready),
-    .axiIn0_aw_payload_addr     (cpu_sync_awaddr),
-    .axiIn0_aw_payload_id       (cpu_sync_awid),
-    .axiIn0_aw_payload_len      (cpu_sync_awlen),
-    .axiIn0_aw_payload_size     (cpu_sync_awsize),
-    .axiIn0_aw_payload_burst    (cpu_sync_awburst),
-    .axiIn0_aw_payload_lock     (cpu_sync_awlock),
-    .axiIn0_aw_payload_cache    (cpu_sync_awcache),
-    .axiIn0_aw_payload_prot     (cpu_sync_awprot),
+    .axiIn0_aw_valid            (cpu_awvalid),
+    .axiIn0_aw_ready            (cpu_awready),
+    .axiIn0_aw_payload_addr     (cpu_awaddr),
+    .axiIn0_aw_payload_id       (cpu_awid),
+    .axiIn0_aw_payload_len      (cpu_awlen),
+    .axiIn0_aw_payload_size     (cpu_awsize),
+    .axiIn0_aw_payload_burst    (cpu_awburst),
+    .axiIn0_aw_payload_lock     (cpu_awlock[0]),
+    .axiIn0_aw_payload_cache    (cpu_awcache),
+    .axiIn0_aw_payload_prot     (cpu_awprot),
 
     // AXI Master (Input) - Write Data Channel
-    .axiIn0_w_valid     (cpu_sync_wvalid),
-    .axiIn0_w_ready     (cpu_sync_wready),
-    .axiIn0_w_payload_data      (cpu_sync_wdata),
-    .axiIn0_w_payload_strb      (cpu_sync_wstrb),
-    .axiIn0_w_payload_last      (cpu_sync_wlast),
+    .axiIn0_w_valid             (cpu_wvalid),
+    .axiIn0_w_ready             (cpu_wready),
+    .axiIn0_w_payload_data      (cpu_wdata),
+    .axiIn0_w_payload_strb      (cpu_wstrb),
+    .axiIn0_w_payload_last      (cpu_wlast),
 
     // AXI Master (Input) - Write Response Channel
-    .axiIn0_b_valid     (cpu_sync_bvalid),
-    .axiIn0_b_ready     (cpu_sync_bready),
-    .axiIn0_b_payload_id        (cpu_sync_bid),
-    .axiIn0_b_payload_resp      (cpu_sync_bresp),
+    .axiIn0_b_valid             (cpu_bvalid),
+    .axiIn0_b_ready             (cpu_bready),
+    .axiIn0_b_payload_id        (cpu_bid),
+    .axiIn0_b_payload_resp      (cpu_bresp),
 
     // AXI Master (Input) - Read Address Channel
-    .axiIn0_ar_valid    (cpu_sync_arvalid),
-    .axiIn0_ar_ready    (cpu_sync_arready),
-    .axiIn0_ar_payload_addr     (cpu_sync_araddr),
-    .axiIn0_ar_payload_id       (cpu_sync_arid),
-    .axiIn0_ar_payload_len      (cpu_sync_arlen),
-    .axiIn0_ar_payload_size     (cpu_sync_arsize),
-    .axiIn0_ar_payload_burst    (cpu_sync_arburst),
-    .axiIn0_ar_payload_lock     (cpu_sync_arlock),
-    .axiIn0_ar_payload_cache    (cpu_sync_arcache),
-    .axiIn0_ar_payload_prot     (cpu_sync_arprot),
+    .axiIn0_ar_valid            (cpu_arvalid),
+    .axiIn0_ar_ready            (cpu_arready),
+    .axiIn0_ar_payload_addr     (cpu_araddr),
+    .axiIn0_ar_payload_id       (cpu_arid),
+    .axiIn0_ar_payload_len      (cpu_arlen),
+    .axiIn0_ar_payload_size     (cpu_arsize),
+    .axiIn0_ar_payload_burst    (cpu_arburst),
+    .axiIn0_ar_payload_lock     (cpu_arlock[0]),
+    .axiIn0_ar_payload_cache    (cpu_arcache),
+    .axiIn0_ar_payload_prot     (cpu_arprot),
 
     // AXI Master (Input) - Read Data Channel
-    .axiIn0_r_valid     (cpu_sync_rvalid),
-    .axiIn0_r_ready     (cpu_sync_rready),
-    .axiIn0_r_payload_data      (cpu_sync_rdata),
-    .axiIn0_r_payload_id        (cpu_sync_rid),
-    .axiIn0_r_payload_resp      (cpu_sync_rresp),
-    .axiIn0_r_payload_last      (cpu_sync_rlast),
+    .axiIn0_r_valid             (cpu_rvalid),
+    .axiIn0_r_ready             (cpu_rready),
+    .axiIn0_r_payload_data      (cpu_rdata),
+    .axiIn0_r_payload_id        (cpu_rid),
+    .axiIn0_r_payload_resp      (cpu_rresp),
+    .axiIn0_r_payload_last      (cpu_rlast),
 
 
     // --- AXI Master Input 1 (Dummy Master) ---
