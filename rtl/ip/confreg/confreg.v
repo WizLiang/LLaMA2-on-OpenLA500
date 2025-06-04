@@ -336,6 +336,42 @@ end
 //-------------------------------{int_ctrl}begin----------------------------//
 //TODO: add your code
 
+wire write_int_en    = w_enter & (buf_addr[15:0]==(`CONFREG_INT_ADDR + 16'h0));
+wire write_int_edge  = w_enter & (buf_addr[15:0]==(`CONFREG_INT_ADDR + 16'h4));
+wire write_int_pol   = w_enter & (buf_addr[15:0]==(`CONFREG_INT_ADDR + 16'h8));
+wire write_int_clr   = w_enter & (buf_addr[15:0]==(`CONFREG_INT_ADDR + 16'hc));
+
+always @(posedge aclk) begin
+  if (!aresetn) begin
+    confreg_int_en   <= 32'b0;
+    confreg_int_edge <= 32'b0;
+    confreg_int_pol  <= 32'b0;
+    confreg_int_clr  <= 32'b0;
+    confreg_int_set  <= 32'b0;
+  end else begin
+    if(write_int_en  ) confreg_int_en   <= s_wdata;
+    if(write_int_edge) confreg_int_edge <= s_wdata;
+    if(write_int_pol ) confreg_int_pol  <= s_wdata;
+    if(write_int_clr ) confreg_int_clr  <= s_wdata;
+
+  end
+end
+
+
+ext_int_ctrl u_ext_int_ctrl(
+    .sys_clk    (aclk),
+    .sys_resetn (aresetn),
+    .cpu_clk    (cpu_clk),
+    .cpu_resetn (cpu_resetn),
+    .int_en     (confreg_int_en),
+    .int_edge   (confreg_int_edge),
+    .int_pol    (confreg_int_pol),
+    .int_in     ({27'b0 , timer_int , touch_btn_data}),
+    .int_clr    (confreg_int_clr),
+    .int_state  (confreg_int_state),
+    .int_out    (confreg_int)
+);
+
 //--------------------------------{int_ctrl}end-----------------------------//
 
 endmodule

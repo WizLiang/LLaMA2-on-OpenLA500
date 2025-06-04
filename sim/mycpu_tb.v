@@ -48,13 +48,13 @@ reg   [31:0]  dip_sw;
 
 wire         UART_RX;
 wire         UART_TX;
-wire  [2:0]  video_red;
-wire  [2:0]  video_green;
-wire  [1:0]  video_blue;
-wire  video_hsync;
-wire  video_vsync;
-wire  video_clk;
-wire  video_de;
+// wire  [2:0]  video_red;
+// wire  [2:0]  video_green;
+// wire  [1:0]  video_blue;
+// wire  video_hsync;
+// wire  video_vsync;
+// wire  video_clk;
+// wire  video_de;
 wire  [15:0]  leds;
 wire  [7:0]  dpy0;
 wire  [7:0]  dpy1;
@@ -77,7 +77,7 @@ begin
     clk = 1'b0;
     reset = 1'b1;
     dip_sw = 32'h0;
-    #3000;
+    #2000;
     reset = 1'b0;
 end
 always #10 clk=~clk;
