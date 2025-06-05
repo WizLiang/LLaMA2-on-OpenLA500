@@ -56,12 +56,12 @@ reg int_out_sys;
 reg sync1, sync2;
 
 always @(posedge sys_clk)begin
-    if(sys_resetn) int_out_sys <= 'b0;
+    if(!sys_resetn) int_out_sys <= 'b0;
     else  int_out_sys <= |state;
 end
 
 always @(posedge cpu_clk) begin
-    if(cpu_resetn)begin
+    if(!cpu_resetn)begin
         sync1 <= 'b0;
         sync2 <= 'b0;
     end else begin
@@ -71,6 +71,6 @@ always @(posedge cpu_clk) begin
 end
 
 assign int_state = state;
-assign int_out   = |state;
+assign int_out   = sync2;
 
 endmodule
