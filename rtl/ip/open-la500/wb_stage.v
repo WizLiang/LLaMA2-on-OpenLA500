@@ -64,9 +64,11 @@ module wb_stage(
     output [ 3:0] debug_wb_rf_wen                  ,
     output [ 4:0] debug_wb_rf_wnum                 ,
     output [31:0] debug_wb_rf_wdata                ,
-    output [31:0] debug_wb_inst                    ,
+    output [31:0] debug_wb_inst                    
 
     // difftest
+`ifdef DIFFTEST_EN
+    ,
     output        ws_valid_diff                    ,
     output        ws_cnt_inst_diff                 ,
     output [63:0] ws_timer_64_diff                 ,
@@ -79,6 +81,7 @@ module wb_stage(
     output [31:0] ws_st_data_diff                  ,
     output        ws_csr_rstat_en_diff             ,
     output [31:0] ws_csr_data_diff
+`endif
 );
 
 reg         ws_valid;
@@ -300,6 +303,7 @@ assign debug_wb_rf_wdata = ws_final_result;
 assign debug_wb_inst     = ws_inst;
 assign debug_ws_valid    = ws_valid;
 
+`ifdef DIFFTEST_EN
 assign ws_valid_diff        = real_valid        ;
 assign ws_timer_64_diff     = ws_timer_64       ;
 assign ws_cnt_inst_diff     = ws_cnt_inst       ;
@@ -315,5 +319,6 @@ assign ws_st_data_diff      = ws_st_data        ;
 
 assign ws_csr_rstat_en_diff = ws_csr_rstat_en   ;
 assign ws_csr_data_diff     = ws_csr_data       ;
+`endif
 
 endmodule

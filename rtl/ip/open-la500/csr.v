@@ -72,8 +72,10 @@ module csr
     input  [31:0]                   tlbidx_in    ,
     input  [ 9:0]                   asid_in      ,
     //general use
-    output [ 1:0]                   plv_out      ,
+    output [ 1:0]                   plv_out      
     // csr regs for diff
+`ifdef DIFFTEST_EN
+    ,
     output [31:0]                   csr_crmd_diff,
     output [31:0]                   csr_prmd_diff,
     output [31:0]                   csr_ectl_diff,
@@ -100,6 +102,7 @@ module csr
     output [31:0]                   csr_dmw1_diff,
     output [31:0]                   csr_pgdl_diff,
     output [31:0]                   csr_pgdh_diff
+`endif
 );
 
 localparam CRMD  = 14'h0;
@@ -760,6 +763,7 @@ always @(posedge clk) begin
 end
 
 // difftest
+`ifdef DIFFTEST_EN
 assign csr_crmd_diff        = csr_crmd;
 assign csr_prmd_diff        = csr_prmd;
 assign csr_ectl_diff        = csr_ectl;
@@ -786,5 +790,6 @@ assign csr_dmw0_diff        = csr_dmw0;
 assign csr_dmw1_diff        = csr_dmw1;
 assign csr_pgdl_diff        = csr_pgdl;
 assign csr_pgdh_diff        = csr_pgdh;
+`endif
 
 endmodule

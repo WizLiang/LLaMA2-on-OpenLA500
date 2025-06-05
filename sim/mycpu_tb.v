@@ -42,18 +42,19 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 module tb_top( );
 reg reset;
 reg clk;
+wire clk_o;
 reg   [3:0]  touch_btn;
 reg   [31:0]  dip_sw;
 
 wire         UART_RX;
 wire         UART_TX;
-wire  [2:0]  video_red;
-wire  [2:0]  video_green;
-wire  [1:0]  video_blue;
-wire  video_hsync;
-wire  video_vsync;
-wire  video_clk;
-wire  video_de;
+// wire  [2:0]  video_red;
+// wire  [2:0]  video_green;
+// wire  [1:0]  video_blue;
+// wire  video_hsync;
+// wire  video_vsync;
+// wire  video_clk;
+// wire  video_de;
 wire  [15:0]  leds;
 wire  [7:0]  dpy0;
 wire  [7:0]  dpy1;
@@ -76,7 +77,7 @@ begin
     clk = 1'b0;
     reset = 1'b1;
     dip_sw = 32'h0;
-    #3000;
+    #2000;
     reset = 1'b0;
 end
 always #10 clk=~clk;
@@ -113,16 +114,17 @@ end
 soc_top #(.SIMULATION(1'b1))  u_soc_top (
     .clk                     ( clk           ),
     .reset                   ( reset         ),
+    .clk_o                   (clk_o          ),
     .touch_btn               ( touch_btn     ),
     .dip_sw                  ( dip_sw        ),
 
-    .video_red               ( video_red     ),
-    .video_green             ( video_green   ),
-    .video_blue              ( video_blue    ),
-    .video_hsync             ( video_hsync   ),
-    .video_vsync             ( video_vsync   ),
-    .video_clk               ( video_clk     ),
-    .video_de                ( video_de      ),
+    // .video_red               ( video_red     ),
+    // .video_green             ( video_green   ),
+    // .video_blue              ( video_blue    ),
+    // .video_hsync             ( video_hsync   ),
+    // .video_vsync             ( video_vsync   ),
+    // .video_clk               ( video_clk     ),
+    // .video_de                ( video_de      ),
     .leds                    ( leds          ),
     .dpy0                    ( dpy0          ),
     .dpy1                    ( dpy1          ),

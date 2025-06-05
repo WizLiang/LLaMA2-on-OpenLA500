@@ -116,6 +116,10 @@ assign {btb_pre_error_flush,
 
 wire [31:0] fs_inst;
 reg  [31:0] fs_pc;
+
+reg [37:0] btb_lock_buffer;
+reg        btb_lock_en;
+
 assign fs_to_ds_bus = {btb_ret_pc_t,    //108:77
                        btb_index_t,     //76:72
                        btb_taken_t,     //71:71
@@ -231,8 +235,6 @@ end
 * btb ret only maintain one clock
 * when pfs not ready go, should buffer btb ret
 */
-reg [37:0] btb_lock_buffer;
-reg        btb_lock_en;
 always @(posedge clk) begin
 	if (reset || flush_sign || fetch_en)
 		btb_lock_en <= 1'b0;

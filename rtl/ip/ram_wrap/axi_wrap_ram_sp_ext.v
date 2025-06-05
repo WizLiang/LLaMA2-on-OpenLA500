@@ -40,7 +40,7 @@ module axi_wrap_ram_sp_ext (
     input  [7 :0] axi_arlen  ,
     input  [2 :0] axi_arsize ,
     input  [1 :0] axi_arburst,
-    input  [1 :0] axi_arlock ,
+    input         axi_arlock ,
     input  [3 :0] axi_arcache,
     input  [2 :0] axi_arprot ,
     input         axi_arvalid,
@@ -58,7 +58,7 @@ module axi_wrap_ram_sp_ext (
     input  [7 :0] axi_awlen  ,
     input  [2 :0] axi_awsize ,
     input  [1 :0] axi_awburst,
-    input  [1 :0] axi_awlock ,
+    input         axi_awlock ,
     input  [3 :0] axi_awcache,
     input  [2 :0] axi_awprot ,
     input         axi_awvalid,
@@ -76,7 +76,9 @@ module axi_wrap_ram_sp_ext (
     input         axi_bready ,
 
     //BaseRAM信号
-    inout  [31:0] base_ram_data,  //BaseRAM数据，低8位与CPLD串口控制器共享
+    input  [31:0] base_ram_data_i,
+    output [31:0] base_ram_data_o,
+    output [31:0] base_ram_data_oe,//0:output 1:input
     output [19:0] base_ram_addr, //BaseRAM地址
     output [ 3:0] base_ram_be_n,  //BaseRAM字节使能，低有效。如果不使用字节使能，请保持为0
     output  base_ram_ce_n,       //BaseRAM片选，低有效
@@ -84,7 +86,9 @@ module axi_wrap_ram_sp_ext (
     output  base_ram_we_n,       //BaseRAM写使能，低有效
 
     //ExtRAM信号
-    inout  [31:0] ext_ram_data,  //ExtRAM数据
+    input  [31:0] ext_ram_data_i,
+    output [31:0] ext_ram_data_o,
+    output [31:0] ext_ram_data_oe,
     output [19:0] ext_ram_addr, //ExtRAM地址
     output [ 3:0] ext_ram_be_n,  //ExtRAM字节使能，低有效。如果不使用字节使能，请保持为0
     output  ext_ram_ce_n,       //ExtRAM片选，低有效
@@ -100,7 +104,7 @@ wire [31:0] ram_araddr ;
 wire [7 :0] ram_arlen  ;
 wire [2 :0] ram_arsize ;
 wire [1 :0] ram_arburst;
-wire [1 :0] ram_arlock ;
+wire        ram_arlock ;
 wire [3 :0] ram_arcache;
 wire [2 :0] ram_arprot ;
 wire        ram_arvalid;
@@ -118,7 +122,7 @@ wire [31:0] ram_awaddr ;
 wire [7 :0] ram_awlen  ;
 wire [2 :0] ram_awsize ;
 wire [1 :0] ram_awburst;
-wire [1 :0] ram_awlock ;
+wire        ram_awlock ;
 wire [3 :0] ram_awcache;
 wire [2 :0] ram_awprot ;
 wire        ram_awvalid;
@@ -245,15 +249,17 @@ assign base_ram_be_n = choose_sram ? 4'b1111 : ~be_out;
 assign base_ram_ce_n = ~(soc_sram_cs & (~choose_sram));
 assign base_ram_oe_n = soc_sram_we | choose_sram;
 assign base_ram_we_n = ~(soc_sram_we & (~choose_sram));
-assign base_ram_data = ((~choose_sram) & soc_sram_cs & soc_sram_we) ? soc_sram_wdata : 32'hzzzzzzzz;
+assign base_ram_data_oe = {32{~((~choose_sram) & soc_sram_cs & soc_sram_we)}};
+assign base_ram_data_o  = soc_sram_wdata;
 
 assign ext_ram_addr = soc_sram_addr[21:2];
 assign ext_ram_be_n = choose_sram ? ~be_out : 4'b1111;
 assign ext_ram_ce_n = choose_sram ? ~soc_sram_cs : 1'b1;
 assign ext_ram_oe_n = choose_sram ? soc_sram_we : 1'b1;
 assign ext_ram_we_n = choose_sram ? ~soc_sram_we : 1'b1;
-assign ext_ram_data = ((choose_sram) & soc_sram_cs & soc_sram_we) ? soc_sram_wdata : 32'hzzzzzzzz;
+assign ext_ram_data_oe = {32{~((choose_sram) & soc_sram_cs & soc_sram_we)}};
+assign ext_ram_data_o  = soc_sram_wdata;
 
-assign soc_sram_rdata = choose_sram ? ext_ram_data : base_ram_data;
+assign soc_sram_rdata = choose_sram ? ext_ram_data_i : base_ram_data_i;
 
 endmodule
