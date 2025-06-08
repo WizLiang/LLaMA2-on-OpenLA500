@@ -1,55 +1,33 @@
-# Dev_soc
-大部分按照demo完成了soc_top的连接。跑完了Helloword以及Coremark
-![Screenshot from 2025-04-08 10-08-24](https://github.com/user-attachments/assets/0864f55d-5077-4077-84f8-3ef0180d349e)
+# Circuir Breaker 
 
-## 代码修改
-### .gitnore添加了
-/vivado24.2/ #这是我自己的vivado启动目录，结果他运行.tcl脚本之后，project创建在/fpga/中，所以需要将/fpga/也加进去
-/rtl/ip/PLL_2019_2/#避免了vivado版本问题，
-/fpga/
+队伍编号：CICC0900647
 
-### rtl/ip/confreg/confreg.v
-注释 无用信号input [4 :0] s_wid,
-
-## 注意事项
-### critcal warning
-soc_top中并没有对wire sys_clk 和 cpu_clk进行引出，导致critical warning，但是我在第一次编译的时候并没有出现报这个warning，而在我将.xdc文件移位之后出现ip报错，重新升级之后才出现，故怀疑也可能是pll_ip的问题，故没有修改.xdc
-> 这个重建ip并没有解决，理论上.xdc只能约束顶层的io。可能是.xdc写多了
-
-### IP core
-由于clk_pll不再跟踪，所以第一次创建工程的时候可能需要使用先前版本的xci
-
-# Github Tips
-## 更新本地仓库
-
-在开始任何新工作之前，先执行 `git pull`（或从远程仓库拉取最新代码）来确保你的本地仓库与远程仓库保持同步，避免因为代码版本差异而产生冲突。
+目前已经按照复赛要求，通过了（修改之后的）中断测试还有之后的RT-Tread的启动。
+![image](https://github.com/user-attachments/assets/5c8dc6a2-f999-4cec-af63-2b5c56bcbea9)
 
 
-`git pull origin main  # 或者你所在仓库使用的主分支名称`
 
-## 创建新分支
-为了保持主分支的稳定性，建议在本地创建一个新的分支来进行修改。创建分支的命令通常是：
+## FPGA工程
+完成2x4的AXI总线拓展
 
-`git checkout -b feature/your-feature-name`
-这里的 feature/your-feature-name 可以根据你所要开发的功能或任务进行命名。这样可以让团队成员一眼看出该分支的目的。
+### DC综合可能遗留问题
 
-## 开发和提交代码
-在新分支上进行开发，完成代码修改后，通过以下命令添加和提交改动：
+目前工程中含有`PLL`，可能在DC综合的时候会出现问题。Cache到时候得留，我们似乎需要一直搬数据，去掉 **D$** 不可取。
 
-`git add .`
+---
+官方的原话是`在进行DC逻辑综合时，还需手动调整一下顶层文件。此时，iopad由工艺库提供，不需要使用iopad_fpga.v。并且不使用pll，请将时钟和复位相关逻辑用下述代码替换。CDC模块不需要删除。并关闭cache，将rtl/config.h中的宏define USE_CACHE注释掉。这样处理完后，不需要使用pll和SRAM这些hard macro，物理设计会更简单。`
 
-`git commit -m "描述你的改动"`
+---
 
-确保你的提交信息清晰、简洁地描述了改动的目的和内容，这有助于代码审核和后续维护。
 
-定期同步远程更新
-如果开发周期较长，建议定期将主分支上的最新改动合并到你的分支上，以避免日后合并时出现较大的冲突：
+ ~~这话我读了两三遍。~~ 目前由于需要上FPGA验证，为了保证时序，没有去除PLL。
 
-`git pull origin master  # 拉取主分支最新代码`
 
-`git merge master       # 将主分支合并到当前分支`
+## 软件部分
+### 测试代码
+int_test中的对clr寄存器进行了复位，否则无法
 
-## 推送分支并创建 Pull Request
-开发完成后，将你的分支推送到远程仓库：
-`git push -u origin feature/your-feature-name`
-然后在 GitHub 上创建 Pull Request，让团队成员进行代码审核、讨论和确认合并。
+# Tips of Dev
+1. 记得创建自己的分支，尽量有统一的命名规范
+1. 适当添加描述
+1. 注意git pull origin master
