@@ -1,7 +1,7 @@
 `timescale 1ns/100ps
 module sram_sp #(
     parameter AW = 16,
-    parameter Init_File = "none"
+    parameter Init_File = "D:/loongarch/loong_soc/la32r_soc_ciciec/sdk/axi_ram.mif"
 )
 (
     inout  [31:0] ram_data,  //BaseRAM数据，低8位与CPLD串口控制器共享

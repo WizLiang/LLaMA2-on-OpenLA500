@@ -82,6 +82,23 @@ module soc_top #(parameter SIMULATION=1'b0)
     //------uart-------
     inout           UART_RX,            //串口RX接收
     inout           UART_TX             //串口TX发送
+
+    //to ddr
+    // output        ddr3_reset_n_w,
+    // output        ddr3_ck_p_w,
+    // output        ddr3_ck_n_w,
+    // output        ddr3_cke_w,
+    // output        ddr3_cs_n_w,
+    // output        ddr3_ras_n_w,
+    // output        ddr3_cas_n_w,
+    // output        ddr3_we_n_w,
+    // inout  [ 1:0] ddr3_dm_w,
+    // output [ 2:0] ddr3_ba_w,
+    // output [13:0] ddr3_addr_w,
+    // inout  [15:0] ddr3_dq_w,
+    // inout  [ 1:0] ddr3_dqs_p_w,
+    // inout  [ 1:0] ddr3_dqs_n_w,
+    // output        ddr3_odt_w
 );
 
 wire cpu_clk;
@@ -648,62 +665,151 @@ axi_uart_controller u_axi_uart_controller
 
 
 
-// AXI Slave 2 (Output) signals
-wire         axiOut_2_awvalid;
-wire         axiOut_2_awready;
-wire [31:0]  axiOut_2_awaddr;
-wire [4:0]   axiOut_2_awid;
-wire [7:0]   axiOut_2_awlen;
+// DDR AXI Slave 2 (Output) signals
+wire         axiOut_2_awvalid;//
+wire         axiOut_2_awready;//
+wire [31:0]  axiOut_2_awaddr;//
+wire [4:0]   axiOut_2_awid;//
+wire [7:0]   axiOut_2_awlen;//
 wire [2:0]   axiOut_2_awsize;
-wire [1:0]   axiOut_2_awburst;
+wire [1:0]   axiOut_2_awburst;//
 wire [0:0]   axiOut_2_awlock;
 wire [3:0]   axiOut_2_awcache;
 wire [2:0]   axiOut_2_awprot;
 
-wire         axiOut_2_wvalid;
-wire         axiOut_2_wready;
-wire [31:0]  axiOut_2_wdata;
-wire [3:0]   axiOut_2_wstrb;
-wire         axiOut_2_wlast;
+wire         axiOut_2_wvalid;//
+wire         axiOut_2_wready;//
+wire [31:0]  axiOut_2_wdata;//
+wire [3:0]   axiOut_2_wstrb;//
+wire         axiOut_2_wlast;//
 
-wire         axiOut_2_bvalid;
-wire         axiOut_2_bready;
-wire [4:0]   axiOut_2_bid;
-wire [1:0]   axiOut_2_bresp;
+wire         axiOut_2_bvalid;//
+wire         axiOut_2_bready;//
+wire [4:0]   axiOut_2_bid;//
+wire [1:0]   axiOut_2_bresp;//
 
-wire         axiOut_2_arvalid;
-wire         axiOut_2_arready;
-wire [31:0]  axiOut_2_araddr;
-wire [4:0]   axiOut_2_arid;
-wire [7:0]   axiOut_2_arlen;
+wire         axiOut_2_arvalid;//
+wire         axiOut_2_arready;//
+wire [31:0]  axiOut_2_araddr;//
+wire [4:0]   axiOut_2_arid;//
+wire [7:0]   axiOut_2_arlen;//
 wire [2:0]   axiOut_2_arsize;
-wire [1:0]   axiOut_2_arburst;
+wire [1:0]   axiOut_2_arburst;//
 wire [0:0]   axiOut_2_arlock;
 wire [3:0]   axiOut_2_arcache;
 wire [2:0]   axiOut_2_arprot;
 
-wire         axiOut_2_rvalid;
-wire         axiOut_2_rready;
-wire [31:0]  axiOut_2_rdata;
-wire [4:0]   axiOut_2_rid;
-wire [1:0]   axiOut_2_rresp;
-wire         axiOut_2_rlast;
+wire         axiOut_2_rvalid;//
+wire         axiOut_2_rready;//
+wire [31:0]  axiOut_2_rdata;//
+wire [4:0]   axiOut_2_rid;//
+wire [1:0]   axiOut_2_rresp;//
+wire         axiOut_2_rlast;//
+
+axi2ddr_top u_axi2ddr_top
+(
+    //AXI
+    .clk100mhz             (sys_clk          ),
+    .rst_w                 (sys_resetn       ),
+    .axi4_awvalid_w        (axiOut_2_awvalid ),
+    .axi4_awaddr_w         (axiOut_2_awaddr  ),
+    .axi4_awid_w           (axiOut_2_awid    ),
+    .axi4_awlen_w          (axiOut_2_awlen   ),
+    .axi4_awburst_w        (axiOut_2_awburst ),
+    .axi4_wvalid_w         (axiOut_2_wvalid  ),
+    .axi4_wdata_w          (axiOut_2_wdata   ),
+    .axi4_wstrb_w          (axiOut_2_wstrb   ),
+    .axi4_wlast_w          (axiOut_2_wlast   ),
+    .axi4_bready_w         (axiOut_2_bready  ),
+    .axi4_arvalid_w        (axiOut_2_arvalid ),
+    .axi4_araddr_w         (axiOut_2_araddr  ),
+    .axi4_arid_w           (axiOut_2_arid    ),
+    .axi4_arlen_w          (axiOut_2_arlen   ),
+    .axi4_arburst_w        (axiOut_2_arburst ),
+    .axi4_rready_w         (axiOut_2_rready  ),
+
+    .axi4_awready_w        (axiOut_2_awready ),
+    .axi4_wready_w         (axiOut_2_wready  ),
+    .axi4_bvalid_w         (axiOut_2_bvalid  ),
+    .axi4_bresp_w          (axiOut_2_bresp   ),
+    .axi4_bid_w            (axiOut_2_bid     ),
+    .axi4_arready_w        (axiOut_2_arready ),
+    .axi4_rvalid_w         (axiOut_2_rvalid  ),
+    .axi4_rdata_w          (axiOut_2_rdata   ),
+    .axi4_rresp_w          (axiOut_2_rresp   ),
+    .axi4_rid_w            (axiOut_2_rid     ),
+    .axi4_rlast_w          (axiOut_2_rlast   ),
+
+    //to DDR
+    .ddr3_reset_n          (ddr3_reset_n_w   ),
+    .ddr3_cke              (ddr3_cke_w       ),
+    .ddr3_cs_n             (ddr3_cs_n_w      ),
+    .ddr3_ras_n            (ddr3_ras_n_w     ),
+    .ddr3_cas_n            (ddr3_cas_n_w     ),
+    .ddr3_we_n             (ddr3_we_n_w      ),
+    .ddr3_ba               (ddr3_ba_w        ),
+    .ddr3_addr             (ddr3_addr_w      ),
+    .ddr3_dqs_p            (ddr3_dqs_p_w     ),
+    .ddr3_dqs_n            (ddr3_dqs_n_w     ),
+    .ddr3_dq               (ddr3_dq_w        ),
+    .ddr3_dm               (ddr3_dm_w        ),
+    .ddr3_odt              (ddr3_odt_w       ),
+    .ddr3_ck_p             (ddr3_ck_p_w      ),
+    .ddr3_ck_n             (ddr3_ck_n_w      )
+); 
+
+wire        ddr3_reset_n_w;
+wire        ddr3_ck_p_w;
+wire        ddr3_ck_n_w;
+wire        ddr3_cke_w;
+wire        ddr3_cs_n_w;
+wire        ddr3_ras_n_w;
+wire        ddr3_cas_n_w;
+wire        ddr3_we_n_w;
+wire [ 1:0] ddr3_dm_w;
+wire [ 2:0] ddr3_ba_w;
+wire [13:0] ddr3_addr_w;
+wire [15:0] ddr3_dq_w;
+wire [ 1:0] ddr3_dqs_p_w;
+wire [ 1:0] ddr3_dqs_n_w;
+wire        ddr3_odt_w;
+
+//DDR3 simulation module
+ddr3 u_ddr3
+(
+     .rst_n               (ddr3_reset_n_w  )
+    ,.ck                  (ddr3_ck_p_w     )
+    ,.ck_n                (ddr3_ck_n_w     )
+    ,.cke                 (ddr3_cke_w      )
+    ,.cs_n                (ddr3_cs_n_w     )
+    ,.ras_n               (ddr3_ras_n_w    )
+    ,.cas_n               (ddr3_cas_n_w    )
+    ,.we_n                (ddr3_we_n_w     )
+    ,.dm_tdqs             (ddr3_dm_w       )
+    ,.ba                  (ddr3_ba_w       )
+    ,.addr                (ddr3_addr_w     )
+    ,.dq                  (ddr3_dq_w       )
+    ,.dqs                 (ddr3_dqs_p_w    ) 
+    ,.dqs_n               (ddr3_dqs_n_w    )
+    ,.tdqs_n              (                )
+    ,.odt                 (ddr3_odt_w      )
+);
 
 //Dummy Slave Output (Slave -> Cross Bus)
-assign axiOut_2_awready = 1'b1;
-assign axiOut_2_wready  = 1'b1;
+// assign axiOut_2_awready = 1'b1;
+// assign axiOut_2_wready  = 1'b1;
 
-assign axiOut_2_bvalid  = 1'b0;
-assign axiOut_2_bid     = 5'b0;
-assign axiOut_2_bresp   = 2'b0;
+// assign axiOut_2_bvalid  = 1'b0;
+// assign axiOut_2_bid     = 5'b0;
+// assign axiOut_2_bresp   = 2'b0;
 
-assign axiOut_2_arready = 1'b1;
+// assign axiOut_2_arready = 1'b1;
 
-assign axiOut_2_rvalid  = 1'b0;
-assign axiOut_2_rid     = 5'b0;
-assign axiOut_2_rdata   = 32'b0;
-assign axiOut_2_rresp   = 2'b0;
-assign axiOut_2_rlast   = 1'b0;
+// assign axiOut_2_rvalid  = 1'b0;
+// assign axiOut_2_rid     = 5'b0;
+// assign axiOut_2_rdata   = 32'b0;
+// assign axiOut_2_rresp   = 2'b0;
+// assign axiOut_2_rlast   = 1'b0;
 
 
 
