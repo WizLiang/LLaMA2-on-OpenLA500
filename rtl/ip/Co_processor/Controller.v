@@ -13,7 +13,7 @@
 
 
 
-module CB_Controler (
+module CB_Controller (
 
     //clk & rst
     input clk,
@@ -83,6 +83,7 @@ reg [31:0] csr_rows, csr_cols;
 //Axi_R_or_W read true
 reg Axi_busy,Axi_write,Axi_R_or_W;
 
+reg [31:0] rdata_d;
 
 //addr hs
 wire ar_enter = s_arvalid & s_arready;
@@ -151,6 +152,19 @@ always@(posedge clk)
     else if(aw_enter) s_wready <= 1'b1;
     else if(w_enter & s_wlast) s_wready <= 1'b0;
 
+// assign rdata_d =
+//        (buf_addr[15:0] == `REG_CTRL_ADDR     ) ? csr_ctrl      :
+//        (buf_addr[15:0] == `REG_STATUS_ADDR   ) ? csr_status    :
+//        (buf_addr[15:0] == `REG_ERR_CODE_ADDR ) ? csr_err_code  :
+
+//        (buf_addr[15:0] == `REG_VI_BASE_ADDR  ) ? csr_vi_base   :
+//        (buf_addr[15:0] == `REG_MI_BASE_ADDR  ) ? csr_mi_base   :
+//        (buf_addr[15:0] == `REG_VO_BASE_ADDR  ) ? csr_vo_base   :
+
+//        (buf_addr[15:0] == `REG_ROWS_ADDR     ) ? csr_rows      :
+//        (buf_addr[15:0] == `REG_COLS_ADDR     ) ? csr_cols      :
+
+//                                                32'h0;          // default
 
 always@(posedge clk)
     if(~rst_n) begin
@@ -187,15 +201,18 @@ always @(*)begin
         `REG_STATUS_ADDR   : rdata_d = csr_status;      // STATUS (RO)
         `REG_ERR_CODE_ADDR : rdata_d = csr_err_code;    // ERR_CODE (RO)
 
-        `REG_VI_BASE_ADDR  : rdata_d = csr_vi_base;     // VEC_BASE (W)
-        `REG_MI_BASE_ADDR  : rdata_d = csr_mi_base;     // MAT_BASE (W)
-        `REG_VO_BASE_ADDR  : rdata_d = csr_vo_base;     // OUT_BASE (W)
+        // `REG_VI_BASE_ADDR  : rdata_d = csr_vi_base;     // VEC_BASE (W)
+        // `REG_MI_BASE_ADDR  : rdata_d = csr_mi_base;     // MAT_BASE (W)
+        // `REG_VO_BASE_ADDR  : rdata_d = csr_vo_base;     // OUT_BASE (W)
 
-        `REG_ROWS_ADDR     : rdata_d = csr_rows;        // ROWS (W)
-        `REG_COLS_ADDR     : rdata_d = csr_cols;        // COLS (W)
-    default :rdata_d = 16'h0;
+        // `REG_ROWS_ADDR     : rdata_d = csr_rows;        // ROWS (W)
+        // `REG_COLS_ADDR     : rdata_d = csr_cols;        // COLS (W)
+    default :rdata_d = 32'h0;
     endcase
 end
+
+
+
 
 
 always @(posedge clk)begin
@@ -211,8 +228,8 @@ always @(posedge clk)begin
     end else if(w_enter)begin
         case(buf_addr[15:0])
             `REG_CTRL_ADDR     : csr_ctrl <= s_wdata;        // CTRL   (RW)
-            //`REG_STATUS_ADDR   : ;      // STATUS (RO)
-            //`REG_ERR_CODE_ADDR : ;    // ERR_CODE (RO)
+            `REG_STATUS_ADDR   : csr_status<= s_wdata;      // STATUS (RO)
+            `REG_ERR_CODE_ADDR : csr_err_code <= s_wdata;    // ERR_CODE (RO)
 
             `REG_VI_BASE_ADDR  : csr_vi_base <= s_wdata;     // VEC_BASE (W)
             `REG_MI_BASE_ADDR  : csr_mi_base <= s_wdata;     // MAT_BASE (W)
