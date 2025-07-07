@@ -829,22 +829,67 @@ wire [4:0]   axiOut_2_rid;
 wire [1:0]   axiOut_2_rresp;
 wire         axiOut_2_rlast;
 
-//Dummy Slave Output (Slave -> Cross Bus)
-assign axiOut_2_awready = 1'b1;
-assign axiOut_2_wready  = 1'b1;
+// //Dummy Slave Output (Slave -> Cross Bus)
+// assign axiOut_2_awready = 1'b1;
+// assign axiOut_2_wready  = 1'b1;
 
-assign axiOut_2_bvalid  = 1'b0;
-assign axiOut_2_bid     = 5'b0;
-assign axiOut_2_bresp   = 2'b0;
+// assign axiOut_2_bvalid  = 1'b0;
+// assign axiOut_2_bid     = 5'b0;
+// assign axiOut_2_bresp   = 2'b0;
 
-assign axiOut_2_arready = 1'b1;
+// assign axiOut_2_arready = 1'b1;
 
-assign axiOut_2_rvalid  = 1'b0;
-assign axiOut_2_rid     = 5'b0;
-assign axiOut_2_rdata   = 32'b0;
-assign axiOut_2_rresp   = 2'b0;
-assign axiOut_2_rlast   = 1'b0;
+// assign axiOut_2_rvalid  = 1'b0;
+// assign axiOut_2_rid     = 5'b0;
+// assign axiOut_2_rdata   = 32'b0;
+// assign axiOut_2_rresp   = 2'b0;
+// assign axiOut_2_rlast   = 1'b0;
 
+CB_top u_cb_top(
+    .clk                (sys_clk),          
+    .rst_n              (sys_resetn),    
+
+//AXI Slave interface
+    .s_awid             (axiOut_2_awid   ),
+    .s_awaddr           (axiOut_2_awaddr ),
+    .s_awlen            (axiOut_2_awlen  ),
+    .s_awsize           (axiOut_2_awsize ),
+    .s_awburst          (axiOut_2_awburst),
+    .s_awlock           (axiOut_2_awlock ),
+    .s_awcache          (axiOut_2_awcache),
+    .s_awprot           (axiOut_2_awprot ),
+    .s_awvalid          (axiOut_2_awvalid),
+    .s_awready          (axiOut_2_awready),
+
+    .s_wdata            (axiOut_2_wdata ),
+    .s_wstrb            (axiOut_2_wstrb ),
+    .s_wlast            (axiOut_2_wlast ),
+    .s_wvalid           (axiOut_2_wvalid),
+    .s_wready           (axiOut_2_wready),
+
+    .s_bid              (axiOut_2_bid   ),
+    .s_bresp            (axiOut_2_bresp ),
+    .s_bvalid           (axiOut_2_bvalid),
+    .s_bready           (axiOut_2_bready),
+
+    .s_arid             (axiOut_2_arid   ),
+    .s_araddr           (axiOut_2_araddr ),
+    .s_arlen            (axiOut_2_arlen  ),
+    .s_arsize           (axiOut_2_arsize ),
+    .s_arburst          (axiOut_2_arburst),
+    .s_arlock           (axiOut_2_arlock ),
+    .s_arcache          (axiOut_2_arcache),
+    .s_arprot           (axiOut_2_arprot ),
+    .s_arvalid          (axiOut_2_arvalid),
+    .s_arready          (axiOut_2_arready),
+
+    .s_rid              (axiOut_2_rid   ),
+    .s_rdata            (axiOut_2_rdata ),
+    .s_rresp            (axiOut_2_rresp ),
+    .s_rlast            (axiOut_2_rlast ),
+    .s_rvalid           (axiOut_2_rvalid),
+    .s_rready           (axiOut_2_rready)
+);
 
 
 
