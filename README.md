@@ -2,10 +2,12 @@
 
 队伍编号：CICC0900647
 
+
 目前已经按照复赛要求，通过了（修改之后的）中断测试还有之后的RT-Tread的启动。
 ![image](https://github.com/user-attachments/assets/5c8dc6a2-f999-4cec-af63-2b5c56bcbea9)
 
-
+## 仓库架构
+基本同官方，`sdk/software/apps`为测试C语言
 
 ## FPGA工程
 完成2x4的AXI总线拓展
