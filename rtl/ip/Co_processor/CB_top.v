@@ -62,7 +62,8 @@ module CB_top(
 
 );
 
-
+    wire mac_start_wire, mac_done_wire;
+    wire mac_error_wire = 1'b0;
 
 
 CB_Controller u_controller(
@@ -71,8 +72,17 @@ CB_Controller u_controller(
 
 
     //TODO: DMA_Ctrl
+    .dma_start(),
+    .dma_addr(),
+    .dma_len(),
+    .dma_dir(),
+    .dma_done(1'b1),    //TODO: DMA_Ctrl
+    .dma_error(1'b0),
 
     //TODO: MAC_Engine
+    .mac_start(mac_start_wire),
+    .mac_done(mac_done_wire),
+    .mac_error(mac_error_wire),
 
 
     //TODO: Debug
@@ -119,5 +129,12 @@ CB_Controller u_controller(
     .s_rvalid   (s_rvalid),
     .s_rready   (s_rready)
 );
+
+
+    mac_top mac_top_inst (
+        .clk(clk), .srstn(rst_n), .start_processing(mac_start_wire),
+        .processing_done(mac_done_wire)
+    );
+
     
 endmodule
