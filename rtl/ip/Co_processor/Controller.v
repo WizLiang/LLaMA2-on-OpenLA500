@@ -20,7 +20,13 @@ module CB_Controller (
     input rst_n,
 
     //TODO: DMA_Ctrl
-
+    output reg          cmd_valid,
+    input  wire          cmd_ready,
+    output  reg [31: 0] cmd_src_addr,
+    output  reg [31: 0] cmd_dst_addr,
+    output  wire [1:0]   cmd_burst,  //00 INCR
+    output  wire         cmd_rw, // 0 = r
+    output wire [9:0]    cmd_len,
     //TODO: MAC_Engine
 
 
@@ -243,7 +249,30 @@ always @(posedge clk)begin
 end
 
 
+/*******************888 DMA*****************************/
+assign cmd_rw = 1'b0;
+assign cmd_burst = 2'b00;
+assign cmd_len = 10'd8;
+assign cmd_size = 3'b100;
 
+always@(posedge clk)begin
+    if(!rst_n)begin
+        cmd_valid <= 1'b0;
+        cmd_src_addr <= 32'd0;
+        cmd_dst_addr <= 32'd0;
+        //rw,burst,size
+    end else if (csr_ctrl[0]) begin
+        cmd_valid <= 1'b1;
+        cmd_src_addr <= csr_vi_base;
+        //dst.....
+    end 
+    else begin
+        cmd_valid <= 1'b0;
+        cmd_src_addr <= cmd_src_addr;
+        cmd_dst_addr <= cmd_dst_addr;
+    end
+
+end
 
 
 endmodule
