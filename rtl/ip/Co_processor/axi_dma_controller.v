@@ -21,6 +21,7 @@
     input  wire                 cmd_rw, // 0 = r
     input  wire [9: 0]          cmd_len,    //Size of data (B)
     input  wire [2:0]           cmd_size,   //AXI Beat Size
+    output wire                 dma_done,
 
     input  wire [STRB_WD-1 : 0] R_strobe, 
     // Read Address Channel
@@ -65,7 +66,7 @@
     output wire                 M_AXI_BREADY
  );
 
-    reg  [DATA_WD - 1:0] mem [0 : 256]; 
+    reg  [DATA_WD - 1:0] mem [0 : 255]; 
 
     reg   [ADDR_WD-1 : 0]     r_cmd_src_addr            ;
     reg   [ADDR_WD-1 : 0]     r_cmd_dst_addr            ;
@@ -172,6 +173,8 @@
 
 wire read_finish = M_AXI_RLAST;
 wire write_finish = M_AXI_BREADY && M_AXI_BVALID;//TODO
+
+assign dma_done = cmd_rw ? write_finish : read_finish ;
 
     always@(posedge clk) begin
         if(rst) 

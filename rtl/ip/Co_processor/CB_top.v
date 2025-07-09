@@ -115,7 +115,7 @@ wire [1:0]                 cmd_burst;       // 00=INCR, 01=FIXED, 10=WRAP
 wire                       cmd_rw;          // 0=读, 1=写
 wire [9:0]                 cmd_len;         // 传输字节数
 wire [2:0]                 cmd_size;        // AXI beat 大小 (0=1B,1=2B,2=4B,…)
-
+wire                       dma_done; 
 //wire [STRB_WD-1:0]         R_strobe;        // 读通道 byte-enable（不需可接全 1）
 
 assign cmd_size = 2'b10;
@@ -133,6 +133,7 @@ CB_Controller u_controller(
     .cmd_burst      (cmd_burst),
     .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
     .cmd_len        (cmd_len),     // 单位：Byte
+    .dma_done       (dma_done),
 
     //TODO: MAC_Engine
 
@@ -181,9 +182,12 @@ CB_Controller u_controller(
     .s_rvalid   (s_rvalid),
     .s_rready   (s_rready)
 );
+
+
+
     axi_dma_controller #(
-    .ADDR_WD (32),   // 地址宽度
-    .DATA_WD (32),   // 数据宽度
+    .ADDR_WD (32),  
+    .DATA_WD (32),   
     .ID_WD   (4)     
 ) u_axi_dma_controller (
     //-------------------------------------------------
@@ -204,6 +208,7 @@ CB_Controller u_controller(
     .cmd_len        (cmd_len),     // 单位：Byte
     .cmd_size       (cmd_size),    // AXI beat size
     .R_strobe       (4'b1111),    // 读通道 byte-enable
+    .dma_done       (dma_done),
 
     //-------------------------------------------------
     // AXI-4 Read Address Channel

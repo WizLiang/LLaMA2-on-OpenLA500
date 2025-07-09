@@ -27,6 +27,7 @@ module CB_Controller (
     output  wire [1:0]   cmd_burst,  //00 INCR
     output  wire         cmd_rw, // 0 = r
     output wire [9:0]    cmd_len,
+    input  wire         dma_done,
     //TODO: MAC_Engine
 
 
@@ -245,7 +246,10 @@ always @(posedge clk)begin
             `REG_COLS_ADDR     : csr_cols   <= s_wdata;        // COLS (W)
         default :;
     endcase
+    end else if (cmd_valid & cmd_ready) begin //cmd send to dma
+            csr_ctrl <= 32'h0; //TEMP : testing DMA ; 
     end
+
 end
 
 
