@@ -39,7 +39,7 @@
     input  wire                 M_AXI_RVALID,
     input  wire [DATA_WD-1 : 0] M_AXI_RDATA,
     input  wire [1:0]           M_AXI_RRESP,
-    input  wire                 M_AXI_RLAST, //todo : check the last              
+    input  wire                 M_AXI_RLAST,         
     output wire                 M_AXI_RREADY,
     input  wire [ID_WD-1:0]     M_AXI_RID,
     // Write Address Channel
@@ -90,7 +90,7 @@
     reg                       r_m_axi_wlast             ;
     reg                       r_m_axi_wvalid            ; 
     reg [STRB_WD -1:0]        r_m_axi_wstrb             ; 
-    reg [STRB_WD -1:0]        r_m_axi_wstrb_1             ; 
+    //reg [STRB_WD -1:0]        r_m_axi_wstrb_1             ; 
     reg [8:0]                 r_write_cnt               ;  
     reg [8:0]                 r_read_cnt                ;  
 
@@ -129,7 +129,7 @@
     assign M_AXI_AWCACHE    = 4'b0000;
 
     //assign M_AXI_WSTRB      = {STRB_WD{1'b1}}           ; 
-    assign M_AXI_WSTRB      = r_m_axi_wstrb_1             ; 
+    assign M_AXI_WSTRB      = r_m_axi_wstrb             ; 
     assign M_AXI_WDATA      = r_m_axi_wdata             ; 
     assign M_AXI_WLAST      = r_m_axi_wlast             ; 
     assign M_AXI_WVALID     = r_m_axi_wvalid            ; 
@@ -146,10 +146,11 @@
             r_cmd_src_addr <= 0; 
             r_cmd_dst_addr <= 0;
             r_cmd_burst <= 0;
-            r_cmd_size <= 0;
+            r_cmd_size <= 3'b010;
             r_m_axi_awlen <= 1;
             r_m_axi_arlen <= 1;
             r_read_start <= 0;
+            r_write_start <=  1'b0;
         end
         else if(cmd_valid && cmd_ready) begin
             r_cmd_src_addr <= cmd_src_addr;
@@ -159,20 +160,22 @@
             r_m_axi_awlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             r_m_axi_arlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             r_read_start <= ~cmd_rw;
+            r_write_start <=  cmd_rw;
         end
         else begin
             r_cmd_src_addr <= r_cmd_src_addr;
             r_cmd_dst_addr <= r_cmd_dst_addr;
             r_cmd_burst <= r_cmd_burst;
             r_cmd_size <= r_cmd_size;
-            r_read_start <= 0;              //NOTE
+            r_read_start <=     1'b0;
+            r_write_start <=    1'b0;              //NOTE
             r_m_axi_awlen <= r_m_axi_awlen;
             r_m_axi_arlen <= r_m_axi_arlen;
         end
     end
 
 wire read_finish = M_AXI_RLAST;
-wire write_finish = M_AXI_BREADY && M_AXI_BVALID;//TODO
+wire write_finish = M_AXI_BREADY && M_AXI_BVALID;//TODO OKAY singal
 
 assign dma_done = cmd_rw ? write_finish : read_finish ;
 
@@ -239,7 +242,7 @@ end
         if(rst) begin
             r_read_cnt <= 0;
             for(i = 0; i < 256; i = i + 1) begin
-                mem[i] <= 0;
+                mem[i] <= i + 1 ;//TODO TEST
             end
         end
         else if(M_AXI_RVALID && M_AXI_RREADY) begin
@@ -257,14 +260,14 @@ end
 
 /*--------------------- address write -------------------------*/
 //TODO ： MODIFY THE FSM
-    always@(posedge clk) begin
-        if(rst)
-            r_write_start <= 0;
-        else if(M_AXI_RLAST)
-            r_write_start <= 1;
-        else
-            r_write_start <= 0;
-    end
+    // always@(posedge clk) begin
+    //     if(rst)
+    //         r_write_start <= 0;
+    //     else if(M_AXI_RLAST)
+    //         r_write_start <= 1;
+    //     else
+    //         r_write_start <= 0;
+    // end
 
     always@(posedge clk) begin
         if(rst)
@@ -305,10 +308,10 @@ end
         else 
             w_trans_num <= w_trans_num;
     end
-
-    always@(posedge clk) begin
-        r_m_axi_wstrb_1 <= r_m_axi_wstrb;
-    end
+    //maybe the logic chain to long
+    // always@(posedge clk) begin
+    //     r_m_axi_wstrb_1 <= r_m_axi_wstrb;
+    // end
 
     always@(posedge clk) begin
         if(rst || r_m_axi_wlast) 
@@ -319,7 +322,7 @@ end
             16: r_m_axi_wstrb <= {{(15*STRB_WD/16){1'b0}},{(STRB_WD/16){1'b1}}};
             default: r_m_axi_wstrb <= {STRB_WD{1'b1}};
         endcase
-        else if(M_AXI_WREADY && M_AXI_WVALID)begin
+        else if((M_AXI_AWREADY & M_AXI_AWVALID)|(M_AXI_WREADY & M_AXI_WVALID))begin
             case(TRANS_PER_DATA)
                 2: begin
                     case(w_trans_num)
@@ -357,28 +360,49 @@ end
     end
 
     always@(posedge clk) begin
-        if(rst || M_AXI_WLAST) begin
+        if(rst) begin
             r_m_axi_wdata <= 0;
             r_write_cnt <= 0;
+            r_m_axi_wlast <= 0;
         end
-        else if(M_AXI_WREADY && M_AXI_WVALID) begin
-            r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA];
-            r_write_cnt <= r_write_cnt + 1;
+        else if(M_AXI_AWREADY & M_AXI_AWVALID)begin
+            r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
+            //r_write_cnt <= r_write_cnt + 1;
+            if(r_write_cnt == M_AXI_AWLEN) begin
+                r_m_axi_wlast <= 1'b1;
+                r_write_cnt <= 0;
+            end
+            else begin
+                r_write_cnt <= r_write_cnt +1 ;
+                r_m_axi_wlast <= 1'b0;
+            end
+        end
+        else if(M_AXI_WREADY & M_AXI_WVALID) begin
+            r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
+            if(r_write_cnt == M_AXI_AWLEN) begin
+                r_m_axi_wlast <= 1'b1;
+                r_write_cnt <= 0;
+            end
+            else begin
+                r_write_cnt <= r_write_cnt +1 ;
+                r_m_axi_wlast <= 1'b0;
+            end
         end
         else begin
             r_m_axi_wdata <= r_m_axi_wdata;
             r_write_cnt <= r_write_cnt;
+            r_m_axi_wlast <= r_m_axi_wlast;
         end
     end
 
-    always@(posedge clk) begin
-        if(rst) 
-            r_m_axi_wlast <= 0;
-        else if(r_write_cnt == M_AXI_AWLEN)
-            r_m_axi_wlast <= 1;
-        else
-            r_m_axi_wlast <= 0;
-    end
+    // always@(posedge clk) begin
+    //     if(rst) 
+    //         r_m_axi_wlast <= 0;
+    //     else if((r_write_cnt == M_AXI_AWLEN) && (M_AXI_WREADY & M_AXI_WVALID))
+    //         r_m_axi_wlast <= 1;
+    //     else
+    //         r_m_axi_wlast <= 0;
+    // end
 
 /*--------------------- write response -----------------------*/
 

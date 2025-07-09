@@ -230,8 +230,8 @@ always @(posedge clk)begin
         csr_vi_base   <= 32'h0;
         csr_mi_base   <= 32'h0;
         csr_vo_base   <= 32'h0;
-        csr_rows      <= 32'h0;
-        csr_cols      <= 32'h0;
+        csr_rows      <= 32'h1;//Test DMA
+        csr_cols      <= 32'h1;
     end else if(w_enter)begin
         case(buf_addr[15:0])
             `REG_CTRL_ADDR     : csr_ctrl <= s_wdata;        // CTRL   (RW)
@@ -254,7 +254,7 @@ end
 
 
 /*******************888 DMA*****************************/
-assign cmd_rw = 1'b0;
+assign cmd_rw = 1'b1;
 assign cmd_burst = 2'b00;
 assign cmd_len = 10'd8;
 assign cmd_size = 3'b100;
@@ -268,6 +268,7 @@ always@(posedge clk)begin
     end else if (csr_ctrl[0]) begin
         cmd_valid <= 1'b1;
         cmd_src_addr <= csr_vi_base;
+        cmd_dst_addr <= csr_vo_base;
         //dst.....
     end 
     else begin
