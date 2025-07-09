@@ -49,10 +49,54 @@ module CB_top(
     output [1 :0]   s_rresp,
     output          s_rlast,
     output          s_rvalid,
-    input           s_rready
+    input           s_rready,
 
-//TODO: AXI Master (for DMA)
 
+//AXI Master (for DMA)
+    // Write address channel (AW)
+    output [3 :0]  m_awid,
+    output [31:0]  m_awaddr,
+    output [7 :0]  m_awlen,
+    output [2 :0]  m_awsize,
+    output [1 :0]  m_awburst,
+    output         m_awlock,
+    output [3 :0]  m_awcache,
+    output [2 :0]  m_awprot,
+    output         m_awvalid,
+    input          m_awready,
+
+// Write data channel (W)
+    output [31:0]  m_wdata,
+    output [3 :0]  m_wstrb,
+    output         m_wlast,
+    output         m_wvalid,
+    input          m_wready,
+
+// Write response channel (B)
+    input  [3 :0]  m_bid,
+    input  [1 :0]  m_bresp,
+    input          m_bvalid,
+    output         m_bready,
+
+// Read address channel (AR)
+    output [3 :0]  m_arid,
+    output [31:0]  m_araddr,
+    output [7 :0]  m_arlen,
+    output [2 :0]  m_arsize,
+    output [1 :0]  m_arburst,
+    output         m_arlock,
+    output [3 :0]  m_arcache,
+    output [2 :0]  m_arprot,
+    output         m_arvalid,
+    input          m_arready,
+
+// Read data channel (R)
+    input  [3 :0]  m_rid,
+    input  [31:0]  m_rdata,
+    input  [1 :0]  m_rresp,
+    input          m_rlast,
+    input          m_rvalid,
+    output         m_rready
 
 
 //Debug
@@ -62,9 +106,21 @@ module CB_top(
 
 );
 
-    wire mac_start_wire, mac_done_wire;
-    wire mac_error_wire = 1'b0;
+wire mac_start_wire, mac_done_wire;
+wire mac_error_wire = 1'b0;
+wire                       cmd_valid;       // DMA 命令有效
+wire                       cmd_ready;       // 控制器就绪
 
+wire [31:0]                cmd_src_addr;    // 源地址
+wire [31:0]                cmd_dst_addr;    // 目的地址
+wire [1:0]                 cmd_burst;       // 00=INCR, 01=FIXED, 10=WRAP
+wire                       cmd_rw;          // 0=读, 1=写
+wire [9:0]                 cmd_len;         // 传输字节数
+wire [2:0]                 cmd_size;        // AXI beat 大小 (0=1B,1=2B,2=4B,…)
+wire                       dma_done; 
+//wire [STRB_WD-1:0]         R_strobe;        // 读通道 byte-enable（不需可接全 1）
+
+assign cmd_size = 2'b10;
 
 CB_Controller u_controller(
     .clk(clk),
@@ -72,12 +128,20 @@ CB_Controller u_controller(
 
 
     //TODO: DMA_Ctrl
-    .dma_start(),
-    .dma_addr(),
-    .dma_len(),
-    .dma_dir(),
-    .dma_done(1'b1),    //TODO: DMA_Ctrl
-    .dma_error(1'b0),
+    // .dma_start(),
+    // .dma_addr(),
+    // .dma_len(),
+    // .dma_dir(),
+    // .dma_done(1'b1),    //TODO: DMA_Ctrl
+    // .dma_error(1'b0),
+    .cmd_valid      (cmd_valid),
+    .cmd_ready      (cmd_ready),
+    .cmd_src_addr   (cmd_src_addr),
+    .cmd_dst_addr   (cmd_dst_addr),
+    .cmd_burst      (cmd_burst),
+    .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
+    .cmd_len        (cmd_len),     // 单位：Byte
+    .dma_done       (dma_done),
 
     //TODO: MAC_Engine
     .mac_start(mac_start_wire),
@@ -137,4 +201,86 @@ CB_Controller u_controller(
     );
 
     
+
+    axi_dma_controller #(
+    .ADDR_WD (32),  
+    .DATA_WD (32),   
+    .ID_WD   (4)     
+) u_axi_dma_controller (
+    //-------------------------------------------------
+    // Global
+    //-------------------------------------------------
+    .clk            (clk),
+    .rst            (!rst_n),
+
+    //-------------------------------------------------
+    // DMA Command interface
+    //-------------------------------------------------
+    .cmd_valid      (cmd_valid),
+    .cmd_ready      (cmd_ready),
+    .cmd_src_addr   (cmd_src_addr),
+    .cmd_dst_addr   (cmd_dst_addr),
+    .cmd_burst      (cmd_burst),
+    .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
+    .cmd_len        (cmd_len),     // 单位：Byte
+    .cmd_size       (cmd_size),    // AXI beat size
+    .R_strobe       (4'b1111),    // 读通道 byte-enable
+    .dma_done       (dma_done),
+
+    //-------------------------------------------------
+    // AXI-4 Read Address Channel
+    //-------------------------------------------------
+    .M_AXI_ARVALID  (m_arvalid),
+    .M_AXI_ARADDR   (m_araddr),
+    .M_AXI_ARLEN    (m_arlen),
+    .M_AXI_ARSIZE   (m_arsize),
+    .M_AXI_ARBURST  (m_arburst),
+    .M_AXI_ARREADY  (m_arready),
+    .M_AXI_ARID     (m_arid),
+    .M_AXI_ARLOCK   (m_arlock),
+    .M_AXI_ARPROT   (m_arprot),
+    .M_AXI_ARCACHE  (m_arcache),
+
+    //-------------------------------------------------
+    // AXI-4 Read Data Channel
+    //-------------------------------------------------
+    .M_AXI_RVALID   (m_rvalid),
+    .M_AXI_RDATA    (m_rdata),
+    .M_AXI_RRESP    (m_rresp),
+    .M_AXI_RLAST    (m_rlast),
+    .M_AXI_RREADY   (m_rready),
+    .M_AXI_RID      (m_rid),
+
+    //-------------------------------------------------
+    // AXI-4 Write Address Channel
+    //-------------------------------------------------
+    .M_AXI_AWVALID  (m_awvalid),
+    .M_AXI_AWADDR   (m_awaddr),
+    .M_AXI_AWLEN    (m_awlen),
+    .M_AXI_AWSIZE   (m_awsize),
+    .M_AXI_AWBURST  (m_awburst),
+    .M_AXI_AWREADY  (m_awready),
+    .M_AXI_AWID     (m_awid),
+    .M_AXI_AWLOCK   (m_awlock),
+    .M_AXI_AWPROT   (m_awprot),
+    .M_AXI_AWCACHE  (m_awcache),
+
+    //-------------------------------------------------
+    // AXI-4 Write Data Channel
+    //-------------------------------------------------
+    .M_AXI_WVALID   (m_wvalid),
+    .M_AXI_WDATA    (m_wdata),
+    .M_AXI_WSTRB    (m_wstrb),
+    .M_AXI_WLAST    (m_wlast),
+    .M_AXI_WREADY   (m_wready),
+
+    //-------------------------------------------------
+    // AXI-4 Write Response Channel
+    //-------------------------------------------------
+    .M_AXI_BVALID   (m_bvalid),
+    .M_AXI_BRESP    (m_bresp),
+    .M_AXI_BID      (m_bid),
+    .M_AXI_BREADY   (m_bready)
+);
+
 endmodule
