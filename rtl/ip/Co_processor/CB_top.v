@@ -106,8 +106,11 @@ module CB_top(
 
 );
 
+//MAC
 wire mac_start_wire, mac_done_wire;
 wire mac_error_wire = 1'b0;
+
+//DMA
 wire                       cmd_valid;       // DMA 命令有效
 wire                       cmd_ready;       // 控制器就绪
 
@@ -127,13 +130,6 @@ CB_Controller u_controller(
     .rst_n(rst_n),
 
 
-    //TODO: DMA_Ctrl
-    // .dma_start(),
-    // .dma_addr(),
-    // .dma_len(),
-    // .dma_dir(),
-    // .dma_done(1'b1),    //TODO: DMA_Ctrl
-    // .dma_error(1'b0),
     .cmd_valid      (cmd_valid),
     .cmd_ready      (cmd_ready),
     .cmd_src_addr   (cmd_src_addr),

@@ -75,7 +75,6 @@
     reg                       r_cmd_ready               ;
     reg                       r_cmd_rw;          
 
-    reg                       r_m_axi_rlast             ;
     reg                       r_m_axi_rready            ;
 
     reg [ADDR_WD - 1:0]       r_m_axi_araddr            ;

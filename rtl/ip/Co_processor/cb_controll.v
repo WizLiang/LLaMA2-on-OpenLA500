@@ -30,6 +30,12 @@
 `define CSR_STATUS_DMA_ERR_BIT  8   // [8]: 1 if a DMA Error occurred.
 `define CSR_STATUS_MAC_ERR_BIT  9   // [9]: 1 if a MAC Error occurred.
 
+//TODO RAM地址
+`define BRAM_VI_BASE_ADDR  32'h0000_0000 // BRAM address for Input Vector
+`define BRAM_MI_BASE_ADDR  32'h0000_1000 // BRAM address for Input Matrix
+`define BRAM_VO_BASE_ADDR  32'h0000_8000 // BRAM address for Output Vector
+
+
 
 module CB_Controller (
     // Global Clock and Reset
@@ -38,12 +44,14 @@ module CB_Controller (
 
     // --- Interfaces to Internal Engines ---
     // DMA Controller Interface
-    output reg          dma_start,
-    output reg  [31:0]  dma_addr,   //数据地址
-    output reg  [31:0]  dma_len,    //传输数据长度
-    output reg          dma_dir,    //ram2ddr&ddr2ram
-    input               dma_done,
-    input               dma_error,
+    output  reg             cmd_valid,  // DMA 命令有效
+    input   wire            cmd_ready,  // dma控制器就绪
+    output  reg     [31: 0] cmd_src_addr,
+    output  reg     [31: 0] cmd_dst_addr,
+    output  reg     [1:0]   cmd_burst,  //00 INCR
+    output  reg             cmd_rw, // 0 = r
+    output  reg     [9:0]   cmd_len,
+    input   wire            dma_done,
 
     // MAC Engine Interface
     output reg          mac_start,
@@ -88,7 +96,7 @@ module CB_Controller (
     output      [4:0]   s_rid,
     output reg  [31:0]  s_rdata,
     output      [1:0]   s_rresp,
-    output reg          s_rlast,
+    output reg          s_rlast,    //TODO to be fix
     output reg          s_rvalid,
     input               s_rready
 );
@@ -243,35 +251,78 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 always @(*) begin
-    next_state = state;
-    dma_start = 1'b0;
-    dma_addr = 32'h0;
-    dma_len = 32'h0;
-    dma_dir = 1'b0;
-    mac_start = 1'b0;
+    // Default assignments
+    next_state   = state;
+    cmd_valid    = 1'b0;
+    cmd_src_addr = 32'h0;
+    cmd_dst_addr = 32'h0;
+    cmd_rw       = 1'b0; // Default to read
+    cmd_burst    = 2'b00; // INCR
+    cmd_len      = 10'd8;   //TODO: 目前传输8字节
+    mac_start    = 1'b0;
 
     case (state)
         S_IDLE: if (start_signal) next_state = S_DMA_VI;
         S_DMA_VI: begin
-            dma_start = 1'b1; dma_addr = csr_vi_base; dma_len = csr_cols; dma_dir = 1'b0;
-            next_state = S_WAIT_VI_DONE;
+            cmd_valid = 1'b1;
+            cmd_src_addr = csr_vi_base; //ddr中的地址
+            cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //需要写入的ram
+            cmd_rw = 1'b0;  //read
+            //cmd_len      = ;
+            if (cmd_ready) begin //dma控制器准备
+                next_state = S_WAIT_VI_DONE;
+            end
         end
-        S_WAIT_VI_DONE: if (dma_error) next_state = S_ERROR; else if (dma_done) next_state = S_DMA_MI;
+        S_WAIT_VI_DONE: begin
+            if (dma_done) begin //remove error
+                next_state = S_DMA_MI;
+            end
+        end
         S_DMA_MI: begin
-            dma_start = 1'b1; dma_addr = csr_mi_base; dma_len = csr_rows * csr_cols; dma_dir = 1'b0;
-            next_state = S_WAIT_MI_DONE;
+            cmd_valid = 1'b1;
+            cmd_src_addr = csr_mi_base;
+            cmd_dst_addr = `BRAM_MI_BASE_ADDR;
+            cmd_rw = 1'b0;  //read
+            //TODO len to be fixed
+            if (cmd_ready) begin //dma控制器准备
+                next_state = S_WAIT_MI_DONE;
+            end
         end
-        S_WAIT_MI_DONE: if (dma_error) next_state = S_ERROR; else if (dma_done) next_state = S_COMPUTE;
+        S_WAIT_MI_DONE: begin
+            if (dma_done) begin //remove error
+                next_state = S_COMPUTE;
+            end
+        end
         S_COMPUTE: begin
-            mac_start = 1'b1; next_state = S_WAIT_COMPUTE;
+            mac_start = 1'b1; 
+            next_state = S_WAIT_COMPUTE;
         end
-        S_WAIT_COMPUTE: if (mac_error) next_state = S_ERROR; else if (mac_done) next_state = S_DMA_VO;
+        S_WAIT_COMPUTE: begin
+            if (mac_error) begin 
+                next_state = S_ERROR; 
+            end
+            else if (mac_done) next_state = S_DMA_VO;
+        end
         S_DMA_VO: begin
-            dma_start = 1'b1; dma_addr = csr_vo_base; dma_len = csr_rows; dma_dir = 1'b1;
-            next_state = S_WAIT_VO_DONE;
+            cmd_valid    = 1'b1;
+            cmd_src_addr = `BRAM_VO_BASE_ADDR;  //TODO tobe fix
+            cmd_dst_addr = csr_vo_base;
+            //cmd_len      = ;
+            cmd_rw       = 1'b1; // Write to DDR
+            if (cmd_ready) begin
+                next_state = S_WAIT_VO_DONE;
+            end
         end
-        S_WAIT_VO_DONE: if (dma_error) next_state = S_ERROR; else if (dma_done) next_state = S_DONE;
-        S_DONE: if (!start_signal) next_state = S_IDLE;
+        S_WAIT_VO_DONE: begin
+            if (dma_done) begin
+                next_state = S_DONE;
+            end
+        end
+        S_DONE: begin
+            if (!start_signal) begin
+                next_state = S_IDLE;
+            end
+        end
         S_ERROR: if (!start_signal) next_state = S_IDLE;
         default: next_state = S_IDLE;
     endcase
@@ -293,7 +344,7 @@ always @(posedge clk or negedge rst_n) begin
         if (state == S_DONE) csr_status[`CSR_STATUS_DONE_BIT] <= 1'b1;
         
         // Set ERROR bits
-        if (dma_error) csr_status[`CSR_STATUS_DMA_ERR_BIT] <= 1'b1;
+        // if (dma_error) csr_status[`CSR_STATUS_DMA_ERR_BIT] <= 1'b1;
         if (mac_error) csr_status[`CSR_STATUS_MAC_ERR_BIT] <= 1'b1;
 
         // Clear sticky bits (DONE, ERROR) when CPU writes to CTRL register
