@@ -57,6 +57,8 @@ module CB_Controller (
     output reg          mac_start,
     input               mac_done,
     input               mac_error,
+    output reg          mac_access_mode, // 连接到 mac_top 的 dma_access_mode
+    output reg  [1:0]   dma_target_sram, // 00=Vec, 01=Weight, 10=Out
 
     // --- AXI4-Lite Slave Bus ---
     //aw
@@ -213,6 +215,7 @@ always@(posedge clk)
     else if(r_retire)
     begin
         s_rvalid <= 1'b0;
+        s_rlast  <= 1'b0;
     end
 
 always@(posedge clk)   
@@ -260,10 +263,14 @@ always @(*) begin
     cmd_burst    = 2'b00; // INCR
     cmd_len      = 10'd8;   //TODO: 目前传输8字节
     mac_start    = 1'b0;
+    mac_access_mode = 1'b0; // 默认计算模式
+    dma_target_sram = 2'b00; // 00=Vec
 
     case (state)
         S_IDLE: if (start_signal) next_state = S_DMA_VI;
         S_DMA_VI: begin
+            mac_access_mode = 1'b1; // 取数据
+            dma_target_sram = 2'b00; // 00=Vec
             cmd_valid = 1'b1;
             cmd_src_addr = csr_vi_base; //ddr中的地址
             cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //需要写入的ram
@@ -274,11 +281,14 @@ always @(*) begin
             end
         end
         S_WAIT_VI_DONE: begin
+            mac_access_mode = 1'b1; // 取数据
             if (dma_done) begin //remove error
                 next_state = S_DMA_MI;
             end
         end
         S_DMA_MI: begin
+            mac_access_mode = 1'b1; // 取数据
+            // dma_target_sram = 2'b01; // 01=Weight
             cmd_valid = 1'b1;
             cmd_src_addr = csr_mi_base;
             cmd_dst_addr = `BRAM_MI_BASE_ADDR;
@@ -289,11 +299,14 @@ always @(*) begin
             end
         end
         S_WAIT_MI_DONE: begin
+            mac_access_mode = 1'b1; // 取数据
+            dma_target_sram = 2'b01;
             if (dma_done) begin //remove error
                 next_state = S_COMPUTE;
             end
         end
         S_COMPUTE: begin
+            mac_access_mode = 1'b0; // 计算模式
             mac_start = 1'b1; 
             next_state = S_WAIT_COMPUTE;
         end
@@ -304,6 +317,8 @@ always @(*) begin
             else if (mac_done) next_state = S_DMA_VO;
         end
         S_DMA_VO: begin
+            mac_access_mode = 1'b1; // 输出模式
+            dma_target_sram = 2'b10; // 10=Output
             cmd_valid    = 1'b1;
             cmd_src_addr = `BRAM_VO_BASE_ADDR;  //TODO tobe fix
             cmd_dst_addr = csr_vo_base;

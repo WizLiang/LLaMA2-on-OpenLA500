@@ -19,6 +19,19 @@ module mac_top #(
     input  clk,
     input  srstn,
     input  start_processing, // Top-level start signal
+    input  dma_access_mode, // DMA access 0=计算 1=加载
+    // -- DMA 写接口 (用于加载 Weight 和 Vector) --
+    // Weight SRAM
+    input  dma_w_sram_we,
+    input  [$clog2(SRAM_W_DEPTH)-1:0] dma_w_sram_waddr,
+    input  [SRAM_DATA_WIDTH-1:0]    dma_w_sram_wdata,
+    // Vector SRAM
+    input  dma_v_sram_we,
+    input  [$clog2(SRAM_V_DEPTH)-1:0] dma_v_sram_waddr,
+    input  [DATA_WIDTH-1:0]         dma_v_sram_wdata,
+    // -- DMA 读接口 --
+    input  [$clog2(SRAM_O_DEPTH)-1:0] dma_o_sram_raddr, // DMA提供的读地址
+    output [SRAM_DATA_WIDTH-1:0]    dma_o_sram_rdata,   // 从Outcome SRAM读出的数据
     output processing_done  //TODO 适配控制器模块，缺失error模块
 );
 
@@ -36,9 +49,20 @@ module mac_top #(
     reg [$clog2(SRAM_V_DEPTH)-1:0] sram_v_addr;
 
     // --- Wires for Serializer Connections (now narrow) ---
-    wire sram_we_wire;
-    wire [SRAM_DATA_WIDTH-1:0] sram_wdata_wire;
-    wire [$clog2(ARRAY_SIZE)-1:0] sram_waddr_wire;
+    wire sram_we_from_serializer;
+    wire [SRAM_DATA_WIDTH-1:0] sram_wdata_from_serializer;
+    wire [$clog2(ARRAY_SIZE)-1:0] sram_waddr_from_serializer;
+
+    // --- Wires for SRAM read/write operations ---
+    wire final_wsb_w, final_wsb_v, final_wsb_o;
+    wire [$clog2(SRAM_W_DEPTH)-1:0] final_raddr_w;
+    wire [$clog2(SRAM_V_DEPTH)-1:0] final_raddr_v;
+    wire [$clog2(SRAM_O_DEPTH)-1:0] final_raddr_o;
+
+    // SRAM 读地址切换
+    assign final_raddr_w = (dma_access_mode) ? 'd0 : sram_w_addr; // DMA模式下不读
+    assign final_raddr_v = (dma_access_mode) ? 'd0 : sram_v_addr; // DMA模式下不读
+    assign final_raddr_o = (dma_access_mode) ? dma_o_sram_raddr : 0; // 计算模式下不读
 
 
     //========================================================================
@@ -50,14 +74,14 @@ module mac_top #(
     sram #(
         .DATA_WIDTH(SRAM_DATA_WIDTH),
         .ADDR_WIDTH($clog2(SRAM_W_DEPTH)),
-        .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
+        .INIT_FILE("E://IC//Matrix_coaccelerator//vsrc//weights.mem")
     ) sram_w_inst (
         .clk(clk),
         .csb(1'b0), // Chip select is always active for simplicity
-        .wsb(1'b1), // Write disabled (read-only)
-        .wdata(0),
-        .waddr(0),
-        .raddr(sram_w_addr),
+        .wsb(~(dma_access_mode & dma_w_sram_we)), // 只有在DMA模式且DMA写使能时才写
+        .wdata(dma_w_sram_wdata),
+        .waddr(dma_w_sram_waddr),
+        .raddr(final_raddr_w),
         .rdata(sram_rdata_w_wire)
     );
 
@@ -65,14 +89,14 @@ module mac_top #(
     sram #(
         .DATA_WIDTH(DATA_WIDTH),
         .ADDR_WIDTH($clog2(SRAM_V_DEPTH)),
-        .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//vector.mem")
+        .INIT_FILE("E://IC//Matrix_coaccelerator//vsrc//vector.mem")
     ) sram_v_inst (
         .clk(clk),
         .csb(1'b0),
-        .wsb(1'b1), // Write disabled (read-only)
-        .wdata(0),
-        .waddr(0),
-        .raddr(sram_v_addr),
+        .wsb(~(dma_access_mode & dma_v_sram_we)), // Write disabled (read-only)
+        .wdata(dma_v_sram_wdata),
+        .waddr(dma_v_sram_waddr),
+        .raddr(final_raddr_v),
         .rdata(sram_rdata_v_wire)
     );
 
@@ -82,12 +106,12 @@ module mac_top #(
         .ADDR_WIDTH(1)
     ) sram_outcome_inst (
         .clk(clk), 
-        .csb(~sram_we_wire), 
-        .wsb(~sram_we_wire), 
-        .wdata(sram_wdata_wire), 
-        .waddr(sram_waddr_wire), 
-        .raddr(0), 
-        .rdata()
+        .csb(~sram_we_from_serializer), 
+        .wsb(~(~dma_access_mode & sram_we_from_serializer)), 
+        .wdata(sram_wdata_from_serializer), 
+        .waddr(sram_waddr_from_serializer), 
+        .raddr(final_raddr_o), 
+        .rdata(dma_o_sram_rdata)
     );
 
     // Instantiate the PE core
@@ -121,9 +145,9 @@ module mac_top #(
         .sram_write_enable(alu_start_reg),
         .cycle_num(cycle_num_reg),
         .parallel_data_in(final_result_wire),
-        .sram_we(sram_we_wire),
-        .sram_wdata(sram_wdata_wire),
-        .sram_waddr(sram_waddr_wire)
+        .sram_we(sram_we_from_serializer),
+        .sram_wdata(sram_wdata_from_serializer),
+        .sram_waddr(sram_waddr_from_serializer)
     );
 
     //========================================================================

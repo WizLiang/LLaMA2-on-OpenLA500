@@ -3,7 +3,20 @@
 //Defines
 
 
-module CB_top(
+module CB_top #(
+    parameter AXI_ADDR_WIDTH = 32,
+    parameter AXI_DATA_WIDTH = 32,
+    parameter AXI_ID_WIDTH   = 4,
+    parameter MAC_SRAM_W_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_W_DEPTH) = 6
+    parameter MAC_SRAM_V_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_V_DEPTH) = 6
+    parameter MAC_SRAM_O_ADDR_WIDTH = 1, // 假设 $clog2(SRAM_O_DEPTH) = 5
+    parameter MAC_SRAM_W_DATA_WIDTH = 1024,
+    parameter MAC_SRAM_V_DATA_WIDTH = 32,
+    parameter MAC_SRAM_O_DATA_WIDTH = 1024,
+    parameter ADDR_WD = 32,  // DMA地址宽度
+    parameter DATA_WD = 32  // DMA数据宽度
+)
+(
     
 //clk & rst
     input clk,
@@ -107,8 +120,8 @@ module CB_top(
 );
 
 //MAC
-wire mac_start_wire, mac_done_wire;
-wire mac_error_wire = 1'b0;
+wire mac_start, mac_done;
+wire mac_error = 1'b0;
 
 //DMA
 wire                       cmd_valid;       // DMA 命令有效
@@ -123,7 +136,79 @@ wire [2:0]                 cmd_size;        // AXI beat 大小 (0=1B,1=2B,2=4B,�
 wire                       dma_done; 
 //wire [STRB_WD-1:0]         R_strobe;        // 读通道 byte-enable（不需可接全 1）
 
+    wire [1:0]                 dma_target_sram; // 00=Vec, 01=Weight, 10=Output, 11=Reserved
+    wire                       mac_access_mode; // 0=计算模式, 1=DMA访问模式
+
+    // 来自 DMA 的 SRAM 接口信号
+    wire dma_sram_we;
+    wire [ADDR_WD-1:0] dma_sram_waddr;
+    wire [DATA_WD-1:0] dma_sram_wdata;
+    wire [ADDR_WD-1:0] dma_sram_raddr;
+    wire [DATA_WD-1:0] dma_sram_rdata; // 从 MAC 输入到 DMA
+
+    // 连接到mac_top的Weight SRAM的写端口
+    wire mac_w_sram_we;
+    wire [MAC_SRAM_W_ADDR_WIDTH-1:0] mac_w_sram_waddr;
+    wire [MAC_SRAM_W_DATA_WIDTH-1:0] mac_w_sram_wdata;
+
+    // 连接到mac_top的Vector SRAM的写端口
+    wire mac_v_sram_we;
+    wire [MAC_SRAM_V_ADDR_WIDTH-1:0] mac_v_sram_waddr;
+    wire [MAC_SRAM_V_DATA_WIDTH-1:0] mac_v_sram_wdata;
+
+    // 连接到mac_top的Outcome SRAM的读端口
+    wire [MAC_SRAM_O_ADDR_WIDTH-1:0] mac_o_sram_raddr;
+    wire [MAC_SRAM_O_DATA_WIDTH-1:0] mac_o_sram_rdata;
+
 assign cmd_size = 2'b10;
+
+// 路由器
+// always @(*) begin
+//     // 默认值
+//     mac_w_sram_we = 1'b0;
+//     mac_v_sram_we = 1'b0;
+//     mac_w_sram_waddr = 0;
+//     mac_v_sram_waddr = 0;
+//     mac_w_sram_wdata = 0;
+//     mac_v_sram_wdata = 0;
+//     mac_o_sram_raddr = 0;
+
+//     case (dma_target_sram)
+//         2'b00: begin // 目标: Vector SRAM
+//             mac_v_sram_we    = dma_sram_we;
+//             mac_v_sram_waddr = dma_sram_addr;
+//             mac_v_sram_wdata = dma_sram_wdata;
+//         end
+//         2'b01: begin // 目标: Weight SRAM
+//             mac_w_sram_we    = dma_sram_we;
+//             mac_w_sram_waddr = dma_sram_addr;
+//             mac_w_sram_wdata = dma_sram_wdata;
+//         end
+//         2'b10: begin // 目标: Outcome SRAM (这是读操作)
+//             // DMA 的读数据来自 MAC 的 Outcome SRAM 读数据端口
+//             dma_sram_rdata = mac_o_sram_rdata;
+//             // DMA 的读地址驱动 MAC 的 Outcome SRAM 读地址端口
+//             mac_o_sram_raddr = dma_sram_addr;
+//         end
+//         default: ;
+//     endcase
+// end
+
+
+assign mac_v_sram_we    = (dma_target_sram == 2'b00) ? dma_sram_we    : 1'b0;
+assign mac_v_sram_waddr = (dma_target_sram == 2'b00) ? dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0]  : 0;
+assign mac_v_sram_wdata = (dma_target_sram == 2'b00) ? dma_sram_wdata : 0;
+
+
+assign mac_w_sram_we    = (dma_target_sram == 2'b01) ? dma_sram_we    : 1'b0;
+assign mac_w_sram_waddr = (dma_target_sram == 2'b01) ? dma_sram_waddr[MAC_SRAM_W_ADDR_WIDTH-1:0]  : 0;
+assign mac_w_sram_wdata = (dma_target_sram == 2'b01) ? dma_sram_wdata : 0;
+
+
+assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0]  : 0;
+
+assign dma_sram_rdata   = (dma_target_sram == 2'b10) ? mac_o_sram_rdata : 0;
+
 
 CB_Controller u_controller(
     .clk(clk),
@@ -140,9 +225,11 @@ CB_Controller u_controller(
     .dma_done       (dma_done),
 
     //TODO: MAC_Engine
-    .mac_start(mac_start_wire),
-    .mac_done(mac_done_wire),
-    .mac_error(mac_error_wire),
+    .mac_start(mac_start),
+    .mac_done(mac_done),
+    .mac_error(mac_error),
+    .mac_access_mode(mac_access_mode), // 0=计算模式, 1=DMA访问模式
+    .dma_target_sram(dma_target_sram), // 00=Vec, 01=Weight, 10=Output, 11=Reserved
 
 
     //TODO: Debug
@@ -192,17 +279,29 @@ CB_Controller u_controller(
 
 
     mac_top mac_top_inst (
-        .clk(clk), .srstn(rst_n), .start_processing(mac_start_wire),
-        .processing_done(mac_done_wire)
+        .clk(clk), 
+        .srstn(rst_n), 
+        .start_processing(mac_start),
+        .processing_done(mac_done),
+
+        .dma_access_mode(mac_access_mode),
+        .dma_w_sram_we(mac_w_sram_we),
+        .dma_w_sram_waddr(mac_w_sram_waddr),
+        .dma_w_sram_wdata(mac_w_sram_wdata),
+        .dma_v_sram_we(mac_v_sram_we),
+        .dma_v_sram_waddr(mac_v_sram_waddr),
+        .dma_v_sram_wdata(mac_v_sram_wdata),
+        .dma_o_sram_raddr(mac_o_sram_raddr),
+        .dma_o_sram_rdata(mac_o_sram_rdata)
     );
 
     
 
     axi_dma_controller #(
-    .ADDR_WD (32),  
-    .DATA_WD (32),   
-    .ID_WD   (4)     
-) u_axi_dma_controller (
+        .ADDR_WD (32),  
+        .DATA_WD (32),   
+        .ID_WD   (4)     
+    ) u_axi_dma_controller (
     //-------------------------------------------------
     // Global
     //-------------------------------------------------
@@ -276,7 +375,15 @@ CB_Controller u_controller(
     .M_AXI_BVALID   (m_bvalid),
     .M_AXI_BRESP    (m_bresp),
     .M_AXI_BID      (m_bid),
-    .M_AXI_BREADY   (m_bready)
+    .M_AXI_BREADY   (m_bready),
+    //-------------------------------------------------
+    // DMA Target SRAM Interface
+    //-------------------------------------------------
+    .sram_we(dma_sram_we),
+    .sram_waddr(dma_sram_waddr),
+    .sram_wdata(dma_sram_wdata),
+    .sram_raddr(dma_sram_raddr), // 读写地址共用
+    .sram_rdata(dma_sram_rdata)
 );
 
 endmodule

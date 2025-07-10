@@ -6,6 +6,7 @@
       parameter integer ADDR_WD = 32,
       parameter integer DATA_WD = 32,
       parameter integer ID_WD   = 4,
+      parameter integer SRAM_ADDR_WD = 32, // SRAM 地址宽度为32位
       localparam integer DATA_WD_BYTE = DATA_WD / 8,
       localparam integer STRB_WD =  DATA_WD / 8,
       localparam [ID_WD-1:0] DMA_ID = {ID_WD{1'b0}}
@@ -63,7 +64,14 @@
     input  wire                 M_AXI_BVALID,
     input  wire [1:0]           M_AXI_BRESP,
     input  wire [ID_WD-1:0]     M_AXI_BID,
-    output wire                 M_AXI_BREADY
+    output wire                 M_AXI_BREADY,
+    //SRAM
+    output reg                  sram_we,
+    output reg [SRAM_ADDR_WD-1:0]    sram_waddr,
+    output reg [DATA_WD-1:0]    sram_wdata,
+
+    output reg [SRAM_ADDR_WD-1:0]    sram_raddr,
+    input  wire [DATA_WD-1:0]   sram_rdata
  );
 
     reg  [DATA_WD - 1:0] mem [0 : 255]; 
@@ -249,11 +257,16 @@ end
             mem[r_read_cnt] <= (M_AXI_RDATA & R_strobe_word);
             else
             mem[r_read_cnt/TRANS_PER_DATA] <= mem[r_read_cnt/TRANS_PER_DATA] + (M_AXI_RDATA & R_strobe_word);
+            //SRAM
+            sram_we    <= 1'b1;                  // 使能SRAM写
+            sram_waddr <= r_read_cnt;            // 使用内部读计数器作为SRAM写地址
+            sram_wdata <= (M_AXI_RDATA & R_strobe_word);       // 将AXI读到的数据作为SRAM写数据
             r_read_cnt <= r_read_cnt + 1;
         end
         else begin
             r_read_cnt <= r_read_cnt;
             mem[r_read_cnt] <= mem[r_read_cnt];
+            sram_we <= 1'b0;
         end
     end
 
@@ -358,39 +371,80 @@ end
             r_m_axi_wstrb <= r_m_axi_wstrb;
     end
 
-    always@(posedge clk) begin
-        if(rst) begin
-            r_m_axi_wdata <= 0;
-            r_write_cnt <= 0;
-            r_m_axi_wlast <= 0;
+    // always@(posedge clk) begin
+    //     if(rst) begin
+    //         r_m_axi_wdata <= 0;
+    //         r_write_cnt <= 0;
+    //         r_m_axi_wlast <= 0;
+    //     end
+    //     else if(M_AXI_AWREADY & M_AXI_AWVALID)begin
+    //         r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
+    //         //r_write_cnt <= r_write_cnt + 1;
+    //         if(r_write_cnt == M_AXI_AWLEN) begin
+    //             r_m_axi_wlast <= 1'b1;
+    //             r_write_cnt <= 0;
+    //         end
+    //         else begin
+    //             r_write_cnt <= r_write_cnt +1 ;
+    //             r_m_axi_wlast <= 1'b0;
+    //         end
+    //     end
+    //     else if(M_AXI_WREADY & M_AXI_WVALID) begin
+    //         r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
+    //         if(r_write_cnt == M_AXI_AWLEN) begin
+    //             r_m_axi_wlast <= 1'b1;
+    //             r_write_cnt <= 0;
+    //         end
+    //         else begin
+    //             r_write_cnt <= r_write_cnt +1 ;
+    //             r_m_axi_wlast <= 1'b0;
+    //         end
+    //     end
+    //     else begin
+    //         r_m_axi_wdata <= r_m_axi_wdata;
+    //         r_write_cnt <= r_write_cnt;
+    //         r_m_axi_wlast <= r_m_axi_wlast;
+    //     end
+    // end
+
+    //SRAM
+    always @(posedge clk) begin
+        if (rst) begin
+            sram_raddr <= 'd0;
+        end else if (r_write_start) begin // 当写操作刚启动时
+            sram_raddr <= 'd0; // 请求第一个地址(0)的数据
+        end else if (M_AXI_WREADY && M_AXI_WVALID && !r_m_axi_wlast) begin
+            // 当一个数据成功发送到 AXI 总线，并且不是最后一个数据时
+            // 请求下一个数据
+            sram_raddr <= r_write_cnt + 1;
         end
-        else if(M_AXI_AWREADY & M_AXI_AWVALID)begin
-            r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
-            //r_write_cnt <= r_write_cnt + 1;
-            if(r_write_cnt == M_AXI_AWLEN) begin
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            r_m_axi_wdata <= 'd0;
+        end else if ((M_AXI_AWREADY & M_AXI_AWVALID) || (M_AXI_WREADY & M_AXI_WVALID)) begin
+            // 当 AXI 写通道握手成功时
+            // sram_rdata 上承载的是上一个周期请求的数据，现在正好可以使用
+            r_m_axi_wdata <= sram_rdata;
+        end
+    end
+
+    always @(posedge clk) begin
+        if (rst) begin
+            r_write_cnt <= 'd0;
+            r_m_axi_wlast <= 1'b0;
+        end else if (M_AXI_WREADY && M_AXI_WVALID) begin
+            if (r_write_cnt == r_m_axi_awlen) begin
+                // 这是最后一个数据
                 r_m_axi_wlast <= 1'b1;
-                r_write_cnt <= 0;
+            end else begin
+                r_write_cnt <= r_write_cnt + 1;
             end
-            else begin
-                r_write_cnt <= r_write_cnt +1 ;
-                r_m_axi_wlast <= 1'b0;
-            end
-        end
-        else if(M_AXI_WREADY & M_AXI_WVALID) begin
-            r_m_axi_wdata <= mem[r_write_cnt/TRANS_PER_DATA]; //Only check the TRANS_PER_DATA IS ONE
-            if(r_write_cnt == M_AXI_AWLEN) begin
-                r_m_axi_wlast <= 1'b1;
-                r_write_cnt <= 0;
-            end
-            else begin
-                r_write_cnt <= r_write_cnt +1 ;
-                r_m_axi_wlast <= 1'b0;
-            end
-        end
-        else begin
-            r_m_axi_wdata <= r_m_axi_wdata;
-            r_write_cnt <= r_write_cnt;
-            r_m_axi_wlast <= r_m_axi_wlast;
+        end else if (r_m_axi_wlast) begin
+            // 在最后一个数据发送后，复位 wlast 和计数器
+            r_m_axi_wlast <= 1'b0;
+            r_write_cnt <= 'd0;
         end
     end
 
