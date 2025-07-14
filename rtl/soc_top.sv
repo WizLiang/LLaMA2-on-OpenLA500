@@ -216,12 +216,13 @@ wire [31:0] debug0_wb_rf_wdata;
 wire [31:0] debug0_wb_inst;
 
 wire confreg_int;
+wire CB_done;
 
 core_top #(.TLBNUM(32)) u_core_top (
     .aclk         (cpu_clk),
     .aresetn      (cpu_resetn),
 
-    .intrpt       ({7'h0,confreg_int}),
+    .intrpt       ({6'h0,CB_done,confreg_int}),
     // AXI Read Request
     .arid         (cpu_arid),
     .araddr       (cpu_araddr),
@@ -560,7 +561,8 @@ wire         axiOut_2_rlast;
 
 CB_top u_cb_top(
     .clk                (sys_clk),          
-    .rst_n              (sys_resetn),    
+    .rst_n              (sys_resetn),
+    .CB_done            (CB_done),    
 
     // Write Address Channel (AW)
     .m_awid             (axiIn1_aw_payload_id   ),

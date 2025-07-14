@@ -8,6 +8,7 @@ module CB_top(
 //clk & rst
     input clk,
     input rst_n,
+    output CB_done,
 
 //AXI Slave bus
     //aw
@@ -119,6 +120,7 @@ wire                       dma_done;
 //wire [STRB_WD-1:0]         R_strobe;        // 读通道 byte-enable（不需可接全 1）
 
 assign cmd_size = 2'b10;
+assign CB_done = dma_done;
 
 CB_Controller u_controller(
     .clk(clk),
