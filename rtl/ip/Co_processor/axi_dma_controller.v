@@ -258,6 +258,7 @@ end
             else
             mem[r_read_cnt/TRANS_PER_DATA] <= mem[r_read_cnt/TRANS_PER_DATA] + (M_AXI_RDATA & R_strobe_word);
             //SRAM
+            //TODO rvalid信号和done信号有些问题
             sram_we    <= 1'b1;                  // 使能SRAM写
             sram_waddr <= r_read_cnt;            // 使用内部读计数器作为SRAM写地址
             sram_wdata <= (M_AXI_RDATA & R_strobe_word);       // 将AXI读到的数据作为SRAM写数据

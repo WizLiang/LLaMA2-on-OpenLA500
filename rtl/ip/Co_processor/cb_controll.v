@@ -261,7 +261,7 @@ always @(*) begin
     cmd_dst_addr = 32'h0;
     cmd_rw       = 1'b0; // Default to read
     cmd_burst    = 2'b00; // INCR
-    cmd_len      = 10'd8;   //TODO: 目前传输8字节
+    cmd_len      = 10'd32;   //TODO: 目前传输8字节
     mac_start    = 1'b0;
     mac_access_mode = 1'b0; // 默认计算模式
     dma_target_sram = 2'b00; // 00=Vec
@@ -306,6 +306,7 @@ always @(*) begin
             end
         end
         S_COMPUTE: begin
+            dma_target_sram = 2'b01; // TODO 待修改
             mac_access_mode = 1'b0; // 计算模式
             mac_start = 1'b1; 
             next_state = S_WAIT_COMPUTE;
@@ -329,6 +330,7 @@ always @(*) begin
             end
         end
         S_WAIT_VO_DONE: begin
+            cmd_rw       = 1'b1; // Write to DDR
             if (dma_done) begin
                 next_state = S_DONE;
             end

@@ -18,7 +18,7 @@ module PE_core#(
     parameter OUTCOME_WIDTH = 32,
     // Total MAC latency is 4 cycles.
     // (2 cycles for multiplier + 1 cycle for adder + 1 for acc register update)
-    parameter MAC_LATENCY = 4
+    parameter MAC_LATENCY = 3
 )
 (
     input clk,
@@ -149,17 +149,17 @@ module fp_mac_pipelined_acc (
     );
 
     // Logic for the accumulator register. This is the final stage of the pipeline.
-    always @(posedge clk) begin
+    always @(*) begin
         if (!rstn) begin
-            acc_reg <= 32'b0;
+            acc_reg = 32'b0;
         // rst_acc is a synchronous signal to clear the sum at the start of a sequence.
         end else if (rst_acc) begin
-            acc_reg <= 32'b0;
+            acc_reg = 32'b0;
         // If enabled, the pipeline moves forward.
         end else if (en) begin
             // The adder's output becomes the new accumulated value.
             // This correctly models the feedback loop timing.
-            acc_reg <= add_out_wire;
+            acc_reg = add_out_wire;
         end
     end
 
