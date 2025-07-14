@@ -52,6 +52,7 @@ module CB_Controller (
     output  reg             cmd_rw, // 0 = r
     output  reg     [9:0]   cmd_len,
     input   wire            dma_done,
+    output  wire            ctrl_done, 
 
     // MAC Engine Interface
     output reg          mac_start,
@@ -130,6 +131,9 @@ wire b_retire = s_bvalid & s_bready;
 //only one transaction inflight
 assign s_arready = ~Axi_busy & (!Axi_R_or_W| !s_awvalid);
 assign s_awready = ~Axi_busy & ( Axi_R_or_W| !s_arvalid);
+
+
+assign ctrl_done = (state == 0) ? 0 : dma_done;
 
 //outstanding transaction
 always@(posedge clk)
@@ -358,7 +362,7 @@ always @(posedge clk or negedge rst_n) begin
         csr_status[`CSR_STATUS_BUSY_BIT] <= (state != S_IDLE);
 
         // Set DONE bit
-        if (state == S_DONE) csr_status[`CSR_STATUS_DONE_BIT] <= 1'b1;
+        if ((state == S_DONE) && (start_signal == 1)) csr_status[`CSR_STATUS_DONE_BIT] <= 1'b1;
         
         // Set ERROR bits
         // if (dma_error) csr_status[`CSR_STATUS_DMA_ERR_BIT] <= 1'b1;

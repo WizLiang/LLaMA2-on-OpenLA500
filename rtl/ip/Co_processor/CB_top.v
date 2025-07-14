@@ -21,6 +21,7 @@ module CB_top #(
 //clk & rst
     input clk,
     input rst_n,
+    output CB_done,
 
 //AXI Slave bus
     //aw
@@ -123,6 +124,8 @@ module CB_top #(
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
 
+assign CB_done = ctrl_done;
+
 //DMA
 wire                       cmd_valid;       // DMA 命令有效
 wire                       cmd_ready;       // 控制器就绪
@@ -134,6 +137,7 @@ wire                       cmd_rw;          // 0=读, 1=写
 wire [9:0]                 cmd_len;         // 传输字节数
 wire [2:0]                 cmd_size;        // AXI beat 大小 (0=1B,1=2B,2=4B,…)
 wire                       dma_done; 
+wire                       ctrl_done;       // DMA 启动信号 
 //wire [STRB_WD-1:0]         R_strobe;        // 读通道 byte-enable（不需可接全 1）
 
     wire [1:0]                 dma_target_sram; // 00=Vec, 01=Weight, 10=Output, 11=Reserved
@@ -223,6 +227,7 @@ CB_Controller u_controller(
     .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
     .cmd_len        (cmd_len),     // 单位：Byte
     .dma_done       (dma_done),
+    .ctrl_done      (ctrl_done),   // 控制器完成信号
 
     //TODO: MAC_Engine
     .mac_start(mac_start),
