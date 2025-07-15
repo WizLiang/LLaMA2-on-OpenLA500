@@ -50,7 +50,7 @@ module CB_Controller (
     output  reg     [31: 0] cmd_dst_addr,
     output  reg     [1:0]   cmd_burst,  //00 INCR
     output  reg             cmd_rw, // 0 = r
-    output  reg     [9:0]   cmd_len,
+    output  reg     [15:0]  cmd_len,    //TODO 可能需要扩大
     input   wire            dma_done,
     output  wire            ctrl_done, 
 
@@ -111,6 +111,29 @@ reg [31:0] csr_ctrl, csr_status, csr_err_code;
 reg [31:0] csr_vi_base, csr_mi_base, csr_vo_base;
 reg [31:0] csr_rows, csr_cols;
 
+
+//======================================================================
+//==                         硬件分块寄存器                            ==
+//======================================================================
+
+//TODO 当前情况建立在cpu停顿不会继续写入任务参数，因此可以直接使用csr参数
+// 如果cpu非停顿，则需要锁存参数
+
+reg [31:0] row_offset_counter; // 已处理的行数偏移量
+
+// 当前块的动态参数
+wire [31:0] remaining_rows = csr_rows - row_offset_counter;
+wire [31:0] current_rows;
+localparam HW_MAX_ROWS = 32; // 定义硬件引擎一次能处理的最大行数
+
+// 计算当前块的行数，处理最后不足32行的边界情况
+assign current_rows = (remaining_rows >= HW_MAX_ROWS) ? HW_MAX_ROWS : remaining_rows;
+
+// 计算当前块的地址
+wire [31:0] current_mi_addr = csr_mi_base + (row_offset_counter * csr_cols * 4);   //单位为字节数
+wire [31:0] current_vi_addr = csr_vi_base + (row_offset_counter * 4); //单位为字节数
+wire [31:0] current_vo_addr = csr_vo_base + (row_offset_counter * 4); //单位为字节数
+
 //======================================================================
 //==                  AXI4-Lite Slave Interface Logic                 ==
 //======================================================================
@@ -133,7 +156,7 @@ assign s_arready = ~Axi_busy & (!Axi_R_or_W| !s_awvalid);
 assign s_awready = ~Axi_busy & ( Axi_R_or_W| !s_arvalid);
 
 
-assign ctrl_done = (state == 0) ? 0 : dma_done;
+assign ctrl_done = (state != S_WAIT_VO_DONE) ? 0 : dma_done;
 
 //outstanding transaction
 always@(posedge clk)
@@ -190,20 +213,6 @@ always@(posedge clk)
     else if(aw_enter) s_wready <= 1'b1;
     else if(w_enter & s_wlast) s_wready <= 1'b0;
 
-// assign rdata_d =
-//        (buf_addr[15:0] == `REG_CTRL_ADDR     ) ? csr_ctrl      :
-//        (buf_addr[15:0] == `REG_STATUS_ADDR   ) ? csr_status    :
-//        (buf_addr[15:0] == `REG_ERR_CODE_ADDR ) ? csr_err_code  :
-
-//        (buf_addr[15:0] == `REG_VI_BASE_ADDR  ) ? csr_vi_base   :
-//        (buf_addr[15:0] == `REG_MI_BASE_ADDR  ) ? csr_mi_base   :
-//        (buf_addr[15:0] == `REG_VO_BASE_ADDR  ) ? csr_vo_base   :
-
-//        (buf_addr[15:0] == `REG_ROWS_ADDR     ) ? csr_rows      :
-//        (buf_addr[15:0] == `REG_COLS_ADDR     ) ? csr_cols      :
-
-//                                                32'h0;          // default
-
 always@(posedge clk)
     if(~rst_n) begin
         s_rdata  <= 'b0;
@@ -238,14 +247,16 @@ assign s_rresp = 2'b0;
 parameter   S_IDLE         = 4'd0, 
             S_DMA_VI       = 4'd1, 
             S_WAIT_VI_DONE = 4'd2,
-            S_DMA_MI       = 4'd3, 
-            S_WAIT_MI_DONE = 4'd4, 
-            S_COMPUTE      = 4'd5,
-            S_WAIT_COMPUTE = 4'd6, 
-            S_DMA_VO       = 4'd7, 
-            S_WAIT_VO_DONE = 4'd8,
-            S_DONE         = 4'd9, 
-            S_ERROR        = 4'd10;
+            S_LOOP_START   = 4'd3,
+            S_DMA_MI       = 4'd4, 
+            S_WAIT_MI_DONE = 4'd5, 
+            S_COMPUTE      = 4'd6,
+            S_WAIT_COMPUTE = 4'd7, 
+            S_DMA_VO       = 4'd8, 
+            S_WAIT_VO_DONE = 4'd9,
+            S_UPDATE_OFFSET = 4'd10,
+            S_DONE         = 4'd11, 
+            S_ERROR        = 4'd12;
 
 reg [3:0] state, next_state;
 
@@ -257,6 +268,18 @@ always @(posedge clk or negedge rst_n) begin
     else state <= next_state;
 end
 
+always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+        row_offset_counter <= 32'h0;
+    end else if (state == S_IDLE && next_state != S_IDLE) begin
+        // 当从IDLE启动新任务时，清零计数器
+        row_offset_counter <= 32'h0;
+    end else if (state == S_UPDATE_OFFSET) begin
+        // 仅在 S_UPDATE_OFFSET 状态的下一个时钟沿更新
+        row_offset_counter <= row_offset_counter + current_rows;
+    end
+end
+
 always @(*) begin
     // Default assignments
     next_state   = state;
@@ -265,39 +288,53 @@ always @(*) begin
     cmd_dst_addr = 32'h0;
     cmd_rw       = 1'b0; // Default to read
     cmd_burst    = 2'b00; // INCR
-    cmd_len      = 10'd32;   //TODO: 目前传输8字节
+    cmd_len      = 16'd0;   //TODO: 目前传输32字节,8个浮点
     mac_start    = 1'b0;
     mac_access_mode = 1'b0; // 默认计算模式
     dma_target_sram = 2'b00; // 00=Vec
 
     case (state)
-        S_IDLE: if (start_signal) next_state = S_DMA_VI;
+        S_IDLE: begin
+            if (start_signal) next_state = S_DMA_VI;
+        end
+        // 向量加载仅在开始的时候加载一次即可
         S_DMA_VI: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b00; // 00=Vec
             cmd_valid = 1'b1;
-            cmd_src_addr = csr_vi_base; //ddr中的地址
-            cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //需要写入的ram
+            cmd_src_addr = current_vi_addr; //ddr中的地址
+            cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //TODO 需要修改
             cmd_rw = 1'b0;  //read
-            //cmd_len      = ;
+            cmd_len = csr_cols * 4; // cols个32位浮点数
             if (cmd_ready) begin //dma控制器准备
                 next_state = S_WAIT_VI_DONE;
             end
         end
         S_WAIT_VI_DONE: begin
             mac_access_mode = 1'b1; // 取数据
+            dma_target_sram = 2'b00; // 00=Vec
+            // cmd_len = 16'd4; // 4字节，32位浮点数
             if (dma_done) begin //remove error
-                next_state = S_DMA_MI;
+                next_state = S_LOOP_START; // 进入循环处理状态
             end
         end
+
+        S_LOOP_START: begin // 每次循环的起点
+            if (row_offset_counter >= csr_cols) begin
+                next_state = S_DONE; // 所有行都已处理完毕，任务完成
+            end else begin
+                next_state = S_DMA_MI; // 还有行需要处理，开始加载下一个权重块
+            end
+        end
+
         S_DMA_MI: begin
             mac_access_mode = 1'b1; // 取数据
             // dma_target_sram = 2'b01; // 01=Weight
             cmd_valid = 1'b1;
-            cmd_src_addr = csr_mi_base;
+            cmd_src_addr = current_mi_addr;
             cmd_dst_addr = `BRAM_MI_BASE_ADDR;
             cmd_rw = 1'b0;  //read
-            //TODO len to be fixed
+            cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
             if (cmd_ready) begin //dma控制器准备
                 next_state = S_WAIT_MI_DONE;
             end
@@ -305,6 +342,7 @@ always @(*) begin
         S_WAIT_MI_DONE: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01;
+            // cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
             if (dma_done) begin //remove error
                 next_state = S_COMPUTE;
             end
@@ -326,8 +364,8 @@ always @(*) begin
             dma_target_sram = 2'b10; // 10=Output
             cmd_valid    = 1'b1;
             cmd_src_addr = `BRAM_VO_BASE_ADDR;  //TODO tobe fix
-            cmd_dst_addr = csr_vo_base;
-            //cmd_len      = ;
+            cmd_dst_addr = current_vo_addr;
+            cmd_len      = current_rows * 4; // 输出行数 * 4字节
             cmd_rw       = 1'b1; // Write to DDR
             if (cmd_ready) begin
                 next_state = S_WAIT_VO_DONE;
@@ -335,10 +373,15 @@ always @(*) begin
         end
         S_WAIT_VO_DONE: begin
             cmd_rw       = 1'b1; // Write to DDR
-            if (dma_done) begin
-                next_state = S_DONE;
+            if (dma_done) begin //TODO 增加循环判断
+                next_state = S_UPDATE_OFFSET;
             end
         end
+
+        S_UPDATE_OFFSET: begin
+            next_state = S_LOOP_START; // 返回循环起点
+        end
+
         S_DONE: begin
             if (!start_signal) begin
                 next_state = S_IDLE;
