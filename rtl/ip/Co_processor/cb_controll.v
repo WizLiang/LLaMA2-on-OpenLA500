@@ -50,7 +50,7 @@ module CB_Controller (
     output  reg     [31: 0] cmd_dst_addr,
     output  reg     [1:0]   cmd_burst,  //00 INCR
     output  reg             cmd_rw, // 0 = r
-    output  reg     [15:0]  cmd_len,    //TODO 可能需要扩大
+    output  reg     [10:0]  cmd_len,    //TODO 可能需要扩大
     input   wire            dma_done,
     output  wire            ctrl_done, 
 
@@ -134,6 +134,18 @@ wire [31:0] current_mi_addr = csr_mi_base + (row_offset_counter * csr_cols * 4);
 wire [31:0] current_vi_addr = csr_vi_base + (row_offset_counter * 4); //单位为字节数
 wire [31:0] current_vo_addr = csr_vo_base + (row_offset_counter * 4); //单位为字节数
 
+//DMA分块所需寄存器
+reg [31:0] dma_bytes_total;       // 当前DMA任务需要传输的总字节数
+reg [31:0] dma_bytes_transferred; // 在当前DMA任务中已传输的字节数
+reg [31:0] dma_current_src_addr;  // 当前DMA传输块的源地址
+reg [31:0] dma_current_dst_addr;  // 当前DMA传输块的目的地址
+
+wire [31:0] dma_bytes_remaining = dma_bytes_total - dma_bytes_transferred;
+wire [10:0]  dma_chunk_len;         // 本次DMA传输的长度 (Chunk)
+
+localparam MAX_DMA_LEN = 1024;  //单次最多传输256个浮点数，即1024字节
+// 动态计算本次小块传输的长度
+assign dma_chunk_len = (dma_bytes_remaining >= MAX_DMA_LEN) ? MAX_DMA_LEN : dma_bytes_remaining[10:0];
 //======================================================================
 //==                  AXI4-Lite Slave Interface Logic                 ==
 //======================================================================
@@ -244,19 +256,21 @@ assign s_rresp = 2'b0;
 //======================================================================
 //==              Core Finite State Machine (FSM)                     ==
 //======================================================================
+// TODO 由于vector的长度一般小于最大传输长度256个浮点数，所以暂时不需要更改其状态机
 parameter   S_IDLE         = 4'd0, 
             S_DMA_VI       = 4'd1, 
             S_WAIT_VI_DONE = 4'd2,
             S_LOOP_START   = 4'd3,
-            S_DMA_MI       = 4'd4, 
-            S_WAIT_MI_DONE = 4'd5, 
-            S_COMPUTE      = 4'd6,
-            S_WAIT_COMPUTE = 4'd7, 
-            S_DMA_VO       = 4'd8, 
-            S_WAIT_VO_DONE = 4'd9,
-            S_UPDATE_OFFSET = 4'd10,
-            S_DONE         = 4'd11, 
-            S_ERROR        = 4'd12;
+            S_DMA_MI_INIT  = 4'd4, // 初始化循环状态
+            S_DMA_MI_ISSUE = 4'd5,
+            S_DMA_MI_WAIT  = 4'd6, 
+            S_COMPUTE      = 4'd7,
+            S_WAIT_COMPUTE = 4'd8, 
+            S_DMA_VO       = 4'd9, 
+            S_WAIT_VO_DONE = 4'd10,
+            S_UPDATE_OFFSET = 4'd11,
+            S_DONE         = 4'd12, 
+            S_ERROR        = 4'd13;
 
 reg [3:0] state, next_state;
 
@@ -271,12 +285,28 @@ end
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
         row_offset_counter <= 32'h0;
-    end else if (state == S_IDLE && next_state != S_IDLE) begin
-        // 当从IDLE启动新任务时，清零计数器
-        row_offset_counter <= 32'h0;
-    end else if (state == S_UPDATE_OFFSET) begin
-        // 仅在 S_UPDATE_OFFSET 状态的下一个时钟沿更新
-        row_offset_counter <= row_offset_counter + current_rows;
+        dma_bytes_transferred <= 32'h0;
+        dma_bytes_total <= 32'h0;
+        
+    end else begin
+
+        if (state == S_DMA_MI_INIT) begin
+            dma_bytes_transferred <= 32'h0; // 初始化DMA传输计数器
+        end 
+        else if ((state == S_DMA_MI_WAIT) && (next_state == S_DMA_MI_ISSUE)) begin
+            dma_bytes_transferred <= dma_bytes_transferred + dma_chunk_len;
+            dma_current_src_addr <= dma_current_src_addr + dma_bytes_transferred;
+            dma_current_dst_addr <= dma_current_dst_addr + dma_bytes_transferred;
+        end
+
+        if (state == S_IDLE && next_state != S_IDLE) begin
+            // 当从IDLE启动新任务时，清零计数器
+            row_offset_counter <= 32'h0;
+        end else if (state == S_UPDATE_OFFSET) begin
+            // 仅在 S_UPDATE_OFFSET 状态的下一个时钟沿更新
+            row_offset_counter <= row_offset_counter + current_rows;
+        end
+
     end
 end
 
@@ -284,11 +314,11 @@ always @(*) begin
     // Default assignments
     next_state   = state;
     cmd_valid    = 1'b0;
-    cmd_src_addr = 32'h0;
-    cmd_dst_addr = 32'h0;
+    cmd_src_addr = dma_current_src_addr;
+    cmd_dst_addr = dma_current_dst_addr;
     cmd_rw       = 1'b0; // Default to read
     cmd_burst    = 2'b00; // INCR
-    cmd_len      = 16'd0;   //TODO: 目前传输32字节,8个浮点
+    cmd_len      = dma_chunk_len;   //TODO: 目前传输32字节,8个浮点
     mac_start    = 1'b0;
     mac_access_mode = 1'b0; // 默认计算模式
     dma_target_sram = 2'b00; // 00=Vec
@@ -323,28 +353,35 @@ always @(*) begin
             if (row_offset_counter >= csr_cols) begin
                 next_state = S_DONE; // 所有行都已处理完毕，任务完成
             end else begin
-                next_state = S_DMA_MI; // 还有行需要处理，开始加载下一个权重块
+                next_state = S_DMA_MI_INIT; // 还有行需要处理，开始加载下一个权重块
             end
         end
 
-        S_DMA_MI: begin
+        S_DMA_MI_INIT: begin
             mac_access_mode = 1'b1; // 取数据
-            // dma_target_sram = 2'b01; // 01=Weight
-            cmd_valid = 1'b1;
-            cmd_src_addr = current_mi_addr;
-            cmd_dst_addr = `BRAM_MI_BASE_ADDR;
-            cmd_rw = 1'b0;  //read
-            cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
-            if (cmd_ready) begin //dma控制器准备
-                next_state = S_WAIT_MI_DONE;
+            dma_target_sram = 2'b01; // 01=Weight
+            dma_bytes_total = current_rows * csr_cols * 4; // 当前块的总字节数
+            dma_current_src_addr = current_mi_addr;
+            dma_current_dst_addr = `BRAM_MI_BASE_ADDR;
+            next_state = S_DMA_MI_ISSUE; // 进入DMA传输状态
+        end
+        S_DMA_MI_ISSUE: begin
+            mac_access_mode = 1'b1; // 取数据
+            dma_target_sram = 2'b01; // 01=Weight
+            if (dma_bytes_transferred < dma_bytes_total) begin
+                cmd_valid = 1'b1;
+                cmd_rw = 1'b0; // Read from DDR
+                if (cmd_ready) next_state = S_DMA_MI_WAIT; // 等待DMA传输完成
+            end else begin
+                next_state = S_COMPUTE;
             end
         end
-        S_WAIT_MI_DONE: begin
+        S_DMA_MI_WAIT: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01;
             // cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
             if (dma_done) begin //remove error
-                next_state = S_COMPUTE;
+                next_state = S_DMA_MI_ISSUE;
             end
         end
         S_COMPUTE: begin

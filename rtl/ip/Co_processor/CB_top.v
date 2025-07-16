@@ -134,7 +134,7 @@ wire [31:0]                cmd_src_addr;    // 源地址
 wire [31:0]                cmd_dst_addr;    // 目的地址
 wire [1:0]                 cmd_burst;       // 00=INCR, 01=FIXED, 10=WRAP
 wire                       cmd_rw;          // 0=读, 1=写
-wire [15:0]                cmd_len;         // 传输字节数
+wire [10:0]                cmd_len;         // 传输字节数
 wire [2:0]                 cmd_size;        // AXI beat 大小 (0=1B,1=2B,2=4B,…)
 wire                       dma_done; 
 wire                       ctrl_done;       // DMA 启动信号 

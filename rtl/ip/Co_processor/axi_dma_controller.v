@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-
+// TODO 位宽需要修正
  //`default_nettype none
   module axi_dma_controller #(
       parameter integer ADDR_WD = 32,
@@ -20,7 +20,7 @@
     input  wire [ADDR_WD-1 : 0] cmd_dst_addr,
     input  wire [1:0]           cmd_burst,  //00 INCR
     input  wire                 cmd_rw, // 0 = r
-    input  wire [9: 0]          cmd_len,    //Size of data (B)
+    input  wire [10: 0]         cmd_len,    //Size of data (B)
     input  wire [2:0]           cmd_size,   //AXI Beat Size
     output wire                 dma_done,
 
