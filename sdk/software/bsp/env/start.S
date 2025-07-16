@@ -73,17 +73,17 @@ _start:
     csrxchg	$r12,$r13,0x0
 
     /* load data section */
-	la.local t0, _data_lma
-	la.local t1, _data
-	la.local t2, _edata
-	bgeu t1, t2, 2f
-1:
-	ld.w t3, t0, 0
-	st.w t3, t1, 0
-	addi.w t0, t0, 4
-	addi.w t1, t1, 4
-	bltu t1, t2, 1b
-2:
+#	la.local t0, _data_lma
+#	la.local t1, _data
+#	la.local t2, _edata
+#	bgeu t1, t2, 2f
+#1:
+#	ld.d t3, t0, 0
+#	st.d t3, t1, 0
+#	addi.d t0, t0, 8
+#	addi.d t1, t1, 8
+#	bltu t1, t2, 1b
+#2:
 
 	/* clear bss section */
 	la.local t0, __bss_start
