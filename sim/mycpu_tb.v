@@ -172,7 +172,7 @@ soc_top #(.SIMULATION(1'b1))  u_soc_top (
  end
 
 sram_sp #(
-    .AW        ( 18     ),
+    .AW        ( 18+3     ),
     .Init_File(`SRAM_Init_File))
 base_sram_sp (
     .ram_addr                ( base_ram_addr   ),
@@ -185,7 +185,7 @@ base_sram_sp (
 );
 
 sram_sp #(
-    .AW        ( 18     ),
+    .AW        ( 18+3     ),
     .Init_File(`SRAM_Init_File))
 ext_sram_sp (
     .ram_addr                ( ext_ram_addr   ),

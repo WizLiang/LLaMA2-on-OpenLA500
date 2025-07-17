@@ -37,6 +37,7 @@
 // Board Support Package (BSP) Globals for Bare-Metal Target
 // These variables would be configured for the specific hardware.
 unsigned long UART_BASE = 0xbf000000;              // UART16550的虚地址
+unsigned long CB_BASE = 0xbf100000;
 unsigned long CONFREG_TIMER_BASE = 0xbf20f100;      // CONFREG计数器的虚地址
 unsigned long CONFREG_CLOCKS_PER_SEC = 50000000L;   // CONFREG时钟频率
 unsigned long CORE_CLOCKS_PER_SEC = 33000000L;      // 处理器核时钟频率
@@ -47,6 +48,7 @@ unsigned long CORE_CLOCKS_PER_SEC = 33000000L;      // 处理器核时钟频率
 // They contain the raw model and tokenizer data as C arrays.
 #include "stories_data.h" // Defines stories_bin[] and stories_bin_len
 #include "tok512.h"       // Defines tok512_bin[] and tok512_bin_len
+#include "hw_accelerator.h" // Hardware accelerator definitions
 
 // ----------------------------------------------------------------------------
 
@@ -139,8 +141,8 @@ void malloc_run_state(RunState* s, Config* p) {
     // s->v = calloc(kv_dim, sizeof(float));
     s->att = calloc(p->n_heads * p->seq_len, sizeof(float));
     s->logits = calloc(p->vocab_size, sizeof(float));
-    s->key_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
-    s->value_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));
+    s->key_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));    //30ms
+    s->value_cache = calloc(p->n_layers * p->seq_len * kv_dim, sizeof(float));  //30ms
     // ensure all mallocs were successful
     if (!s->x || !s->xb || !s->xb2 || !s->hb || !s->hb2 || !s->q
      || !s->att || !s->logits || !s->key_cache || !s->value_cache) {
@@ -264,19 +266,48 @@ void softmax(float* x, int size) {
     }
 }
 
+// void matmul(float* xout, float* x, float* w, int n, int d) {
+//     // W (d,n) @ x (n,) -> xout (d,)
+//     // by far the most amount of time is spent inside this function
+//     int i;
+//     #pragma omp parallel for private(i)
+//     for (i = 0; i < d; i++) {
+//         float val = 0.0f;
+//         for (int j = 0; j < n; j++) {
+//             val += w[i * n + j] * x[j];
+//         }
+//         xout[i] = val;
+//     }
+// }
+
 void matmul(float* xout, float* x, float* w, int n, int d) {
-    // W (d,n) @ x (n,) -> xout (d,)
-    // by far the most amount of time is spent inside this function
-    int i;
-    #pragma omp parallel for private(i)
-    for (i = 0; i < d; i++) {
-        float val = 0.0f;
-        for (int j = 0; j < n; j++) {
-            val += w[i * n + j] * x[j];
-        }
-        xout[i] = val;
-    }
+    // 硬件控制器将负责内部的分块循环和地址计算。
+
+    // --- 1. 配置硬件加速器，提供整个大任务的参数 ---
+    
+    // 设置整个权重矩阵 w、输入向量 x 和输出向量 xout 的起始基地址。
+    cb_write(REG_MI_BASE_ADDR, (unsigned long)w);
+    cb_write(REG_VI_BASE_ADDR, (unsigned long)x);
+    cb_write(REG_VO_BASE_ADDR, (unsigned long)xout);
+
+    // 设置整个任务的总维度 (例如，对于64x64矩阵，d=64, n=64)。
+    cb_write(REG_ROWS_ADDR, d);
+    cb_write(REG_COLS_ADDR, n);
+
+    // --- 2. 启动硬件引擎 ---
+    // 发送一个启动命令。硬件控制器收到后，将开始其内部分块循环。
+    cb_write(REG_CTRL_ADDR, CSR_CTRL_START_BIT);
+
+    // --- 3. 等待硬件完成整个大任务 (等待一次中断) ---
+    // CPU进入休眠，等待硬件处理完所有分块后发出的唯一一次完成中断。
+    cpu_idle();
+
+    // --- 4. 应答中断 ---
+    // 唤醒后，清除硬件的中断状态。
+    cb_write(REG_CTRL_ADDR, 0);
+    
 }
+
 
 float* forward(Transformer* transformer, int token, int pos) {
 
