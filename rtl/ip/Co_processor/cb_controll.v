@@ -333,7 +333,7 @@ always @(*) begin
             dma_target_sram = 2'b00; // 00=Vec
             cmd_valid = 1'b1;
             cmd_src_addr = current_vi_addr; //ddr中的地址
-            cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //TODO 需要修改
+            // cmd_dst_addr = `BRAM_VI_BASE_ADDR;  //TODO 需要修改
             cmd_rw = 1'b0;  //read
             cmd_len = csr_cols * 4; // cols个32位浮点数
             if (cmd_ready) begin //dma控制器准备

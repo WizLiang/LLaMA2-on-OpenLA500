@@ -151,67 +151,137 @@ wire                       ctrl_done;       // DMA 启动信号
     wire [DATA_WD-1:0] dma_sram_rdata; // 从 MAC 输入到 DMA
 
     // 连接到mac_top的Weight SRAM的写端口
-    wire mac_w_sram_we;
-    wire [MAC_SRAM_W_ADDR_WIDTH-1:0] mac_w_sram_waddr;
-    wire [MAC_SRAM_W_DATA_WIDTH-1:0] mac_w_sram_wdata;
+    reg  mac_w_sram_we;
+    reg  [MAC_SRAM_W_ADDR_WIDTH-1:0] mac_w_sram_waddr;
+    reg  [MAC_SRAM_W_DATA_WIDTH-1:0] mac_w_sram_wdata;
 
     // 连接到mac_top的Vector SRAM的写端口
-    wire mac_v_sram_we;
-    wire [MAC_SRAM_V_ADDR_WIDTH-1:0] mac_v_sram_waddr;
-    wire [MAC_SRAM_V_DATA_WIDTH-1:0] mac_v_sram_wdata;
+    reg  mac_v_sram_we;
+    reg  [MAC_SRAM_V_ADDR_WIDTH-1:0] mac_v_sram_waddr;
+    reg  [MAC_SRAM_V_DATA_WIDTH-1:0] mac_v_sram_wdata;
 
     // 连接到mac_top的Outcome SRAM的读端口
     wire [MAC_SRAM_O_ADDR_WIDTH-1:0] mac_o_sram_raddr;
     wire [MAC_SRAM_O_DATA_WIDTH-1:0] mac_o_sram_rdata;
 
+    // DMA 读 (主存 -> SRAM) 路径所需的寄存器
+    reg  [MAC_SRAM_W_DATA_WIDTH-1:0] mat_sram_write_buffer; // 1024位写缓冲器，用于拼接数据
+    reg  [$clog2(MAC_SRAM_W_DATA_WIDTH/DATA_WD)-1:0] mat_write_sub_cnt; // 0-31计数器
+    reg  [MAC_SRAM_W_ADDR_WIDTH-1:0] mat_sram_addr_cnt;
+
+    // DMA 写 (SRAM -> 主存) 路径所需的寄存器
+    reg  [MAC_SRAM_O_DATA_WIDTH-1:0] out_sram_read_buffer;  // 1024位读缓冲器，用于锁存和切片
+    reg  [$clog2(MAC_SRAM_O_DATA_WIDTH/DATA_WD)-1:0] out_read_sub_cnt;  // 0-31切片计数器
+
+    // 连接到 DMA 的 sram_rdata 的 MUX 输出
+    wire [DATA_WD-1:0] muxed_sram_rdata;
+
 assign cmd_size = 2'b10;
 
-// 路由器
-// always @(*) begin
-//     // 默认值
-//     mac_w_sram_we = 1'b0;
-//     mac_v_sram_we = 1'b0;
-//     mac_w_sram_waddr = 0;
-//     mac_v_sram_waddr = 0;
-//     mac_w_sram_wdata = 0;
-//     mac_v_sram_wdata = 0;
-//     mac_o_sram_raddr = 0;
 
-//     case (dma_target_sram)
-//         2'b00: begin // 目标: Vector SRAM
-//             mac_v_sram_we    = dma_sram_we;
-//             mac_v_sram_waddr = dma_sram_addr;
-//             mac_v_sram_wdata = dma_sram_wdata;
-//         end
-//         2'b01: begin // 目标: Weight SRAM
-//             mac_w_sram_we    = dma_sram_we;
-//             mac_w_sram_waddr = dma_sram_addr;
-//             mac_w_sram_wdata = dma_sram_wdata;
-//         end
-//         2'b10: begin // 目标: Outcome SRAM (这是读操作)
-//             // DMA 的读数据来自 MAC 的 Outcome SRAM 读数据端口
-//             dma_sram_rdata = mac_o_sram_rdata;
-//             // DMA 的读地址驱动 MAC 的 Outcome SRAM 读地址端口
-//             mac_o_sram_raddr = dma_sram_addr;
-//         end
-//         default: ;
-//     endcase
-// end
+// assign mac_v_sram_we    = (dma_target_sram == 2'b00) ? dma_sram_we    : 1'b0;
+// assign mac_v_sram_waddr = (dma_target_sram == 2'b00) ? dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0]  : 0;
+// assign mac_v_sram_wdata = (dma_target_sram == 2'b00) ? dma_sram_wdata : 0;
 
 
-assign mac_v_sram_we    = (dma_target_sram == 2'b00) ? dma_sram_we    : 1'b0;
-assign mac_v_sram_waddr = (dma_target_sram == 2'b00) ? dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0]  : 0;
-assign mac_v_sram_wdata = (dma_target_sram == 2'b00) ? dma_sram_wdata : 0;
+// assign mac_w_sram_we    = (dma_target_sram == 2'b01) ? dma_sram_we    : 1'b0;
+// assign mac_w_sram_waddr = (dma_target_sram == 2'b01) ? dma_sram_waddr[MAC_SRAM_W_ADDR_WIDTH-1:0]  : 0;
+// assign mac_w_sram_wdata = (dma_target_sram == 2'b01) ? dma_sram_wdata : 0;
 
 
-assign mac_w_sram_we    = (dma_target_sram == 2'b01) ? dma_sram_we    : 1'b0;
-assign mac_w_sram_waddr = (dma_target_sram == 2'b01) ? dma_sram_waddr[MAC_SRAM_W_ADDR_WIDTH-1:0]  : 0;
-assign mac_w_sram_wdata = (dma_target_sram == 2'b01) ? dma_sram_wdata : 0;
+// assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0]  : 0;
+
+// assign dma_sram_rdata   = (dma_target_sram == 2'b10) ? mac_o_sram_rdata : 0;
 
 
-assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0]  : 0;
+// --- 路径 1: DMA 读 (DDR -> SRAM)，数据写入本地 SRAM ---
 
-assign dma_sram_rdata   = (dma_target_sram == 2'b10) ? mac_o_sram_rdata : 0;
+always @(posedge clk) begin
+    if (!rst_n) begin
+        mac_v_sram_we <= 1'b0;
+        mac_w_sram_we <= 1'b0;
+        mat_sram_write_buffer <= 'd0;
+        mat_write_sub_cnt <= 'd0;
+        mac_w_sram_wdata <= 'd0;
+        mac_v_sram_waddr <= 'd0;
+        mac_v_sram_wdata <= 'd0;
+        mac_w_sram_waddr <= 'd0;
+        mat_sram_addr_cnt <= 'd0;
+    end 
+    else begin
+        // 默认情况下，关闭写使能
+        mac_v_sram_we <= 1'b0;
+        mac_w_sram_we <= 1'b0;
+
+        if (dma_sram_we) begin // 当DMA控制器想要写SRAM时
+            case (dma_target_sram)
+                2'b00: begin // 目标: 32位 Vector SRAM
+                    // 直通逻辑
+                    mac_v_sram_we    <= 1'b1;
+                    mac_v_sram_waddr <= dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0];
+                    mac_v_sram_wdata <= dma_sram_wdata;
+                end
+                
+                2'b01: begin // 目标: 1024位 Weight SRAM
+                    // 拼接逻辑
+                    mat_sram_write_buffer[mat_write_sub_cnt * DATA_WD +: DATA_WD] <= dma_sram_wdata;
+                    mat_write_sub_cnt <= mat_write_sub_cnt + 1;
+
+                    if (mat_write_sub_cnt == (MAC_SRAM_W_DATA_WIDTH/DATA_WD - 1)) begin
+                        // 缓冲区满了，触发一次1024位的写操作
+                        mac_w_sram_we    <= 1'b1;
+                        mac_w_sram_waddr <= mat_sram_addr_cnt;
+                        mac_w_sram_wdata <= mat_sram_write_buffer;
+                        mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
+                        mat_write_sub_cnt <= 'd0; // 计数器清零
+                    end
+                end
+                default: ;
+            endcase
+        end
+    end
+end
+
+
+// --- 路径 2: DMA 写 (SRAM -> DDR)，从本地 SRAM 读取数据 ---
+
+// Part A: 地址路由 (组合逻辑)
+// 将DMA的读地址请求路由到正确的SRAM
+assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0] / (MAC_SRAM_O_DATA_WIDTH/DATA_WD) : 'd0;
+// 注意：这里假设Vector SRAM和Weight SRAM在当前设计中不被DMA回读，如果需要，可以添加相应逻辑
+
+
+// Part B: 数据锁存和切片控制 (时序逻辑)
+always @(posedge clk) begin
+    if (!rst_n) begin
+        out_sram_read_buffer <= 'd0;
+        out_read_sub_cnt     <= 'd0;
+    end
+    else begin
+        // 当目标是 Outcome SRAM (1024位) 且一个字块的传输刚开始时，锁存新数据
+        // 判断开始的条件可以是 sub_cnt=0 并且 DMA 有效
+        if ((dma_target_sram == 2'b10) && (out_read_sub_cnt == 0) && (cmd_valid && cmd_rw)) begin
+             out_sram_read_buffer <= mac_o_sram_rdata;
+        end
+
+        // 当DMA成功将一个32位数据写入AXI总线后，更新切片计数器
+        if (m_wvalid && m_wready) begin
+            if (out_read_sub_cnt == (MAC_SRAM_O_DATA_WIDTH/DATA_WD - 1)) begin
+                out_read_sub_cnt <= 'd0;
+            end else begin
+                out_read_sub_cnt <= out_read_sub_cnt + 1;
+            end
+        end
+    end
+end
+
+// Part C: 数据选择 MUX (组合逻辑)
+// 根据目标SRAM和切片计数器，将正确的数据喂给DMA
+assign muxed_sram_rdata = (dma_target_sram == 2'b10) 
+                        ? out_sram_read_buffer >> (out_read_sub_cnt * 32)
+                        : 32'hDEADBEEF; // 默认或用于其他SRAM的路径
+
+assign dma_sram_rdata = muxed_sram_rdata;
 
 
 CB_Controller u_controller(

@@ -265,8 +265,8 @@ end
             r_read_cnt <= r_read_cnt + 1;
         end
         else begin
-            r_read_cnt <= r_read_cnt;
-            mem[r_read_cnt] <= mem[r_read_cnt];
+            r_read_cnt <= 0;
+            mem[r_read_cnt] <= mem[r_read_cnt]; // test to be removed
             sram_we <= 1'b0;
         end
     end
