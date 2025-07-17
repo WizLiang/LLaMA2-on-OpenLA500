@@ -294,6 +294,8 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     cb_write(REG_ROWS_ADDR, d);
     cb_write(REG_COLS_ADDR, n);
 
+    //TODO cache flush
+
     // --- 2. 启动硬件引擎 ---
     // 发送一个启动命令。硬件控制器收到后，将开始其内部分块循环。
     cb_write(REG_CTRL_ADDR, CSR_CTRL_START_BIT);
