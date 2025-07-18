@@ -448,10 +448,13 @@ end
             end else begin
                 r_write_cnt <= r_write_cnt + 1;
             end
-        end else if (r_m_axi_wlast) begin
+        end else if (write_finish) begin
             // 在最后一个数据发送后，复位 wlast 和计数器
             r_m_axi_wlast <= 1'b0;
             r_write_cnt <= 'd0;
+        end else begin
+            r_write_cnt <= r_write_cnt;
+            r_m_axi_wlast <= r_m_axi_wlast;
         end
     end
 

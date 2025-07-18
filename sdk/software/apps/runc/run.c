@@ -51,6 +51,7 @@ unsigned long CORE_CLOCKS_PER_SEC = 33000000L;      // 处理器核时钟频率
 #include "hw_accelerator.h" // Hardware accelerator definitions
 
 // ----------------------------------------------------------------------------
+int matmul_call_count = 0;
 
 static inline void cpu_idle(void)
 {
@@ -279,12 +280,35 @@ void softmax(float* x, int size) {
 //         xout[i] = val;
 //     }
 // }
-
+static int matmul_mismatch_count = 0;
+#define EPSILON 1e-6f
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // 硬件控制器将负责内部的分块循环和地址计算。
-
-    // --- 1. 配置硬件加速器，提供整个大任务的参数 ---
+    matmul_call_count++;
+    printf("matmul call #%d: xout=%p, x=%p, w=%p, n=%d, d=%d\n",
+           matmul_call_count, (void*)xout, (void*)x, (void*)w, n, d);
+    printf("matmul_call_count is %d\n",matmul_call_count);
     
+
+    printf("Go into matmul!\n");
+    //count by cpu
+    float* cpu_out = (float*)malloc(sizeof(float) * d);
+    if (!cpu_out) {
+        fprintf(stderr, "matmul: failed to malloc cpu_out\n");
+        return;
+    }
+
+    // CPU 版本计算
+    #pragma omp parallel for
+    for (int i = 0; i < d; i++) {
+        float sum = 0.0f;
+        for (int j = 0; j < n; j++) {
+            sum += w[i * n + j] * x[j];
+        }
+        cpu_out[i] = sum;
+    }
+
+
     // 设置整个权重矩阵 w、输入向量 x 和输出向量 xout 的起始基地址。
     cb_write(REG_MI_BASE_ADDR, (unsigned long)w);
     cb_write(REG_VI_BASE_ADDR, (unsigned long)x);
@@ -303,10 +327,28 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     // --- 3. 等待硬件完成整个大任务 (等待一次中断) ---
     // CPU进入休眠，等待硬件处理完所有分块后发出的唯一一次完成中断。
     cpu_idle();
+    printf("CB answered, the %d time Done!\n",matmul_call_count);
 
     // --- 4. 应答中断 ---
     // 唤醒后，清除硬件的中断状态。
     cb_write(REG_CTRL_ADDR, 0);
+
+        for (int i = 0; i < d; i++) {
+        float a = cpu_out[i];
+        float b = xout[i];
+        if (fabsf(a - b) > EPSILON) {
+            matmul_mismatch_count++;
+            printf("  [Mismatch] idx=%d, CPU=%f, CB=%f, diff=%f\n",
+                   i, a, b, fabsf(a - b));
+        }
+    }
+    if (matmul_mismatch_count == 0) {
+        printf("  All %d elements match ✅\n", d);
+    } else {
+        printf("  *** Total mismatches: %d ***\n", matmul_mismatch_count);
+    }
+
+    free(cpu_out);
     
 }
 
