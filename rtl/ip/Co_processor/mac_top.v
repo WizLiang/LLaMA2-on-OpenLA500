@@ -60,9 +60,9 @@ module mac_top #(
     wire [$clog2(SRAM_O_DEPTH)-1:0] final_raddr_o;
 
     // SRAM 读地址切换
-    assign final_raddr_w = (dma_access_mode) ? 'd0 : sram_w_addr; // DMA模式下不读
-    assign final_raddr_v = (dma_access_mode) ? 'd0 : sram_v_addr; // DMA模式下不读
-    assign final_raddr_o = (dma_access_mode) ? dma_o_sram_raddr : 0; // 计算模式下不读
+    assign final_raddr_w = (dma_access_mode) ? 'd0 : sram_w_addr; // 0模式（计算）下读，1模式下加载数据
+    assign final_raddr_v = (dma_access_mode) ? 'd0 : sram_v_addr; // 0模式（计算）下读，1模式下加载数据
+    assign final_raddr_o = (dma_access_mode) ? dma_o_sram_raddr : 0; // 计算模式下不读，1模式下读取
 
 
     //========================================================================
@@ -73,8 +73,8 @@ module mac_top #(
     // Instantiate the weight SRAM (for Matrix A)
     sram #(
         .DATA_WIDTH(SRAM_DATA_WIDTH),
-        .ADDR_WIDTH($clog2(SRAM_W_DEPTH)),
-        .INIT_FILE("E://IC//Matrix_coaccelerator//vsrc//weights.mem")
+        .ADDR_WIDTH($clog2(SRAM_W_DEPTH))
+        // .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
     ) sram_w_inst (
         .clk(clk),
         .csb(1'b0), // Chip select is always active for simplicity
@@ -88,8 +88,8 @@ module mac_top #(
     // Instantiate the vector SRAM (for Vector B)
     sram #(
         .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH($clog2(SRAM_V_DEPTH)),
-        .INIT_FILE("E://IC//Matrix_coaccelerator//vsrc//vector.mem")
+        .ADDR_WIDTH($clog2(SRAM_V_DEPTH))
+        // .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//vector.mem")
     ) sram_v_inst (
         .clk(clk),
         .csb(1'b0),

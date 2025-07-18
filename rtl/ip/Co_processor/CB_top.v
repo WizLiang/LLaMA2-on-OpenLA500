@@ -248,7 +248,6 @@ end
 // Part A: 地址路由 (组合逻辑)
 // 将DMA的读地址请求路由到正确的SRAM
 assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0] / (MAC_SRAM_O_DATA_WIDTH/DATA_WD) : 'd0;
-// 注意：这里假设Vector SRAM和Weight SRAM在当前设计中不被DMA回读，如果需要，可以添加相应逻辑
 
 
 // Part B: 数据锁存和切片控制 (时序逻辑)
