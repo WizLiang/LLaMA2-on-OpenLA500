@@ -41,6 +41,9 @@ module CB_Controller (
     // Global Clock and Reset
     input               clk,
     input               rst_n,
+    
+    //Debug Interface
+    output  [3:0]       debug_state,
 
     // --- Interfaces to Internal Engines ---
     // DMA Controller Interface
@@ -143,7 +146,7 @@ reg [31:0] dma_current_dst_addr;  // 当前DMA传输块的目的地址
 wire [31:0] dma_bytes_remaining = dma_bytes_total - dma_bytes_transferred;
 wire [10:0]  dma_chunk_len;         // 本次DMA传输的长度 (Chunk)
 
-localparam MAX_DMA_LEN = 1024;  //单次最多传输256个浮点数，即1024字节
+localparam MAX_DMA_LEN = 512;  //单次最多传输256个浮点数，即1024字节
 // 动态计算本次小块传输的长度
 assign dma_chunk_len = (dma_bytes_remaining >= MAX_DMA_LEN) ? MAX_DMA_LEN : dma_bytes_remaining[10:0];
 //======================================================================
@@ -362,7 +365,7 @@ always @(*) begin
             dma_target_sram = 2'b01; // 01=Weight
             dma_bytes_total = current_rows * csr_cols * 4; // 当前块的总字节数
             dma_current_src_addr = current_mi_addr;
-            dma_current_dst_addr = `BRAM_MI_BASE_ADDR;
+            //dma_current_dst_addr = `BRAM_MI_BASE_ADDR;
             next_state = S_DMA_MI_ISSUE; // 进入DMA传输状态
         end
         S_DMA_MI_ISSUE: begin
@@ -494,5 +497,9 @@ always @(posedge clk or negedge rst_n) begin
         endcase
     end
 end
+
+//Debug signal 
+assign debug_state = state;
+
 
 endmodule

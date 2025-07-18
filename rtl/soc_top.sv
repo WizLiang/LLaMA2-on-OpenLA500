@@ -559,6 +559,8 @@ wire         axiOut_2_rlast;
 // assign axiOut_2_rresp   = 2'b0;
 // assign axiOut_2_rlast   = 1'b0;
 
+wire [3:0]   debug_CB_state;
+
 CB_top u_cb_top(
     .clk                (sys_clk),          
     .rst_n              (sys_resetn),    
@@ -648,9 +650,13 @@ CB_top u_cb_top(
     .s_rresp            (axiOut_2_rresp ),
     .s_rlast            (axiOut_2_rlast ),
     .s_rvalid           (axiOut_2_rvalid),
-    .s_rready           (axiOut_2_rready)
+    .s_rready           (axiOut_2_rready),
+
+    //Debug
+    .debug_state        (debug_CB_state)
 );
 
+assign leds_o = {{12{1'b1}},debug_CB_state};
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;
@@ -1035,7 +1041,7 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
     //board 
     .switch         (dip_sw_i           ),
     .touch_btn      (touch_btn_i        ),
-    .led            (leds_o             ),
+    //.led            (leds_o             ),
     .dpy0           (dpy0_o             ),
     .dpy1           (dpy1_o             ),
     .confreg_int    (confreg_int        )

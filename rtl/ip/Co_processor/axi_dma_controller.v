@@ -243,6 +243,10 @@ end
     //     else
     //         r_trans_num <= r_trans_num;
     // end
+    reg read_finish_r;
+    always@(posedge clk)begin
+        read_finish_r <= read_finish;
+    end
 
     integer i;
     always@(posedge clk) begin
@@ -262,10 +266,12 @@ end
             sram_we    <= 1'b1;                  // 使能SRAM写
             sram_waddr <= r_read_cnt;            // 使用内部读计数器作为SRAM写地址
             sram_wdata <= (M_AXI_RDATA & R_strobe_word);       // 将AXI读到的数据作为SRAM写数据
-            r_read_cnt <= r_read_cnt + 1;
+            r_read_cnt <= read_finish ? 0 : (r_read_cnt + 1);
         end
+        // else if (read_finish_r)
+        //     r_read_cnt <= 0;
         else begin
-            r_read_cnt <= 0;
+            r_read_cnt <= r_read_cnt;
             mem[r_read_cnt] <= mem[r_read_cnt]; // test to be removed
             sram_we <= 1'b0;
         end

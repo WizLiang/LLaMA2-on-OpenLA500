@@ -110,11 +110,11 @@ module CB_top #(
     input  [1 :0]  m_rresp,
     input          m_rlast,
     input          m_rvalid,
-    output         m_rready
+    output         m_rready,
 
 
 //Debug
-    
+    output [3:0]  debug_state
 
 
 
@@ -288,6 +288,8 @@ CB_Controller u_controller(
     .clk(clk),
     .rst_n(rst_n),
 
+    //Debug
+    .debug_state(debug_state),
 
     .cmd_valid      (cmd_valid),
     .cmd_ready      (cmd_ready),
