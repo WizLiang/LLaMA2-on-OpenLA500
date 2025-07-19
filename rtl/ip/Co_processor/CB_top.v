@@ -114,7 +114,8 @@ module CB_top #(
 
 
 //Debug
-    output [3:0]  debug_state
+    output [3:0]  debug_state,
+    output [15:0] debug_data
 
 
 
@@ -175,6 +176,7 @@ wire                       ctrl_done;       // DMA 启动信号
 
     // 连接到 DMA 的 sram_rdata 的 MUX 输出
     wire [DATA_WD-1:0] muxed_sram_rdata;
+    wire [15:0] debug_data;
 
 assign cmd_size = 2'b10;
 
@@ -230,9 +232,9 @@ always @(posedge clk) begin
                     if (mat_write_sub_cnt == (MAC_SRAM_W_DATA_WIDTH/DATA_WD - 1)) begin
                         // 缓冲区满了，触发一次1024位的写操作
                         mac_w_sram_we    <= 1'b1;
-                        mac_w_sram_waddr <= mat_sram_addr_cnt;
-                        mac_w_sram_wdata <= mat_sram_write_buffer;
                         mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
+                        mac_w_sram_waddr <= mat_sram_addr_cnt +1;   //TODO 修改
+                        mac_w_sram_wdata <= mat_sram_write_buffer;
                         mat_write_sub_cnt <= 'd0; // 计数器清零
                     end
                 end
@@ -368,7 +370,8 @@ CB_Controller u_controller(
         .dma_v_sram_waddr(mac_v_sram_waddr),
         .dma_v_sram_wdata(mac_v_sram_wdata),
         .dma_o_sram_raddr(mac_o_sram_raddr),
-        .dma_o_sram_rdata(mac_o_sram_rdata)
+        .dma_o_sram_rdata(mac_o_sram_rdata),
+        .debug_data(debug_data)
     );
 
     

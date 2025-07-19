@@ -560,6 +560,7 @@ wire         axiOut_2_rlast;
 // assign axiOut_2_rlast   = 1'b0;
 
 wire [3:0]   debug_CB_state;
+wire [15:0] debug_data;
 
 CB_top u_cb_top(
     .clk                (sys_clk),          
@@ -653,10 +654,11 @@ CB_top u_cb_top(
     .s_rready           (axiOut_2_rready),
 
     //Debug
-    .debug_state        (debug_CB_state)
+    .debug_state        (debug_CB_state),
+    .debug_data (debug_data)
 );
 
-assign leds_o = {{12{1'b1}},debug_CB_state};
+assign leds_o = {debug_data};
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;

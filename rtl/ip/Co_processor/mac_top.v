@@ -32,7 +32,8 @@ module mac_top #(
     // -- DMA 读接口 --
     input  [$clog2(SRAM_O_DEPTH)-1:0] dma_o_sram_raddr, // DMA提供的读地址
     output [SRAM_DATA_WIDTH-1:0]    dma_o_sram_rdata,   // 从Outcome SRAM读出的数据
-    output processing_done  //TODO 适配控制器模块，缺失error模块
+    output processing_done,  //TODO 适配控制器模块，缺失error模块
+    output [15:0] debug_data
 );
 
     // Internal signals for controlling the PE core
@@ -43,6 +44,8 @@ module mac_top #(
     wire [SRAM_DATA_WIDTH-1:0] sram_rdata_w_wire;
     wire [DATA_WIDTH-1:0]      sram_rdata_v_wire;
     wire [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] final_result_wire;
+
+    assign debug_data = final_result_wire [15:0];
 
     // Address registers for input SRAMs
     reg [$clog2(SRAM_W_DEPTH)-1:0] sram_w_addr;
@@ -73,8 +76,8 @@ module mac_top #(
     // Instantiate the weight SRAM (for Matrix A)
     sram #(
         .DATA_WIDTH(SRAM_DATA_WIDTH),
-        .ADDR_WIDTH($clog2(SRAM_W_DEPTH))
-        // .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
+        .ADDR_WIDTH($clog2(SRAM_W_DEPTH)),
+        .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
     ) sram_w_inst (
         .clk(clk),
         .csb(1'b0), // Chip select is always active for simplicity
@@ -88,8 +91,8 @@ module mac_top #(
     // Instantiate the vector SRAM (for Vector B)
     sram #(
         .DATA_WIDTH(DATA_WIDTH),
-        .ADDR_WIDTH($clog2(SRAM_V_DEPTH))
-        // .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//vector.mem")
+        .ADDR_WIDTH($clog2(SRAM_V_DEPTH)),
+        .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//vector.mem")
     ) sram_v_inst (
         .clk(clk),
         .csb(1'b0),

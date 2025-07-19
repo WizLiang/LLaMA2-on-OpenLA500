@@ -297,15 +297,15 @@ always @(posedge clk or negedge rst_n) begin
 
         if (state == S_DMA_MI_INIT) begin
             dma_bytes_transferred <= 32'h0; // 初始化DMA传输计数器
+            dma_current_src_addr <= current_mi_addr; // 初始化源地址
         end 
-        else if ((state == S_DMA_MI_WAIT) && (next_state == S_DMA_MI_ISSUE)) begin
+        else if ((state == S_DMA_MI_WAIT) && (next_state == S_DMA_MI_ISSUE)) begin  //第一个信号传输完毕
             dma_bytes_transferred <= dma_bytes_transferred + dma_chunk_len;
-            dma_current_src_addr <= current_mi_addr + dma_bytes_transferred;   //TODO 开始地址
-            // dma_current_dst_addr <= dma_current_dst_addr + dma_chunk_len;    //TODO tobefix
+            dma_current_src_addr <= dma_current_src_addr + dma_chunk_len;   //TODO 开始地址
         end
 
-        if (state == S_DMA_VO) begin
-            dma_current_dst_addr <= dma_current_dst_addr + dma_chunk_len;
+        if (state == S_DMA_VO_INIT) begin   //1次即可输出完毕
+            dma_current_dst_addr <= current_vo_addr; // 输出向量的地址
         end
 
         if (state == S_IDLE && next_state != S_IDLE) begin
@@ -375,6 +375,7 @@ always @(*) begin
         S_DMA_MI_ISSUE: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01; // 01=Weight
+            dma_bytes_total = current_rows * csr_cols * 4;
             if (dma_bytes_transferred < dma_bytes_total) begin
                 cmd_valid = 1'b1;
                 cmd_rw = 1'b0; // Read from DDR
@@ -386,6 +387,7 @@ always @(*) begin
         S_DMA_MI_WAIT: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01;
+            dma_bytes_total = current_rows * csr_cols * 4;
             // cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
             if (dma_done) begin //remove error
                 next_state = S_DMA_MI_ISSUE;
@@ -422,6 +424,7 @@ always @(*) begin
             end
         end
         S_WAIT_VO_DONE: begin
+            dma_target_sram = 2'b10; // 10=Output
             cmd_rw       = 1'b1; // Write to DDR
             if (dma_done) begin //TODO 增加循环判断
                 next_state = S_UPDATE_OFFSET;
