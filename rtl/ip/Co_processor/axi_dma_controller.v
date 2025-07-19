@@ -315,6 +315,8 @@ end
             r_m_axi_wvalid <= 0;
         else if(M_AXI_AWREADY && M_AXI_AWVALID)
             r_m_axi_wvalid <= 1;
+        else if(write_finish) // fix the always 1 bug in muti_write
+            r_m_axi_wvalid <= 0;
         else
             r_m_axi_wvalid <= r_m_axi_wvalid;
     end
@@ -449,16 +451,17 @@ end
             end 
             else if (r_write_cnt  == r_m_axi_awlen) begin
                 r_m_axi_wlast <= 1'b0;
-                r_write_cnt <= r_write_cnt;
+                r_write_cnt <= 'd0;
             end 
             else
                 r_write_cnt <= r_write_cnt + 1;
         end 
-        else if (write_finish) begin
-            // 在最后一个数据发送后，复位 wlast 和计数器
-            r_m_axi_wlast <= 1'b0;
-            r_write_cnt <= 'd0;
-        end else begin
+        // else if (write_finish) begin
+        //     // 在最后一个数据发送后，复位 wlast 和计数器
+        //     r_m_axi_wlast <= 1'b0;
+        //     r_write_cnt <= 'd0;
+        // end 
+        else begin
             r_write_cnt <= r_write_cnt;
             r_m_axi_wlast <= r_m_axi_wlast;
         end
