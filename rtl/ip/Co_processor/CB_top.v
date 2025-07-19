@@ -125,6 +125,9 @@ module CB_top #(
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
 
+wire mat_write_finished;
+assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
+
 assign CB_done = ctrl_done;
 
 //DMA
@@ -233,7 +236,7 @@ always @(posedge clk) begin
                         // 缓冲区满了，触发一次1024位的写操作
                         mac_w_sram_we    <= 1'b1;
                         mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
-                        mac_w_sram_waddr <= mat_sram_addr_cnt +1;   //TODO 修改
+                        mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
                         mac_w_sram_wdata <= mat_sram_write_buffer;
                         mat_write_sub_cnt <= 'd0; // 计数器清零
                     end
@@ -291,6 +294,8 @@ CB_Controller u_controller(
 
     //Debug
     .debug_state(debug_state),
+
+    .mat_write_finished(mat_write_finished), // 连接到MAC的写完成信号
 
     .cmd_valid      (cmd_valid),
     .cmd_ready      (cmd_ready),
