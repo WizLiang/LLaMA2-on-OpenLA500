@@ -67,6 +67,10 @@ static inline unsigned long cb_read(unsigned long offset)
     return RegRead(CB_BASE + offset);
 }
 
+void HWI1_IntrHandler(void){
+    cb_write(REG_CTRL_ADDR, 0);
+}
+
 // Data Structures
 
 typedef struct {
@@ -306,7 +310,7 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
 
     // --- 4. 应答中断 ---
     // 唤醒后，清除硬件的中断状态。
-    cb_write(REG_CTRL_ADDR, 0);
+    HWI1_IntrHandler();
     
 }
 
