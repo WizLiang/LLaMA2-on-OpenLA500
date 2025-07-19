@@ -353,7 +353,7 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     }
 
     free(cpu_out);
-    
+    while(1);
 }
 
 

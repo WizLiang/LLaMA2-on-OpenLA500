@@ -12,7 +12,7 @@ LA32R_READELF := loongarch32r-linux-gnusf-readelf
 all: $(TARGET)
 
 #TODO: 根据Cache实际情况调整has_cache宏，以在start.S中生成正确的Cache初始化代码
-CFLAGS += -Dhas_cache=1
+CFLAGS += -Dhas_cache=0
 CFLAGS += -Dcache_index_depth=0x100 -Dcache_offset_width=0x4 -Dcache_way=4
 CFLAGS += -ffunction-sections -fdata-sections
 CFLAGS += -nostartfiles -nostdlib -nostdinc -static -fno-builtin 
