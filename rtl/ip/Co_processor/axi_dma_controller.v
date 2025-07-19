@@ -441,14 +441,20 @@ end
         if (rst) begin
             r_write_cnt <= 'd0;
             r_m_axi_wlast <= 1'b0;
-        end else if (M_AXI_WREADY && M_AXI_WVALID) begin
-            if (r_write_cnt == r_m_axi_awlen) begin
-                // 这是最后一个数据
+        end 
+        else if (M_AXI_WREADY && M_AXI_WVALID) begin
+            if (r_write_cnt +1  == r_m_axi_awlen) begin
                 r_m_axi_wlast <= 1'b1;
-            end else begin
                 r_write_cnt <= r_write_cnt + 1;
-            end
-        end else if (write_finish) begin
+            end 
+            else if (r_write_cnt  == r_m_axi_awlen) begin
+                r_m_axi_wlast <= 1'b0;
+                r_write_cnt <= r_write_cnt;
+            end 
+            else
+                r_write_cnt <= r_write_cnt + 1;
+        end 
+        else if (write_finish) begin
             // 在最后一个数据发送后，复位 wlast 和计数器
             r_m_axi_wlast <= 1'b0;
             r_write_cnt <= 'd0;
