@@ -164,6 +164,8 @@ wire                       ctrl_done;       // DMA 启动信号
     reg  [MAC_SRAM_V_ADDR_WIDTH-1:0] mac_v_sram_waddr;
     reg  [MAC_SRAM_V_DATA_WIDTH-1:0] mac_v_sram_wdata;
 
+    reg  mac_w_sram_w_flop; // 用于控制写使能的寄存器
+
     // 连接到mac_top的Outcome SRAM的读端口
     wire [MAC_SRAM_O_ADDR_WIDTH-1:0] mac_o_sram_raddr;
     wire [MAC_SRAM_O_DATA_WIDTH-1:0] mac_o_sram_rdata;
@@ -212,11 +214,13 @@ always @(posedge clk) begin
         mac_v_sram_wdata <= 'd0;
         mac_w_sram_waddr <= 'd0;
         mat_sram_addr_cnt <= 'd0;
+        mac_w_sram_w_flop <= 1'b0; // 初始化写使能标志
     end 
     else begin
         // 默认情况下，关闭写使能
         mac_v_sram_we <= 1'b0;
         mac_w_sram_we <= 1'b0;
+        mac_w_sram_w_flop <= 1'b0; // 清除写使能标志
 
         if (dma_sram_we) begin // 当DMA控制器想要写SRAM时
             case (dma_target_sram)
@@ -234,16 +238,32 @@ always @(posedge clk) begin
 
                     if (mat_write_sub_cnt == (MAC_SRAM_W_DATA_WIDTH/DATA_WD - 1)) begin
                         // 缓冲区满了，触发一次1024位的写操作
-                        mac_w_sram_we    <= 1'b1;
-                        mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
-                        mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
-                        mac_w_sram_wdata <= mat_sram_write_buffer;
-                        mat_write_sub_cnt <= 'd0; // 计数器清零
+                        // mac_w_sram_we    <= 1'b1;
+                        // mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
+                        // mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
+                        // mac_w_sram_wdata <= mat_sram_write_buffer;
+                        // mat_write_sub_cnt <= 'd0; // 计数器清零
+                        mac_w_sram_w_flop <= 1'b1; // 设置写使能标志
                     end
                 end
                 default: ;
             endcase
         end
+    end
+end
+
+always @(posedge clk) begin
+    if (mac_w_sram_w_flop) begin
+        mac_w_sram_we    <= 1'b1;
+        mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
+        mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
+        mac_w_sram_wdata <= mat_sram_write_buffer;
+        mat_write_sub_cnt <= 'd0; // 计数器清零
+        mac_w_sram_w_flop <= 1'b0; // 清除写使能标志
+    end else begin
+        mac_w_sram_we    <= 1'b0;
+        mac_w_sram_waddr <= 'd0; // 清除地址
+        mac_w_sram_wdata <= 'd0; // 清除数据
     end
 end
 
@@ -270,7 +290,7 @@ always @(posedge clk) begin
 
         // 当DMA成功将一个32位数据写入AXI总线后，更新切片计数器
         if (m_wvalid && m_wready) begin
-            if (out_read_sub_cnt == (MAC_SRAM_O_DATA_WIDTH/DATA_WD - 1)) begin
+            if (out_read_sub_cnt == (MAC_SRAM_O_DATA_WIDTH/DATA_WD)- 1) begin
                 out_read_sub_cnt <= 'd0;
             end else begin
                 out_read_sub_cnt <= out_read_sub_cnt + 1;

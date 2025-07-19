@@ -137,7 +137,7 @@
 
     //assign M_AXI_WSTRB      = {STRB_WD{1'b1}}           ; 
     assign M_AXI_WSTRB      = r_m_axi_wstrb             ; 
-    assign M_AXI_WDATA      = r_m_axi_wdata             ; 
+    //assign M_AXI_WDATA      = r_m_axi_wdata             ; 
     assign M_AXI_WLAST      = r_m_axi_wlast             ; 
     assign M_AXI_WVALID     = r_m_axi_wvalid            ; 
 
@@ -427,16 +427,16 @@ end
         end
     end
 
-    always @(posedge clk) begin
-        if (rst) begin
-            r_m_axi_wdata <= 'd0;
-        end else if ((M_AXI_AWREADY & M_AXI_AWVALID) || (M_AXI_WREADY & M_AXI_WVALID)) begin
-            // 当 AXI 写通道握手成功时
-            // sram_rdata 上承载的是上一个周期请求的数据，现在正好可以使用
-            r_m_axi_wdata <= sram_rdata;
-        end
-    end
-
+    // always @(posedge clk) begin
+    //     if (rst) begin
+    //         r_m_axi_wdata <= 'd0;
+    //     end else if ((M_AXI_AWREADY & M_AXI_AWVALID) || (M_AXI_WREADY & M_AXI_WVALID)) begin
+    //         // 当 AXI 写通道握手成功时
+    //         // sram_rdata 上承载的是上一个周期请求的数据，现在正好可以使用
+    //         r_m_axi_wdata <= sram_rdata;
+    //     end
+    // end
+    assign M_AXI_WDATA = sram_rdata;
     always @(posedge clk) begin
         if (rst) begin
             r_write_cnt <= 'd0;
