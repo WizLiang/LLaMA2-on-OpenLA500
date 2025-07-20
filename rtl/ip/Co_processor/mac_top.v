@@ -81,7 +81,7 @@ module mac_top #(
     ) sram_w_inst (
         .clk(clk),
         .csb(1'b0), // Chip select is always active for simplicity
-        .wsb(~(dma_access_mode & dma_w_sram_we)), // 只有在DMA模式且DMA写使能时才写
+        .wsb(~dma_w_sram_we), // 只有在DMA模式且DMA写使能时才写
         .wdata(dma_w_sram_wdata),
         .waddr(dma_w_sram_waddr),
         .raddr(final_raddr_w),

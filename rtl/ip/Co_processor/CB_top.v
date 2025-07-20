@@ -125,8 +125,8 @@ module CB_top #(
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
 
-wire mat_write_finished;
-assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
+// wire mat_write_finished;
+// assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
 
 assign CB_done = ctrl_done;
 
@@ -307,7 +307,7 @@ CB_Controller u_controller(
     //Debug
     .debug_state(debug_state),
 
-    .mat_write_finished(mat_write_finished), // 连接到MAC的写完成信号
+    // .mat_write_finished(mat_write_finished), // 连接到MAC的写完成信号
 
     .cmd_valid      (cmd_valid),
     .cmd_ready      (cmd_ready),

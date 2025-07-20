@@ -46,7 +46,7 @@ module CB_Controller (
     output  [3:0]       debug_state,
 
     //add
-    input mat_write_finished, // MAC模块写完成信号
+    // input mat_write_finished, // MAC模块写完成信号
 
     // --- Interfaces to Internal Engines ---
     // DMA Controller Interface
@@ -383,7 +383,7 @@ always @(*) begin
                 cmd_valid = 1'b1;
                 cmd_rw = 1'b0; // Read from DDR
                 if (cmd_ready) next_state = S_DMA_MI_WAIT; // 等待DMA传输完成
-            end else if (mat_write_finished) begin
+            end else begin
                 next_state = S_COMPUTE;
             end
         end
