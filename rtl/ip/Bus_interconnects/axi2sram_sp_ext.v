@@ -103,7 +103,7 @@ module axi2sram_sp_ext #(
     localparam              WRAP        = 2'b10;
     
     reg [AXI_ADDR_WIDTH-1:0] req_addr_d, req_addr_q;
-    reg [7:0]                cnt_d, cnt_q;
+    reg [9:0]                cnt_d, cnt_q;
 
     function automatic [AXI_ADDR_WIDTH-1:0] get_wrap_boundary;
         input [AXI_ADDR_WIDTH-1:0] unaligned_address;
@@ -196,7 +196,7 @@ module axi2sram_sp_ext #(
                 // ------------
                 end else if (s_awvalid) begin
                     s_awready = 1'b1;
-                    s_wready  = 1'b1;
+                    // s_wready  = 1'b1;
                     addr_o         = s_awaddr;
                     // sample ax
                     ax_req_d_id     = s_awid;
@@ -205,13 +205,14 @@ module axi2sram_sp_ext #(
                     ax_req_d_size   = s_awsize;
                     ax_req_d_burst  = s_awburst;
                     // we've got our first w_valid so start the write process
-                    if (s_wvalid) begin
-                        req_o          = 1'b1;
-                        we_o           = 1'b1;
-                        state_d        = (s_wlast) ? SEND_B : WRITE_NOP;
-                        cnt_d          = 1;
-                    // we still have to wait for the first w_valid to arrive
-                    end else
+                    //although the axi wdata can faster than ADDR but the SRAM cannot write continusly
+                    // if (s_wvalid) begin
+                    //     req_o          = 1'b1;
+                    //     we_o           = 1'b1;
+                    //     state_d        = (s_wlast) ? SEND_B : WRITE_NOP;
+                    //     cnt_d          = 1;
+                    // // we still have to wait for the first w_valid to arrive
+                    // end else
                         state_d = WAIT_WVALID;
                 end
             end
@@ -224,7 +225,7 @@ module axi2sram_sp_ext #(
                 if (s_wvalid) begin
                     req_o          = 1'b1;
                     we_o           = 1'b1;
-                    state_d        = (s_wlast) ? SEND_B : WRITE;
+                    state_d        = (s_wlast) ? SEND_B : WRITE_NOP;
                     cnt_d          = 1;
                 end
             end
