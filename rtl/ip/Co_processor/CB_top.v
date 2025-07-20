@@ -302,7 +302,7 @@ end
 // Part C: 数据选择 MUX (组合逻辑)
 // 根据目标SRAM和切片计数器，将正确的数据喂给DMA
 assign muxed_sram_rdata = (dma_target_sram == 2'b10) 
-                        ? out_sram_read_buffer >> (out_read_sub_cnt * 32)
+                        ? out_sram_read_buffer >> ((31 - out_read_sub_cnt) * 32)    //TODO 如果宽度更大，可以调整
                         : 32'hDEADBEEF; // 默认或用于其他SRAM的路径
 
 assign dma_sram_rdata = muxed_sram_rdata;

@@ -658,7 +658,7 @@ CB_top u_cb_top(
     .debug_data (debug_data)
 );
 
-assign leds_o = {debug_data};
+assign leds_o = {{12{1'b0}},debug_CB_state};
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;

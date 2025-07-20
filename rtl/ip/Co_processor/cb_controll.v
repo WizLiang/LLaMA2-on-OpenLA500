@@ -411,7 +411,7 @@ always @(*) begin
         S_DMA_VO_INIT: begin    //从out sram写到主存
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b10; // 10=Output
-            cmd_dst_addr = csr_vo_base;
+            // cmd_dst_addr = current_vo_addr;
             cmd_len      = current_rows * 4; // 当前块的总字节数
             next_state = S_DMA_VO; // 进入DMA传输状态
         end
@@ -419,7 +419,7 @@ always @(*) begin
             mac_access_mode = 1'b1; // 输出模式
             dma_target_sram = 2'b10; // 10=Output
             cmd_valid    = 1'b1;
-            cmd_dst_addr = csr_vo_base;
+            // cmd_dst_addr = current_vo_addr;
             cmd_len      = current_rows * 4; // 输出行数 * 4字节
             cmd_rw       = 1'b1; // Write to DDR
             if (cmd_ready) begin
