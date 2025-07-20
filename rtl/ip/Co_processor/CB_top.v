@@ -396,7 +396,7 @@ CB_Controller u_controller(
         .dma_v_sram_wdata(mac_v_sram_wdata),
         .dma_o_sram_raddr(mac_o_sram_raddr),
         .dma_o_sram_rdata(mac_o_sram_rdata),
-        .debug_data(debug_data)
+        .debug_data()
     );
 
     
@@ -487,7 +487,8 @@ CB_Controller u_controller(
     .sram_waddr(dma_sram_waddr),
     .sram_wdata(dma_sram_wdata),
     .sram_raddr(dma_sram_raddr), // 读写地址共用
-    .sram_rdata(dma_sram_rdata)
+    .sram_rdata(dma_sram_rdata),
+    .dma_debug (debug_data)
 );
 
 endmodule

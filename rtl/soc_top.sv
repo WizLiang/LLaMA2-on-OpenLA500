@@ -658,7 +658,7 @@ CB_top u_cb_top(
     .debug_data (debug_data)
 );
 
-assign leds_o = {debug_data};
+
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;
@@ -1331,6 +1331,6 @@ AxiCrossbar_2x4 u_axi_crossbar (
     .axiOut_3_r_payload_last    (confreg_rlast)
 );
 
-
+assign leds_o = {ram_rlast,debug_data[10:0],debug_CB_state};
 endmodule
 

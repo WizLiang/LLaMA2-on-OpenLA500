@@ -71,7 +71,10 @@
     output reg [DATA_WD-1:0]    sram_wdata,
 
     output reg [SRAM_ADDR_WD-1:0]    sram_raddr,
-    input  wire [DATA_WD-1:0]   sram_rdata
+    input  wire [DATA_WD-1:0]   sram_rdata,
+
+    //Debug 
+    output wire [15:0] dma_debug
  );
 
     reg  [DATA_WD - 1:0] mem [0 : 255]; 
@@ -181,8 +184,8 @@
         end
     end
 
-wire read_finish = M_AXI_RLAST;
-wire write_finish = M_AXI_BREADY && M_AXI_BVALID;//TODO OKAY singal
+wire read_finish = M_AXI_RLAST ? 1'b1 :1'b0;
+wire write_finish = M_AXI_BREADY && M_AXI_BVALID ? 1'b1 : 1'b0;//TODO OKAY singal
 
 assign dma_done = cmd_rw ? write_finish : read_finish ;
 
@@ -480,7 +483,7 @@ end
 
 // assign M_AXI_BREADY = 1'b1;
 
-
+assign dma_debug = {9'h0,cmd_ready,dma_done,cmd_rw,read_finish};
 endmodule
 
 
