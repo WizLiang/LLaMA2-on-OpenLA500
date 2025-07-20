@@ -203,66 +203,58 @@ assign cmd_size = 2'b10;
 
 // --- 路径 1: DMA 读 (DDR -> SRAM)，数据写入本地 SRAM ---
 
-//vector 处理
 always @(posedge clk) begin
     if (!rst_n) begin
-        mac_v_sram_we <= 1'b0;
+        // 复位信号
+        mac_v_sram_we         <= 1'b0;
+        mac_v_sram_waddr      <= 'd0;
+        mac_v_sram_wdata      <= 'd0;
+        
+        mac_w_sram_we         <= 1'b0;
+        mac_w_sram_waddr      <= 'd0;
+        mac_w_sram_wdata      <= 'd0;
+        
         mat_sram_write_buffer <= 'd0;
-        mat_write_sub_cnt <= 'd0;
-        mac_v_sram_waddr <= 'd0;
-        mac_v_sram_wdata <= 'd0;
-        mat_sram_addr_cnt <= 'd0;
-        mac_w_sram_w_flop <= 1'b0; // 初始化写使能标志
+        mat_write_sub_cnt     <= 'd0;
+        mat_sram_addr_cnt     <= 'd0;
+        mac_w_sram_w_flop     <= 1'b0;
     end 
     else begin
-        // 默认情况下，关闭写使能
-        mac_v_sram_we <= 1'b0;
-        mac_w_sram_w_flop <= 1'b0; // 清除写使能标志
+        // 基于上一周期的状态 (mac_w_sram_w_flop)
+        if (mac_w_sram_w_flop) begin
+            mac_w_sram_we    <= 1'b1;
+            mac_w_sram_waddr <= mat_sram_addr_cnt;
+            mac_w_sram_wdata <= mat_sram_write_buffer; // 写入已拼接完成的缓冲器数据
+            mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 宽位宽SRAM地址递增
+        end else begin
+            mac_w_sram_we <= 1'b0;
+        end
+        
+        // 这部分逻辑决定下一周期的状态
+        mac_w_sram_w_flop <= 1'b0; // 默认清除标志位
+        mac_v_sram_we     <= 1'b0; // 默认关闭Vector SRAM写使能
 
-        if (dma_sram_we) begin // 当DMA控制器想要写SRAM时
+        if (dma_sram_we) begin
             case (dma_target_sram)
-                2'b00: begin // 目标: 32位 Vector SRAM
-                    // 直通逻辑
+                2'b00: begin // 目标: Vector SRAM (直接写入)
                     mac_v_sram_we    <= 1'b1;
                     mac_v_sram_waddr <= dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0];
                     mac_v_sram_wdata <= dma_sram_wdata;
                 end
                 
-                2'b01: begin // 目标: 1024位 Weight SRAM
-                    // 拼接逻辑
+                2'b01: begin // 目标: Weight SRAM (需要拼接)
+                    // 将新收到的32位数据放入缓冲区的对应位置
                     mat_sram_write_buffer[mat_write_sub_cnt * DATA_WD +: DATA_WD] <= dma_sram_wdata;
-                    mat_write_sub_cnt <= mat_write_sub_cnt + 1;
-
+                    
                     if (mat_write_sub_cnt == (MAC_SRAM_W_DATA_WIDTH/DATA_WD - 1)) begin
-                        mac_w_sram_w_flop <= 1'b1; // 设置写使能标志
+                        mac_w_sram_w_flop <= 1'b1;
+                        mat_write_sub_cnt <= 'd0; // 子计数器清零，为下一个宽数据做准备
+                    end else begin
+                        // 缓冲器未满，子计数器递增
+                        mat_write_sub_cnt <= mat_write_sub_cnt + 1;
                     end
                 end
-                default: ;
             endcase
-        end
-    end
-end
-
-//weight SRAM 处理逻辑
-
-always @(posedge clk) begin
-    if (!rst_n) begin
-        mac_w_sram_we    <= 1'b0;
-        mac_w_sram_waddr <= 'd0; // 清除地址
-        mac_w_sram_wdata <= 'd0; // 清除数据
-    end 
-    else begin 
-        if (mac_w_sram_w_flop) begin
-            mac_w_sram_we    <= 1'b1;
-            mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
-            mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
-            mac_w_sram_wdata <= mat_sram_write_buffer;
-            mat_write_sub_cnt <= 'd0; // 计数器清零
-            mac_w_sram_w_flop <= 1'b0; // 清除写使能标志
-        end else begin
-            mac_w_sram_we    <= 1'b0;
-            mac_w_sram_waddr <= 'd0; // 清除地址
-            mac_w_sram_wdata <= 'd0; // 清除数据
         end
     end
 end
