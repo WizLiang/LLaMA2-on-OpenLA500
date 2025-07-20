@@ -107,7 +107,9 @@ module CB_Controller (
     output      [1:0]   s_rresp,
     output reg          s_rlast,    //TODO to be fix
     output reg          s_rvalid,
-    input               s_rready
+    input               s_rready,
+
+    output reg [31:0]   csr_cols
 );
 
 //======================================================================
@@ -115,7 +117,7 @@ module CB_Controller (
 //======================================================================
 reg [31:0] csr_ctrl, csr_status, csr_err_code;
 reg [31:0] csr_vi_base, csr_mi_base, csr_vo_base;
-reg [31:0] csr_rows, csr_cols;
+reg [31:0] csr_rows;
 
 
 //======================================================================

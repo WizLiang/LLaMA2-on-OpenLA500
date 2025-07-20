@@ -126,9 +126,11 @@ wire mac_start, mac_done;
 wire mac_error = 1'b0;
 
 wire mat_write_finished;
-assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
+assign mat_write_finished = (mac_w_sram_waddr == csr_cols - 1) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
 
 assign CB_done = ctrl_done;
+
+wire [31:0] csr_cols;
 
 //DMA
 wire                       cmd_valid;       // DMA 命令有效
@@ -357,7 +359,9 @@ CB_Controller u_controller(
     .s_rresp    (s_rresp),
     .s_rlast    (s_rlast),
     .s_rvalid   (s_rvalid),
-    .s_rready   (s_rready)
+    .s_rready   (s_rready),
+
+    .csr_cols   (csr_cols) // 连接到控制器的列寄存器
 );
 
 
