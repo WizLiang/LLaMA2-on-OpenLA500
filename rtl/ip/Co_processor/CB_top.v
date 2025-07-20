@@ -125,7 +125,12 @@ module CB_top #(
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
 
+wire mat_write_finished;
+assign mat_write_finished = (mac_w_sram_waddr == csr_cols - 1) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
+
 assign CB_done = ctrl_done;
+
+wire [31:0] csr_cols;
 
 //DMA
 wire                       cmd_valid;       // DMA 命令有效
@@ -249,7 +254,7 @@ end
 
 // Part A: 地址路由 (组合逻辑)
 // 将DMA的读地址请求路由到正确的SRAM
-assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0] / (MAC_SRAM_O_DATA_WIDTH/DATA_WD) : 'd0;
+assign mac_o_sram_raddr = 1'd0; // 只读一个地址，假设为0
 
 
 // Part B: 数据锁存和切片控制 (时序逻辑)
@@ -291,6 +296,8 @@ CB_Controller u_controller(
 
     //Debug
     .debug_state(debug_state),
+
+    .mat_write_finished(mat_write_finished), // 连接到MAC的写完成信号
 
     .cmd_valid      (cmd_valid),
     .cmd_ready      (cmd_ready),
@@ -352,7 +359,9 @@ CB_Controller u_controller(
     .s_rresp    (s_rresp),
     .s_rlast    (s_rlast),
     .s_rvalid   (s_rvalid),
-    .s_rready   (s_rready)
+    .s_rready   (s_rready),
+
+    .csr_cols   (csr_cols) // 连接到控制器的列寄存器
 );
 
 

@@ -12,7 +12,7 @@ module mac_top #(
     parameter SRAM_W_DEPTH    = K_ACCUM_DEPTH,// Depth of the weight SRAM
     parameter SRAM_V_DEPTH    = K_ACCUM_DEPTH, // Depth of the vector SRAM
     // Added a parameter for the depth of the outcome SRAM for clarity
-    parameter SRAM_O_DEPTH    = 32,
+    parameter SRAM_O_DEPTH    = 2,
     parameter MAC_LATENCY = 4
 )
 (
@@ -109,7 +109,7 @@ module mac_top #(
         .ADDR_WIDTH(1)
     ) sram_outcome_inst (
         .clk(clk), 
-        .csb(~sram_we_from_serializer), 
+        .csb(1'b0), 
         .wsb(~(~dma_access_mode & sram_we_from_serializer)), 
         .wdata(sram_wdata_from_serializer), 
         .waddr(sram_waddr_from_serializer), 
@@ -157,7 +157,7 @@ module mac_top #(
     // CONTROL LOGIC
     //========================================================================
     localparam ACCUM_DONE_CYCLE = K_ACCUM_DEPTH;
-    localparam WRITE_DONE_CYCLE = K_ACCUM_DEPTH + MAC_LATENCY + 2;   //TODO 需要修改，当前写入逻辑较慢
+    localparam WRITE_DONE_CYCLE = K_ACCUM_DEPTH + MAC_LATENCY + 3;   //TODO 需要修改，当前写入逻辑较慢
 
     assign processing_done = (cycle_num_reg == WRITE_DONE_CYCLE);
 
