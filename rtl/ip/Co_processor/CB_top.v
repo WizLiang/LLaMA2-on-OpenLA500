@@ -233,7 +233,7 @@ always @(posedge clk) begin
                         // 缓冲区满了，触发一次1024位的写操作
                         mac_w_sram_we    <= 1'b1;
                         mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 更新地址计数器
-                        mac_w_sram_waddr <= mat_sram_addr_cnt +1;   //TODO 修改
+                        mac_w_sram_waddr <= mat_sram_addr_cnt;   //TODO 修改
                         mac_w_sram_wdata <= mat_sram_write_buffer;
                         mat_write_sub_cnt <= 'd0; // 计数器清零
                     end
