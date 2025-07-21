@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////
 module PE_core#(
     parameter ARRAY_SIZE = 32,
-    parameter SRAM_DATA_WIDTH = 1024,
+    parameter SRAM_DATA_WIDTH = 32,
     parameter DATA_WIDTH = 32,
     parameter K_ACCUM_DEPTH = 64,
     parameter OUTCOME_WIDTH = 32,
@@ -25,7 +25,7 @@ module PE_core#(
     input srstn, // Active-low synchronous reset
     input alu_start,
     input [8:0] cycle_num,
-    input [SRAM_DATA_WIDTH-1:0] sram_rdata_w,
+    input [SRAM_DATA_WIDTH * ARRAY_SIZE - 1:0] sram_rdata_w,
     input [DATA_WIDTH-1:0] sram_rdata_v,
     output [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] mul_outcome
 );
