@@ -69,22 +69,22 @@ module CB_top #(
 //AXI Master (for DMA)
     // Write address channel (AW)
     output [3 :0]  m_awid,
-    output [31:0]  m_awaddr,
+    (* mark_debug = "true" *)output [31:0]  m_awaddr,
     output [7 :0]  m_awlen,
     output [2 :0]  m_awsize,
     output [1 :0]  m_awburst,
     output         m_awlock,
     output [3 :0]  m_awcache,
     output [2 :0]  m_awprot,
-    output         m_awvalid,
-    input          m_awready,
+    (* mark_debug = "true" *)output         m_awvalid,
+    (* mark_debug = "true" *)input          m_awready,
 
 // Write data channel (W)
-    output [31:0]  m_wdata,
+    (* mark_debug = "true" *)output [31:0]  m_wdata,
     output [3 :0]  m_wstrb,
-    output         m_wlast,
-    output         m_wvalid,
-    input          m_wready,
+    (* mark_debug = "true" *)output         m_wlast,
+    (* mark_debug = "true" *)output         m_wvalid,
+    (* mark_debug = "true" *)input          m_wready,
 
 // Write response channel (B)
     input  [3 :0]  m_bid,
@@ -94,27 +94,27 @@ module CB_top #(
 
 // Read address channel (AR)
     output [3 :0]  m_arid,
-    output [31:0]  m_araddr,
+    (* mark_debug = "true" *)output [31:0]  m_araddr,
     output [7 :0]  m_arlen,
     output [2 :0]  m_arsize,
     output [1 :0]  m_arburst,
     output         m_arlock,
     output [3 :0]  m_arcache,
     output [2 :0]  m_arprot,
-    output         m_arvalid,
-    input          m_arready,
+    (* mark_debug = "true" *)output         m_arvalid,
+    (* mark_debug = "true" *)input          m_arready,
 
 // Read data channel (R)
     input  [3 :0]  m_rid,
-    input  [31:0]  m_rdata,
+    (* mark_debug = "true" *)input  [31:0]  m_rdata,
     input  [1 :0]  m_rresp,
-    input          m_rlast,
-    input          m_rvalid,
-    output         m_rready,
+    (* mark_debug = "true" *)input          m_rlast,
+    (* mark_debug = "true" *)input          m_rvalid,
+    (* mark_debug = "true" *)output         m_rready,
 
 
 //Debug
-    output [3:0]  debug_state,
+    (* mark_debug = "true" *)output [3:0]  debug_state,
     output [15:0] debug_data
 
 

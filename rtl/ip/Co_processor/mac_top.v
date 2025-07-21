@@ -43,9 +43,9 @@ module mac_top #(
     // Wires to connect SRAMs to the PE core
     wire [SRAM_DATA_WIDTH-1:0] sram_rdata_w_wire;
     wire [DATA_WIDTH-1:0]      sram_rdata_v_wire;
-    wire [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] final_result_wire;
+    (* mark_debug = "true" *) wire [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] final_result_wire;
 
-    assign debug_data = final_result_wire [15:0];
+    assign debug_data = 0;
 
     // Address registers for input SRAMs
     reg [$clog2(SRAM_W_DEPTH)-1:0] sram_w_addr;
