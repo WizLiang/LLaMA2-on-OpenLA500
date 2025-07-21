@@ -96,7 +96,7 @@ module mac_top #(
     ) sram_v_inst (
         .clk(clk),
         .csb(1'b0),
-        .wsb(~(dma_access_mode & dma_v_sram_we)), // Write disabled (read-only)
+        .wsb(~ dma_v_sram_we), // Write disabled (read-only)
         .wdata(dma_v_sram_wdata),
         .waddr(dma_v_sram_waddr),
         .raddr(final_raddr_v),
