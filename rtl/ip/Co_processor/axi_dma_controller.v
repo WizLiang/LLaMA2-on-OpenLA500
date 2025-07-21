@@ -181,7 +181,8 @@
         end
     end
 
-wire read_finish = M_AXI_RLAST;
+//wire read_finish = M_AXI_RLAST;
+reg read_finish;
 wire write_finish = M_AXI_BREADY && M_AXI_BVALID;//TODO OKAY singal
 
 assign dma_done = cmd_rw ? write_finish : read_finish ;
@@ -252,6 +253,7 @@ end
     always@(posedge clk) begin
         if(rst) begin
             r_read_cnt <= 0;
+            read_finish <= 1'b0;
             for(i = 0; i < 256; i = i + 1) begin
                 mem[i] <= i + 1 ;//TODO TEST
             end
@@ -266,11 +268,13 @@ end
             sram_we    <= 1'b1;                  // 使能SRAM写
             sram_waddr <= r_read_cnt;            // 使用内部读计数器作为SRAM写地址
             sram_wdata <= (M_AXI_RDATA & R_strobe_word);       // 将AXI读到的数据作为SRAM写数据
-            r_read_cnt <= read_finish ? 0 : (r_read_cnt + 1);
+            r_read_cnt <= M_AXI_RLAST ? 0 : (r_read_cnt + 1);
+            read_finish <= M_AXI_RLAST; 
         end
         // else if (read_finish_r)
         //     r_read_cnt <= 0;
         else begin
+            read_finish <= 1'b0;
             r_read_cnt <= r_read_cnt;
             mem[r_read_cnt] <= mem[r_read_cnt]; // test to be removed
             sram_we <= 1'b0;
