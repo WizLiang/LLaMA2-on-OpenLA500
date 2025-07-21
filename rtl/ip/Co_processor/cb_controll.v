@@ -149,7 +149,7 @@ reg [31:0] dma_current_dst_addr;  // 当前DMA传输块的目的地址
 wire [31:0] dma_bytes_remaining = dma_bytes_total - dma_bytes_transferred;
 wire [10:0]  dma_chunk_len;         // 本次DMA传输的长度 (Chunk)
 
-localparam MAX_DMA_LEN = 512;  //单次最多传输128个浮点数，即512字节
+localparam MAX_DMA_LEN = 1024;  //单次最多传输128个浮点数，即512字节
 // 动态计算本次小块传输的长度
 assign dma_chunk_len = (dma_bytes_remaining >= MAX_DMA_LEN) ? MAX_DMA_LEN : dma_bytes_remaining[10:0];
 //======================================================================
