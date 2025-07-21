@@ -77,7 +77,7 @@ module mac_top #(
 
     genvar i; // 声明 generate 循环变量
     generate
-        for (i = 0; i < SRAM_DATA_WIDTH / DATA_WIDTH; i = i + 1) begin : sram_bank_gen
+        for (i = 0; i < 32; i = i + 1) begin : sram_bank_gen
             // 每个 sram 模块位宽是32，深度是64
             sram #(
                 .DATA_WIDTH(DATA_WIDTH), 
