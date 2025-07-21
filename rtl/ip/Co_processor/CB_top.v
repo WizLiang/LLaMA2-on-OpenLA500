@@ -1,6 +1,5 @@
-
-
 //Defines
+//!!! 当前处理32*64的矩阵向量乘法
 
 
 module CB_top #(
@@ -10,10 +9,12 @@ module CB_top #(
     parameter MAC_SRAM_W_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_W_DEPTH) = 6
     parameter MAC_SRAM_V_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_V_DEPTH) = 6
     parameter MAC_SRAM_O_ADDR_WIDTH = 1, // 假设 $clog2(SRAM_O_DEPTH) = 5
-    parameter MAC_SRAM_W_DATA_WIDTH = 1024,
+    parameter MAC_SRAM_W_DATA_WIDTH = 32,
     parameter MAC_SRAM_V_DATA_WIDTH = 32,
     parameter MAC_SRAM_O_DATA_WIDTH = 1024,
     parameter ADDR_WD = 32,  // DMA地址宽度
+    parameter MAC_SRAM_W_BANK_NUM = 32, // 假设有32个SRAM bank
+    parameter K_ACCUM_DEPTH = 64, // 假设累加深度为64
     parameter DATA_WD = 32  // DMA数据宽度
 )
 (
@@ -155,9 +156,11 @@ wire                       ctrl_done;       // DMA 启动信号
     wire [DATA_WD-1:0] dma_sram_rdata; // 从 MAC 输入到 DMA
 
     // 连接到mac_top的Weight SRAM的写端口
-    reg  mac_w_sram_we;
+    reg  [MAC_SRAM_W_BANK_NUM-1:0]   mac_w_sram_bank_we;
     reg  [MAC_SRAM_W_ADDR_WIDTH-1:0] mac_w_sram_waddr;
     reg  [MAC_SRAM_W_DATA_WIDTH-1:0] mac_w_sram_wdata;
+    reg  [4:0] dma_w_bank_sel_cnt;       // 5位, 用于选择目标 Bank (0-31)
+    reg  [5:0] dma_w_addr_in_bank_cnt;   // 6位, 用于 Bank 内的地址 (0-63)
 
     // 连接到mac_top的Vector SRAM的写端口
     reg  mac_v_sram_we;
@@ -171,9 +174,9 @@ wire                       ctrl_done;       // DMA 启动信号
     wire [MAC_SRAM_O_DATA_WIDTH-1:0] mac_o_sram_rdata;
 
     // DMA 读 (主存 -> SRAM) 路径所需的寄存器
-    reg  [MAC_SRAM_W_DATA_WIDTH-1:0] mat_sram_write_buffer; // 1024位写缓冲器，用于拼接数据
-    reg  [$clog2(MAC_SRAM_W_DATA_WIDTH/DATA_WD)-1:0] mat_write_sub_cnt; // 0-31计数器
-    reg  [MAC_SRAM_W_ADDR_WIDTH-1:0] mat_sram_addr_cnt;
+    // reg  [MAC_SRAM_W_DATA_WIDTH-1:0] mat_sram_write_buffer; // 1024位写缓冲器，用于拼接数据
+    reg  [$clog2(K_ACCUM_DEPTH)-1:0] mat_write_sub_cnt; // 0-63计数器
+    // reg  [MAC_SRAM_W_ADDR_WIDTH-1:0] mat_sram_addr_cnt;
 
     // DMA 写 (SRAM -> 主存) 路径所需的寄存器
     reg  [MAC_SRAM_O_DATA_WIDTH-1:0] out_sram_read_buffer;  // 1024位读缓冲器，用于锁存和切片
@@ -203,55 +206,54 @@ assign cmd_size = 2'b10;
 
 // --- 路径 1: DMA 读 (DDR -> SRAM)，数据写入本地 SRAM ---
 
-always @(posedge clk) begin
+always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        // 复位信号
-        mac_v_sram_we         <= 1'b0;
-        mac_v_sram_waddr      <= 'd0;
-        mac_v_sram_wdata      <= 'd0;
+        // --- 复位信号 ---
+        mac_v_sram_we          <= 1'b0;
+        mac_v_sram_waddr       <= 0;
+        mac_v_sram_wdata       <= 0;
         
-        mac_w_sram_we         <= 1'b0;
-        mac_w_sram_waddr      <= 'd0;
-        mac_w_sram_wdata      <= 'd0;
+        mac_w_sram_bank_we     <= 32'b0;
+        mac_w_sram_waddr       <= 0;
+        mac_w_sram_wdata       <= 0;
+
+        // 复位Bank选择和地址计数器
+        dma_w_bank_sel_cnt     <= 0;
+        dma_w_addr_in_bank_cnt <= 0;
         
-        mat_sram_write_buffer <= 'd0;
-        mat_write_sub_cnt     <= 'd0;
-        mat_sram_addr_cnt     <= 'd0;
-        mac_w_sram_w_flop     <= 1'b0;
-    end 
-    else begin
-        // 基于上一周期的状态 (mac_w_sram_w_flop)
-        if (mac_w_sram_w_flop) begin
-            mac_w_sram_we    <= 1'b1;
-            mac_w_sram_waddr <= mat_sram_addr_cnt;
-            mac_w_sram_wdata <= mat_sram_write_buffer; // 写入已拼接完成的缓冲器数据
-            mat_sram_addr_cnt <= mat_sram_addr_cnt + 1; // 宽位宽SRAM地址递增
-        end else begin
-            mac_w_sram_we <= 1'b0;
-        end
-        
-        // 这部分逻辑决定下一周期的状态
-        mac_w_sram_w_flop <= 1'b0; // 默认清除标志位
-        mac_v_sram_we     <= 1'b0; // 默认关闭Vector SRAM写使能
+    end else begin
+        mac_w_sram_bank_we <= 32'b0;
+        mac_v_sram_we      <= 1'b0;
 
         if (dma_sram_we) begin
             case (dma_target_sram)
                 2'b00: begin // 目标: Vector SRAM (直接写入)
                     mac_v_sram_we    <= 1'b1;
+                    // 注意: 这里的地址位宽需要匹配Vector SRAM的定义
                     mac_v_sram_waddr <= dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0];
                     mac_v_sram_wdata <= dma_sram_wdata;
                 end
                 
-                2'b01: begin // 目标: Weight SRAM (需要拼接)
-                    // 将新收到的32位数据放入缓冲区的对应位置
-                    mat_sram_write_buffer[mat_write_sub_cnt * DATA_WD +: DATA_WD] <= dma_sram_wdata;
+                2'b01: begin // 目标: Weight SRAM (顺序块写入)
                     
-                    if (mat_write_sub_cnt == (MAC_SRAM_W_DATA_WIDTH/DATA_WD - 1)) begin
-                        mac_w_sram_w_flop <= 1'b1;
-                        mat_write_sub_cnt <= 'd0; // 子计数器清零，为下一个宽数据做准备
+                    // one-hot 写使能信号
+                    mac_w_sram_bank_we <= (1 << dma_w_bank_sel_cnt);
+
+                    // 2. 驱动地址和数据总线
+                    //    地址使用Bank内地址计数器
+                    mac_w_sram_waddr <= dma_w_addr_in_bank_cnt; //可以考虑使用dma_w_addr
+                    //    数据直接来自DMA接口
+                    mac_w_sram_wdata <= dma_sram_wdata;
+
+                    // 3. 更新计数器
+                    if (dma_w_addr_in_bank_cnt == 63) begin
+                        // 当前 Bank 已写满 (地址从0到63，共64个)
+                        dma_w_addr_in_bank_cnt <= 0; // Bank 内地址清零
+                        // 切换到下一个 Bank (如果已经是最后一个Bank，则会自然溢出回到0)
+                        dma_w_bank_sel_cnt     <= dma_w_bank_sel_cnt + 1; 
                     end else begin
-                        // 缓冲器未满，子计数器递增
-                        mat_write_sub_cnt <= mat_write_sub_cnt + 1;
+                        // 当前 Bank 未写满，地址递增
+                        dma_w_addr_in_bank_cnt <= dma_w_addr_in_bank_cnt + 1;
                     end
                 end
             endcase
@@ -380,7 +382,7 @@ CB_Controller u_controller(
         .processing_done(mac_done),
 
         .dma_access_mode(mac_access_mode),
-        .dma_w_sram_we(mac_w_sram_we),
+        .dma_w_sram_bank_we(mac_w_sram_bank_we),
         .dma_w_sram_waddr(mac_w_sram_waddr),
         .dma_w_sram_wdata(mac_w_sram_wdata),
         .dma_v_sram_we(mac_v_sram_we),

@@ -5,7 +5,7 @@
 //****************************************************************************
 module mac_top #(
     parameter ARRAY_SIZE      = 32,
-    parameter SRAM_DATA_WIDTH = 1024,         // 32*32=1024
+    parameter SRAM_DATA_WIDTH = 32,         // 32*32=1024
     parameter DATA_WIDTH      = 32,           // 32-bit floating point
     parameter K_ACCUM_DEPTH   = 64,           // Accumulation depth for MAC operations
     parameter OUTCOME_WIDTH   = 32,           // Output 32-bit floating point
@@ -22,7 +22,7 @@ module mac_top #(
     input  dma_access_mode, // DMA access 0=计算 1=加载
     // -- DMA 写接口 (用于加载 Weight 和 Vector) --
     // Weight SRAM
-    input  dma_w_sram_we,
+    input  [ARRAY_SIZE-1:0]     dma_w_sram_bank_we,
     input  [$clog2(SRAM_W_DEPTH)-1:0] dma_w_sram_waddr,
     input  [SRAM_DATA_WIDTH-1:0]    dma_w_sram_wdata,
     // Vector SRAM
@@ -41,11 +41,11 @@ module mac_top #(
     reg  [8:0]  cycle_num_reg;
 
     // Wires to connect SRAMs to the PE core
-    wire [SRAM_DATA_WIDTH-1:0] sram_rdata_w_wire;
+    // wire [SRAM_DATA_WIDTH-1:0] sram_rdata_w_wire;
     wire [DATA_WIDTH-1:0]      sram_rdata_v_wire;
     wire [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] final_result_wire;
 
-    assign debug_data = final_result_wire [15:0];
+    // assign debug_data = final_result_wire [15:0];
 
     // Address registers for input SRAMs
     reg [$clog2(SRAM_W_DEPTH)-1:0] sram_w_addr;
@@ -62,6 +62,8 @@ module mac_top #(
     wire [$clog2(SRAM_V_DEPTH)-1:0] final_raddr_v;
     wire [$clog2(SRAM_O_DEPTH)-1:0] final_raddr_o;
 
+    wire [31:0] sram_w_rdata_bank [0:31]; 
+
     // SRAM 读地址切换
     assign final_raddr_w = (dma_access_mode) ? 'd0 : sram_w_addr; // 0模式（计算）下读，1模式下加载数据
     assign final_raddr_v = (dma_access_mode) ? 'd0 : sram_v_addr; // 0模式（计算）下读，1模式下加载数据
@@ -73,20 +75,50 @@ module mac_top #(
     //========================================================================
     // NOTE: Assuming the use of the 'sram' module created earlier.
 
+    genvar i; // 声明 generate 循环变量
+    generate
+        for (i = 0; i < SRAM_DATA_WIDTH / DATA_WIDTH; i = i + 1) begin : sram_bank_gen
+            // 每个 sram 模块位宽是32，深度是64
+            sram #(
+                .DATA_WIDTH(DATA_WIDTH), 
+                .ADDR_WIDTH($clog2(SRAM_W_DEPTH))
+            ) sram_w_bank_inst (
+                .clk(clk),
+                .csb(1'b0),
+                .wsb(~(dma_w_sram_bank_we[i])), 
+                .waddr(dma_w_sram_waddr), 
+                .wdata(dma_w_sram_wdata), 
+
+                .raddr(final_raddr_w), 
+                .rdata(sram_w_rdata_bank[i]) 
+            );
+        end
+    endgenerate
+
+    // 声明一条1024位的宽总线，用于连接到PE Core
+    wire [ARRAY_SIZE * DATA_WIDTH - 1:0] pe_core_w_input_bus;
+
+    // 拼接
+    genvar j;
+    generate
+        for (j = 0; j < ARRAY_SIZE; j = j + 1) begin : concat_gen
+            assign pe_core_w_input_bus[j*DATA_WIDTH +: DATA_WIDTH] = sram_w_rdata_bank[j];
+        end
+    endgenerate
     // Instantiate the weight SRAM (for Matrix A)
-    sram #(
-        .DATA_WIDTH(SRAM_DATA_WIDTH),
-        .ADDR_WIDTH($clog2(SRAM_W_DEPTH)),
-        .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
-    ) sram_w_inst (
-        .clk(clk),
-        .csb(1'b0), // Chip select is always active for simplicity
-        .wsb(~dma_w_sram_we), // 只有在DMA模式且DMA写使能时才写
-        .wdata(dma_w_sram_wdata),
-        .waddr(dma_w_sram_waddr),
-        .raddr(final_raddr_w),
-        .rdata(sram_rdata_w_wire)
-    );
+    // sram #(
+    //     .DATA_WIDTH(SRAM_DATA_WIDTH),
+    //     .ADDR_WIDTH($clog2(SRAM_W_DEPTH)),
+    //     .INIT_FILE("D://IC//Matrix_coaccelerator//vsrc//weights.mem")
+    // ) sram_w_inst (
+    //     .clk(clk),
+    //     .csb(1'b0), // Chip select is always active for simplicity
+    //     .wsb(~dma_w_sram_we), // 只有在DMA模式且DMA写使能时才写
+    //     .wdata(dma_w_sram_wdata),
+    //     .waddr(dma_w_sram_waddr),
+    //     .raddr(final_raddr_w),
+    //     .rdata(sram_rdata_w_wire)
+    // );
 
     // Instantiate the vector SRAM (for Vector B)
     sram #(
@@ -131,7 +163,7 @@ module mac_top #(
         .srstn(srstn),
         .alu_start(alu_start_reg),
         .cycle_num(cycle_num_reg),
-        .sram_rdata_w(sram_rdata_w_wire),
+        .sram_rdata_w(pe_core_w_input_bus),
         .sram_rdata_v(sram_rdata_v_wire),
         .mul_outcome(final_result_wire)
     );
