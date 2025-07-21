@@ -31,7 +31,7 @@ module mac_top #(
     input  [DATA_WIDTH-1:0]         dma_v_sram_wdata,
     // -- DMA 读接口 --
     input  [$clog2(SRAM_O_DEPTH)-1:0] dma_o_sram_raddr, // DMA提供的读地址
-    output [SRAM_DATA_WIDTH-1:0]    dma_o_sram_rdata,   // 从Outcome SRAM读出的数据
+    output [SRAM_DATA_WIDTH * ARRAY_SIZE -1:0]    dma_o_sram_rdata,   // 从Outcome SRAM读出的数据
     output processing_done,  //TODO 适配控制器模块，缺失error模块
     output [15:0] debug_data
 );
@@ -53,7 +53,7 @@ module mac_top #(
 
     // --- Wires for Serializer Connections (now narrow) ---
     wire sram_we_from_serializer;
-    wire [SRAM_DATA_WIDTH-1:0] sram_wdata_from_serializer;
+    wire [SRAM_DATA_WIDTH * ARRAY_SIZE - 1:0] sram_wdata_from_serializer;
     wire [$clog2(ARRAY_SIZE)-1:0] sram_waddr_from_serializer;
 
     // --- Wires for SRAM read/write operations ---
@@ -137,7 +137,7 @@ module mac_top #(
 
     // --- Final Outcome SRAM (with standard 32-bit width) ---
     sram #(
-        .DATA_WIDTH(SRAM_DATA_WIDTH),   //改为高位宽输出
+        .DATA_WIDTH(SRAM_DATA_WIDTH*ARRAY_SIZE),   //改为高位宽输出
         .ADDR_WIDTH(1)
     ) sram_outcome_inst (
         .clk(clk), 
