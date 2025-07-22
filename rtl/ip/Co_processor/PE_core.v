@@ -47,6 +47,12 @@ module PE_core#(
                 weight_queue[i] <= sram_rdata_w[i*DATA_WIDTH +: DATA_WIDTH];
             end
             vec_reg <= sram_rdata_v;
+        end else begin
+            // Maintain the current state if not starting a new operation
+            for (i = 0; i < ARRAY_SIZE; i = i + 1) begin
+                weight_queue[i] <= 0;
+            end
+            vec_reg <= 0;
         end
     end
 
