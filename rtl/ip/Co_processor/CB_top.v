@@ -393,7 +393,19 @@ CB_Controller u_controller(
         .debug_data(debug_data)
     );
 
-    
+wire [8:0]           cmd_block_size;
+wire [10:0]          cmd_stride; //stide Bytes
+wire                 cmd_padding_en;
+wire  [2:0]          cmd_block_count; // block_cnt -1
+wire [7:0]           cmd_padding_words;
+
+//assign cmd_block_size = cmd_len;
+assign cmd_block_size = 'd88;
+assign cmd_block_count = 'd1;
+assign cmd_padding_en =1'd1;
+assign cmd_padding_words = 'd10;
+assign cmd_stride ='d0;
+
 
     axi_dma_controller #(
         .ADDR_WD (32),  
@@ -415,11 +427,15 @@ CB_Controller u_controller(
     .cmd_dst_addr   (cmd_dst_addr),
     .cmd_burst      (cmd_burst),
     .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
-    .cmd_len        (cmd_len),     // 单位：Byte
+    .cmd_len        (cmd_len),     // 单位：Byte Use in write 
     .cmd_size       (cmd_size),    // AXI beat size
     .R_strobe       (4'b1111),    // 读通道 byte-enable
-    .dma_done       (dma_done),
-
+    .dma_done       (dma_done), 
+    .cmd_block_size (cmd_block_size), // 单位：Byte e.g. 32 32bits-floating should be 32*32/8=128 (B)
+    .cmd_stride     (cmd_stride),// ADDR, e.g 32 float is 32*4 = 128, 
+    .cmd_padding_en (cmd_padding_en),
+    .cmd_padding_words(cmd_padding_words),
+    .cmd_block_count(cmd_block_count),//block_cnt -1 ,e.g. transmit by once , this signal should be 0
     //-------------------------------------------------
     // AXI-4 Read Address Channel
     //-------------------------------------------------
