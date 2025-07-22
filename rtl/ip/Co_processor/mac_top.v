@@ -54,7 +54,7 @@ module mac_top #(
     // --- Wires for Serializer Connections (now narrow) ---
     wire sram_we_from_serializer;
     wire [SRAM_DATA_WIDTH * ARRAY_SIZE - 1:0] sram_wdata_from_serializer;
-    wire [$clog2(ARRAY_SIZE)-1:0] sram_waddr_from_serializer;
+    wire sram_waddr_from_serializer;
 
     // --- Wires for SRAM read/write operations ---
     wire final_wsb_w, final_wsb_v, final_wsb_o;

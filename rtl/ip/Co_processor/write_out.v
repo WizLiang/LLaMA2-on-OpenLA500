@@ -22,7 +22,7 @@ module write_out#(
     // Outputs for the narrow, final SRAM
     output reg sram_we,
     output reg [(ARRAY_SIZE*DATA_WIDTH)-1:0] sram_wdata,
-    output reg [$clog2(ARRAY_SIZE)-1:0] sram_waddr
+    output reg sram_waddr
 );
 
     // Using a single clocked always block for robust, latch-free logic.
