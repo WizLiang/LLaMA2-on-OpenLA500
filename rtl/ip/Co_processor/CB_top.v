@@ -403,11 +403,11 @@ wire                 cmd_padding_en;
 wire  [2:0]          cmd_block_count; // block_cnt -1
 wire [7:0]           cmd_padding_words;
 
-//assign cmd_block_size = cmd_len;
-assign cmd_block_size = 'd88;
-assign cmd_block_count = 'd1;
-assign cmd_padding_en =1'd1;
-assign cmd_padding_words = 'd10;
+assign cmd_block_size = cmd_len;
+// assign cmd_block_size = 'd88;
+assign cmd_block_count = 'd0;
+assign cmd_padding_en =1'd0;
+assign cmd_padding_words = 'd0;
 assign cmd_stride ='d0;
 
 
