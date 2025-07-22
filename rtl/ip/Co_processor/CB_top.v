@@ -291,6 +291,8 @@ always @(posedge clk) begin
             end else begin
                 out_read_sub_cnt <= out_read_sub_cnt + 1;
             end
+        end else if (CB_done) begin
+            out_read_sub_cnt <= 'd0;
         end
     end
 end
