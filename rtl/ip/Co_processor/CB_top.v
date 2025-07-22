@@ -250,15 +250,15 @@ always @(posedge clk or negedge rst_n) begin
                         // 当前 Bank 已写满 (地址从0到63，共64个)
                         dma_w_addr_in_bank_cnt <= 0; // Bank 内地址清零
                         // 切换到下一个 Bank (如果已经是最后一个Bank，则会自然溢出回到0)
-                        dma_w_bank_sel_cnt     <= dma_w_bank_sel_cnt + 1; 
-                    end else if (CB_done)begin
-                        dma_w_bank_sel_cnt <= 0; // 如果DMA完成，重置Bank选择计数器
+                        dma_w_bank_sel_cnt     <= dma_w_bank_sel_cnt + 1;                         
                     end else begin
                         // 当前 Bank 未写满，地址递增
                         dma_w_addr_in_bank_cnt <= dma_w_addr_in_bank_cnt + 1;
                     end
                 end
             endcase
+        end else if (CB_done) begin
+            dma_w_bank_sel_cnt <= 0; // 如果DMA完成，重置Bank选择计数器
         end
     end
 end
