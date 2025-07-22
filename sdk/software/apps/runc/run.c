@@ -303,7 +303,7 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     }
 
     // CPU 版本计算
-    #pragma omp parallel for
+    // #pragma omp parallel for
     for (int i = 0; i < d; i++) {
         float sum = 0.0f;
         for (int j = 0; j < n; j++) {
