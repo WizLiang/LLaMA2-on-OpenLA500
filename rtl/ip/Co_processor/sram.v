@@ -12,6 +12,7 @@ module sram #(
     input clk,
     input csb,
     input wsb,
+    input rst, // Active-high reset signal
     input [DATA_WIDTH-1:0] wdata,
     input [ADDR_WIDTH-1:0] waddr,
     input [ADDR_WIDTH-1:0] raddr,
@@ -23,6 +24,7 @@ module sram #(
     // The core memory array
     reg [DATA_WIDTH-1:0] mem [0:DEPTH-1];
     reg [DATA_WIDTH-1:0] _rdata;
+    integer i;
 
     // Synthesizable initialization block
     initial begin
@@ -33,13 +35,21 @@ module sram #(
 
     // Synchronous write logic
     always @(posedge clk) begin
-        if (~csb && ~wsb) begin
+        if (rst) begin
+            for (i = 0; i < DEPTH; i = i + 1) begin
+                mem[i] <= {DATA_WIDTH{1'b0}};
+            end
+        end else if (~csb && ~wsb) begin
+            // If not in reset, perform a normal write on chip select and write enable.
             mem[waddr] <= wdata;
         end
     end
 
-    always@(posedge clk) begin
-        if (~csb) begin
+    always @(posedge clk) begin
+        if (rst) begin
+            // Reset the intermediate read register to 0.
+            _rdata <= {DATA_WIDTH{1'b0}};
+        end else if (~csb) begin
             _rdata <= mem[raddr];
         end
     end

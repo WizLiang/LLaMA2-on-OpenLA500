@@ -222,7 +222,7 @@ core_top #(.TLBNUM(32)) u_core_top (
     .aclk         (cpu_clk),
     .aresetn      (cpu_resetn),
 
-    .intrpt       ({6'h0,CB_done,confreg_int}),
+    .intrpt       ({6'h0,CB_done,(confreg_int & (debug_CB_state== 'b0))}),
     // AXI Read Request
     .arid         (cpu_arid),
     .araddr       (cpu_araddr),

@@ -27,6 +27,7 @@ module PE_core#(
     input [8:0] cycle_num,
     input [SRAM_DATA_WIDTH * ARRAY_SIZE - 1:0] sram_rdata_w,
     input [DATA_WIDTH-1:0] sram_rdata_v,
+    input acc_en, // Enable signal for the MAC units
     output [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] mul_outcome
 );
 
@@ -34,6 +35,21 @@ module PE_core#(
     reg [DATA_WIDTH-1:0] weight_queue [0:ARRAY_SIZE-1];
     reg [DATA_WIDTH-1:0] vec_reg;
     integer i;
+    reg [ARRAY_SIZE * DATA_WIDTH - 1:0] partial_sum_in;
+
+    //锁存逻辑
+    always @(posedge clk) begin
+        if (~srstn)begin
+            partial_sum_in <= 0;
+        end
+        else if (acc_en) begin
+            // Load the initial value for the accumulator from the SRAM read data
+            partial_sum_in <= mul_outcome_reg;
+        end else begin
+            // Maintain the current state if not starting a new operation
+            partial_sum_in <= 0;
+        end
+    end
 
     // Input data loading logic
     always @(posedge clk) begin
@@ -83,6 +99,7 @@ module PE_core#(
                 .rst_acc(rst_acc_pulse),
                 .a(weight_queue[gi]),
                 .b(vec_reg),
+                .partial_sum_in(partial_sum_in[((ARRAY_SIZE-gi) * DATA_WIDTH) - 1 -: DATA_WIDTH]),
                 .result(mac_results_wire[gi])
             );
         end
@@ -122,9 +139,10 @@ module fp_mac_pipelined_acc (
     input clk,
     input rstn,      // Active-low reset for this module
     input en,        // Enable pipeline stages
-    input rst_acc,   // Synchronous reset for the accumulator value itself
+    input rst_acc,   // 用于加载初始值
     input [31:0] a,
     input [31:0] b,
+    input [31:0] partial_sum_in,
     output [31:0] result
 );
     // Wires connecting the internal modules
@@ -160,7 +178,7 @@ module fp_mac_pipelined_acc (
             acc_reg = 32'b0;
         // rst_acc is a synchronous signal to clear the sum at the start of a sequence.
         end else if (rst_acc) begin
-            acc_reg = 32'b0;
+            acc_reg = partial_sum_in; // Load the initial value into the accumulator
         // If enabled, the pipeline moves forward.
         end else if (en) begin
             // The adder's output becomes the new accumulated value.

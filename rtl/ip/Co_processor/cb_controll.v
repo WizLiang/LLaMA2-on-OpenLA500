@@ -66,6 +66,8 @@ module CB_Controller (
     input               mac_error,
     output reg          mac_access_mode, // 连接到 mac_top 的 dma_access_mode
     output reg  [1:0]   dma_target_sram, // 00=Vec, 01=Weight, 10=Out
+    output reg          acc_en,
+    output reg          mem_rst,    // 内存复位信号 
 
     // --- AXI4-Lite Slave Bus ---
     //aw
@@ -117,6 +119,16 @@ reg [31:0] csr_ctrl, csr_status, csr_err_code;
 reg [31:0] csr_vi_base, csr_mi_base, csr_vo_base;
 reg [31:0] csr_rows, csr_cols;
 
+// --- 硬件能力参数 (Hardware Capability) ---
+localparam HW_ROWS = 32; // 硬件引擎一次能处理的行数
+localparam HW_COLS = 64; // 硬件引擎一次能处理的列数
+
+reg [HW_ROWS * 32 - 1:0] partial_sum_buffer;
+// --- 动态计算和控制寄存器 ---
+reg [15:0] num_tiles_reg;        // 锁存当前任务需要的块数
+reg [15:0] tile_cnt;             // 当前处理的是第几个块 (外循环计数器)
+// wire [HW_ROWS * 32 - 1:0] adder_result = mac_result + partial_sum_buffer;
+
 
 //======================================================================
 //==                         硬件分块寄存器                            ==
@@ -129,15 +141,19 @@ reg [31:0] row_offset_counter; // 已处理的行数偏移量
 
 // 当前块的动态参数
 wire [31:0] remaining_rows = csr_rows - row_offset_counter;
+wire [31:0] remaining_cols = csr_cols - (tile_cnt * HW_COLS); // 当前块剩余列数
 wire [31:0] current_rows;
+wire [31:0] current_cols;
 localparam HW_MAX_ROWS = 32; // 定义硬件引擎一次能处理的最大行数
+localparam HW_MAX_COLS = 64; // 定义硬件引擎一次能处理的最大列数
 
 // 计算当前块的行数，处理最后不足32行的边界情况
 assign current_rows = (remaining_rows >= HW_MAX_ROWS) ? HW_MAX_ROWS : remaining_rows;
+assign current_cols = (remaining_cols >= HW_MAX_COLS) ? HW_MAX_COLS : remaining_cols;
 
 // 计算当前块的地址
 wire [31:0] current_mi_addr = csr_mi_base + (row_offset_counter * csr_cols * 4);   //单位为字节数
-wire [31:0] current_vi_addr = csr_vi_base + (row_offset_counter * 4); //单位为字节数
+wire [31:0] current_vi_addr = csr_vi_base + (tile_cnt * HW_MAX_ROWS * 4); //单位为字节数
 wire [31:0] current_vo_addr = csr_vo_base + (row_offset_counter * 4); //单位为字节数
 
 //DMA分块所需寄存器
@@ -263,23 +279,25 @@ assign s_rresp = 2'b0;
 //==              Core Finite State Machine (FSM)                     ==
 //======================================================================
 // TODO 由于vector的长度一般小于最大传输长度256个浮点数，所以暂时不需要更改其状态机
-parameter   S_IDLE         = 4'd0, 
-            S_DMA_VI       = 4'd1, 
-            S_WAIT_VI_DONE = 4'd2,
-            S_LOOP_START   = 4'd3,
-            S_DMA_MI_INIT  = 4'd4, // 初始化循环状态
-            S_DMA_MI_ISSUE = 4'd5,
-            S_DMA_MI_WAIT  = 4'd6, 
-            S_COMPUTE      = 4'd7,
-            S_WAIT_COMPUTE = 4'd8, 
-            S_DMA_VO       = 4'd9, 
-            S_WAIT_VO_DONE = 4'd10,
-            S_UPDATE_OFFSET = 4'd11,
-            S_DONE         = 4'd12, 
-            S_ERROR        = 4'd13,
-            S_DMA_VO_INIT = 4'd14; // 新增状态，用于初始化输出向量
+parameter   S_IDLE         = 5'd0, 
+            S_DMA_VI       = 5'd1, 
+            S_WAIT_VI_DONE = 5'd2,
+            S_LOOP_START   = 5'd3,
+            S_DMA_MI_INIT  = 5'd4, // 初始化循环状态
+            S_DMA_MI_ISSUE = 5'd5,
+            S_DMA_MI_WAIT  = 5'd6, 
+            S_COMPUTE      = 5'd7,
+            S_WAIT_COMPUTE = 5'd8, 
+            S_DMA_VO       = 5'd9, 
+            S_WAIT_VO_DONE = 5'd10,
+            S_UPDATE_OFFSET = 5'd11,
+            S_DONE         = 5'd12, 
+            S_ERROR        = 5'd13,
+            S_DMA_VO_INIT = 5'd14, // 新增状态，用于初始化输出向量
+            S_ACCUMULATE   = 5'd15,  // 新增状态，用于累加结果
+            S_CHECK_LOOP   = 5'd16;  // 新增状态，用于检查是否需要继续循环
 
-reg [3:0] state, next_state;
+reg [4:0] state, next_state;
 
 wire start_signal = csr_ctrl[`CSR_CTRL_START_BIT];
 // wire error = dma_error | mac_error;
@@ -295,6 +313,10 @@ always @(posedge clk or negedge rst_n) begin
         dma_bytes_transferred <= 32'h0;
         dma_current_src_addr <= 32'h0;
         dma_current_dst_addr <= 32'h0;
+        tile_cnt <= 0;
+        acc_en <= 1'b0;
+        num_tiles_reg <= 1'b0;
+        // mem_rst <= 1'b0; // 内存复位信号
         
     end else begin
 
@@ -307,6 +329,26 @@ always @(posedge clk or negedge rst_n) begin
             dma_current_src_addr <= dma_current_src_addr + dma_chunk_len;   //TODO 开始地址
         end
 
+        // if (state == S_WAIT_COMPUTE) begin
+        //     // 等待计算完成
+        //     if (mac_done) begin
+        //         mem_rst <= 1'b1;    // 计算完成后复位内存
+        //     end
+        // end
+
+        if (state == S_ACCUMULATE) begin
+            num_tiles_reg      <= (csr_cols + HW_COLS - 1) / HW_COLS;
+            acc_en <= 1'b1; // 开始累加
+        end
+
+        if (state == S_CHECK_LOOP) begin
+            if (tile_cnt < num_tiles_reg - 1) begin
+                tile_cnt <= tile_cnt + 1; // 增加块计数器
+            end else begin
+                tile_cnt <= 0; // 重置块计数器
+            end
+        end
+
         if (state == S_DMA_VO_INIT) begin   //1次即可输出完毕
             dma_current_dst_addr <= current_vo_addr; // 输出向量的地址
         end
@@ -317,6 +359,7 @@ always @(posedge clk or negedge rst_n) begin
         end else if (state == S_UPDATE_OFFSET) begin
             // 仅在 S_UPDATE_OFFSET 状态的下一个时钟沿更新
             row_offset_counter <= row_offset_counter + current_rows;
+            acc_en <= 1'b0; // 停止累加
         end
 
     end
@@ -335,9 +378,11 @@ always @(*) begin
     mac_access_mode = 1'b0; // mac_access_mode 0的时候进行计算操作并将结果写到ram中，以及从主存写到ram中，1的时候从outram中读数据，将数据写入2个buffer
     dma_target_sram = 2'b00; // 00=Vec
     dma_bytes_total = 32'h0; // 初始化DMA总字节数
+    mem_rst = 1'b0; // 内存复位信号
 
     case (state)
         S_IDLE: begin
+            mem_rst = 1'b1; // 内存复位信号
             if (start_signal) next_state = S_DMA_VI;
         end
         // 向量加载仅在开始的时候加载一次即可
@@ -371,14 +416,14 @@ always @(*) begin
         S_DMA_MI_INIT: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01; // 01=Weight
-            dma_bytes_total = current_rows * csr_cols * 4; // 当前块的总字节数
+            dma_bytes_total = current_rows * current_cols * 4; // 当前块的总字节数
             // dma_current_src_addr = current_mi_addr;
             next_state = S_DMA_MI_ISSUE; // 进入DMA传输状态
         end
         S_DMA_MI_ISSUE: begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01; // 01=Weight
-            dma_bytes_total = current_rows * csr_cols * 4;
+            dma_bytes_total = current_rows * current_cols * 4;
             if (dma_bytes_transferred < dma_bytes_total) begin
                 cmd_valid = 1'b1;
                 cmd_rw = 1'b0; // Read from DDR
@@ -406,7 +451,22 @@ always @(*) begin
             if (mac_error) begin 
                 next_state = S_ERROR; 
             end
-            else if (mac_done) next_state = S_DMA_VO_INIT;
+            else if (mac_done && csr_cols > 64) begin 
+                mem_rst = 1'b1; // 计算完成后复位内存
+                next_state = S_ACCUMULATE;
+            end
+            else if (mac_done) begin
+                mem_rst = 1'b1; // 计算完成后复位内存
+                next_state = S_DMA_VO_INIT; // 计算完成，进入输出状态
+            end
+        end
+        S_ACCUMULATE: begin
+            next_state = S_CHECK_LOOP; // 累加完成后进入输出状态
+        end
+        S_CHECK_LOOP: begin
+            // 检查是否需要继续循环处理
+            if (tile_cnt >= num_tiles_reg - 1) next_state = S_DMA_VO_INIT;
+            else next_state = S_DMA_VI;
         end
         S_DMA_VO_INIT: begin    //从out sram写到主存
             mac_access_mode = 1'b1; // 取数据

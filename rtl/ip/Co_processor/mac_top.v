@@ -29,6 +29,10 @@ module mac_top #(
     input  dma_v_sram_we,
     input  [$clog2(SRAM_V_DEPTH)-1:0] dma_v_sram_waddr,
     input  [DATA_WIDTH-1:0]         dma_v_sram_wdata,
+
+    input acc_en,
+    input mem_rst, // 内存复位信号
+
     // -- DMA 读接口 --
     input  [$clog2(SRAM_O_DEPTH)-1:0] dma_o_sram_raddr, // DMA提供的读地址
     output [SRAM_DATA_WIDTH * ARRAY_SIZE -1:0]    dma_o_sram_rdata,   // 从Outcome SRAM读出的数据
@@ -86,6 +90,7 @@ module mac_top #(
                 .clk(clk),
                 .csb(1'b0),
                 .wsb(~(dma_w_sram_bank_we[i])), 
+                .rst(mem_rst), // 内存复位信号
                 .waddr(dma_w_sram_waddr), 
                 .wdata(dma_w_sram_wdata), 
 
@@ -129,6 +134,7 @@ module mac_top #(
         .clk(clk),
         .csb(1'b0),
         .wsb(~ dma_v_sram_we), // Write disabled (read-only)
+        .rst(mem_rst),
         .wdata(dma_v_sram_wdata),
         .waddr(dma_v_sram_waddr),
         .raddr(final_raddr_v),
@@ -150,7 +156,6 @@ module mac_top #(
     );
 
     // Instantiate the PE core
-    (* DONT_TOUCH = "true" *)
     PE_core #(
         .ARRAY_SIZE(ARRAY_SIZE),
         .SRAM_DATA_WIDTH(SRAM_DATA_WIDTH),
@@ -165,6 +170,7 @@ module mac_top #(
         .cycle_num(cycle_num_reg),
         .sram_rdata_w(pe_core_w_input_bus),
         .sram_rdata_v(sram_rdata_v_wire),
+        .acc_en(acc_en),
         .mul_outcome(final_result_wire)
     );
 

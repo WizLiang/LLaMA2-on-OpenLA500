@@ -125,6 +125,8 @@ module CB_top #(
 //MAC
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
+wire acc_en;    //从controller送到mac的累加信号
+wire mem_rst; // 内存复位信号
 
 // wire mat_write_finished;
 // assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
@@ -331,6 +333,8 @@ CB_Controller u_controller(
     .mac_error(mac_error),
     .mac_access_mode(mac_access_mode), // 0=计算模式, 1=DMA访问模式
     .dma_target_sram(dma_target_sram), // 00=Vec, 01=Weight, 10=Output, 11=Reserved
+    .acc_en(acc_en),
+    .mem_rst(mem_rst),    // 内存复位信号
 
 
     //TODO: Debug
@@ -384,6 +388,8 @@ CB_Controller u_controller(
         .srstn(rst_n), 
         .start_processing(mac_start),
         .processing_done(mac_done),
+        .acc_en(acc_en),
+        .mem_rst(mem_rst), // 内存复位信号
 
         .dma_access_mode(mac_access_mode),
         .dma_w_sram_bank_we(mac_w_sram_bank_we),
