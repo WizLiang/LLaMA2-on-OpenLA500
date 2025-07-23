@@ -454,7 +454,7 @@ always @(*) begin
             end else begin
                 cmd_block_size = HW_COLS * 4; // 当前块的总字节数
                 cmd_block_count = current_rows - 1; // 当前块的总字节数
-                cmd_stride = 0; // 目前不需要步长
+                cmd_stride = 'd256; // 目前不需要步长
                 cmd_padding_en = 1'b0; // 不需要填充
                 cmd_padding_words = 0; // 不需要填充
             end
