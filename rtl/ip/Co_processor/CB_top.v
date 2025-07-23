@@ -128,6 +128,8 @@ wire mac_error = 1'b0;
 wire acc_en;    //从controller送到mac的累加信号
 wire mem_rst; // 内存复位信号
 
+wire [31:0] current_cols; // 当前列数
+
 // wire mat_write_finished;
 // assign mat_write_finished = (mac_w_sram_waddr == 63) ? 1'b1 : 1'b0; // 假设写入完成条件为地址到达63
 
@@ -248,7 +250,7 @@ always @(posedge clk or negedge rst_n) begin
                     mac_w_sram_wdata <= dma_sram_wdata;
 
                     // 3. 更新计数器
-                    if (dma_w_addr_in_bank_cnt == 63) begin
+                    if (dma_w_addr_in_bank_cnt == current_cols - 1) begin
                         // 当前 Bank 已写满 (地址从0到63，共64个)
                         dma_w_addr_in_bank_cnt <= 0; // Bank 内地址清零
                         // 切换到下一个 Bank (如果已经是最后一个Bank，则会自然溢出回到0)
@@ -314,6 +316,7 @@ CB_Controller u_controller(
 
     //Debug
     .debug_state(debug_state),
+    .current_cols(current_cols), // 连接到当前列数
 
     // .mat_write_finished(mat_write_finished), // 连接到MAC的写完成信号
 
@@ -326,6 +329,11 @@ CB_Controller u_controller(
     .cmd_len        (cmd_len),     // 单位：Byte
     .dma_done       (dma_done),
     .ctrl_done      (ctrl_done),   // 控制器完成信号
+    .cmd_block_size (cmd_block_size), // 单位：Byte
+    .cmd_stride     (cmd_stride), // ADDR, e.g 32 float is 32*4 = 128,
+    .cmd_padding_en (cmd_padding_en),
+    .cmd_padding_words(cmd_padding_words),
+    .cmd_block_count(cmd_block_count), // block_cnt -1 ,e.g. transmit
 
     //TODO: MAC_Engine
     .mac_start(mac_start),
@@ -406,15 +414,15 @@ CB_Controller u_controller(
 wire [8:0]           cmd_block_size;
 wire [10:0]          cmd_stride; //stide Bytes
 wire                 cmd_padding_en;
-wire  [2:0]          cmd_block_count; // block_cnt -1
+wire  [6:0]          cmd_block_count; // block_cnt -1
 wire [7:0]           cmd_padding_words;
 
-assign cmd_block_size = cmd_len;
-// assign cmd_block_size = 'd88;
-assign cmd_block_count = 'd0;
-assign cmd_padding_en =1'd0;
-assign cmd_padding_words = 'd0;
-assign cmd_stride ='d0;
+// assign cmd_block_size = cmd_len;
+// // assign cmd_block_size = 'd88;
+// assign cmd_block_count = 'd0;
+// assign cmd_padding_en =1'd0;
+// assign cmd_padding_words = 'd0;
+// assign cmd_stride ='d0;
 
 
     axi_dma_controller #(

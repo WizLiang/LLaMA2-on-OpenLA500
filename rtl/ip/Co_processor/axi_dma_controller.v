@@ -27,7 +27,7 @@
     input  wire [8:0]           cmd_block_size,
     input  wire [10:0]          cmd_stride, //stide Bytes
     input  wire                 cmd_padding_en,
-    input  wire  [2:0]          cmd_block_count, // block_cnt
+    input  wire  [5:0]          cmd_block_count, // block_cnt
     input  wire  [7:0]          cmd_padding_words,
 
     input  wire [STRB_WD-1 : 0] R_strobe, 
@@ -90,7 +90,7 @@
     //reg                       r_cmd_rw;          
     reg   [8:0]                r_cmd_block_size         ;
     reg    [10:0]              r_cmd_stride             ;
-    reg   [2:0]                r_cmd_block_count ;
+    reg   [6:0]                r_cmd_block_count ;
     reg                       r_cmd_padding;   
     reg   [7:0]               r_cmd_padding_words; 
 
@@ -228,7 +228,7 @@ assign dma_done = cmd_rw ? write_finish : read_All_finish ;
             r_cmd_ready <= r_cmd_ready;
     end
 /*---------------------  read  CTRL  -------------------------*/
-reg [2:0] finished_block_cnt;
+reg [6:0] finished_block_cnt;
 always@(posedge clk)begin
     if(rst)begin
         finished_block_cnt <= 'b0;
@@ -236,7 +236,7 @@ always@(posedge clk)begin
     end
     else if (read_finish)begin
         //read_All_finish <= (finished_block_cnt == cmd_block_count) ? 1'b1 : 1'b0 ;
-        if(finished_block_cnt == cmd_block_count)begin
+        if(finished_block_cnt == r_cmd_block_count)begin
             read_All_finish <= 'b1;
             finished_block_cnt <= 'b0;
         end 

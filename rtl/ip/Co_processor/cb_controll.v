@@ -30,11 +30,6 @@
 `define CSR_STATUS_DMA_ERR_BIT  8   // [8]: 1 if a DMA Error occurred.
 `define CSR_STATUS_MAC_ERR_BIT  9   // [9]: 1 if a MAC Error occurred.
 
-//TODO RAM地址
-`define BRAM_VI_BASE_ADDR  32'h0000_0000 // BRAM address for Input Vector
-`define BRAM_MI_BASE_ADDR  32'h0000_1000 // BRAM address for Input Matrix
-`define BRAM_VO_BASE_ADDR  32'h0000_8000 // BRAM address for Output Vector
-
 
 
 module CB_Controller (
@@ -44,6 +39,7 @@ module CB_Controller (
     
     //Debug Interface
     output  [3:0]       debug_state,
+    output wire [31:0]  current_cols,
 
     //add
     // input mat_write_finished, // MAC模块写完成信号
@@ -59,6 +55,11 @@ module CB_Controller (
     output  reg     [10:0]  cmd_len,    //TODO 可能需要扩大
     input   wire            dma_done,
     output  wire            ctrl_done, 
+    output reg [8:0] cmd_block_size,
+    output reg [6:0] cmd_block_count,
+    output reg [10:0] cmd_stride,
+    output reg cmd_padding_en,
+    output reg [7:0] cmd_padding_words,
 
     // MAC Engine Interface
     output reg          mac_start,
@@ -107,7 +108,7 @@ module CB_Controller (
     output      [4:0]   s_rid,
     output reg  [31:0]  s_rdata,
     output      [1:0]   s_rresp,
-    output reg          s_rlast,    //TODO to be fix
+    output reg          s_rlast,  
     output reg          s_rvalid,
     input               s_rready
 );
@@ -143,17 +144,15 @@ reg [31:0] row_offset_counter; // 已处理的行数偏移量
 wire [31:0] remaining_rows = csr_rows - row_offset_counter;
 wire [31:0] remaining_cols = csr_cols - (tile_cnt * HW_COLS); // 当前块剩余列数
 wire [31:0] current_rows;
-wire [31:0] current_cols;
-localparam HW_MAX_ROWS = 32; // 定义硬件引擎一次能处理的最大行数
-localparam HW_MAX_COLS = 64; // 定义硬件引擎一次能处理的最大列数
+// wire [31:0] current_cols;
 
 // 计算当前块的行数，处理最后不足32行的边界情况
-assign current_rows = (remaining_rows >= HW_MAX_ROWS) ? HW_MAX_ROWS : remaining_rows;
-assign current_cols = (remaining_cols >= HW_MAX_COLS) ? HW_MAX_COLS : remaining_cols;
+assign current_rows = (remaining_rows >= HW_ROWS) ? HW_ROWS : remaining_rows;
+assign current_cols = (remaining_cols >= HW_COLS) ? HW_COLS : remaining_cols;
 
 // 计算当前块的地址
-wire [31:0] current_mi_addr = csr_mi_base + (row_offset_counter * csr_cols * 4);   //单位为字节数
-wire [31:0] current_vi_addr = csr_vi_base + (tile_cnt * HW_MAX_ROWS * 4); //单位为字节数
+wire [31:0] current_mi_addr = csr_mi_base + (row_offset_counter * csr_cols * 4) + (tile_cnt * HW_COLS * 4);   //单位为字节数
+wire [31:0] current_vi_addr = csr_vi_base + (tile_cnt * HW_COLS * 4); //单位为字节数
 wire [31:0] current_vo_addr = csr_vo_base + (row_offset_counter * 4); //单位为字节数
 
 //DMA分块所需寄存器
@@ -278,7 +277,6 @@ assign s_rresp = 2'b0;
 //======================================================================
 //==              Core Finite State Machine (FSM)                     ==
 //======================================================================
-// TODO 由于vector的长度一般小于最大传输长度256个浮点数，所以暂时不需要更改其状态机
 parameter   S_IDLE         = 5'd0, 
             S_DMA_VI       = 5'd1, 
             S_WAIT_VI_DONE = 5'd2,
@@ -321,12 +319,13 @@ always @(posedge clk or negedge rst_n) begin
     end else begin
 
         if (state == S_DMA_MI_INIT) begin
+            num_tiles_reg      <= (csr_cols + HW_COLS - 1) / HW_COLS;
             dma_bytes_transferred <= 32'h0; // 初始化DMA传输计数器
             dma_current_src_addr <= current_mi_addr; // 初始化源地址
         end 
         else if ((state == S_DMA_MI_WAIT) && (next_state == S_DMA_MI_ISSUE)) begin  //第一个信号传输完毕
             dma_bytes_transferred <= dma_bytes_transferred + dma_chunk_len;
-            dma_current_src_addr <= dma_current_src_addr + dma_chunk_len;   //TODO 开始地址
+            // dma_current_src_addr <= dma_current_src_addr + dma_chunk_len;   //TODO 开始地址
         end
 
         // if (state == S_WAIT_COMPUTE) begin
@@ -337,7 +336,6 @@ always @(posedge clk or negedge rst_n) begin
         // end
 
         if (state == S_ACCUMULATE) begin
-            num_tiles_reg      <= (csr_cols + HW_COLS - 1) / HW_COLS;
             acc_en <= 1'b1; // 开始累加
         end
 
@@ -379,11 +377,19 @@ always @(*) begin
     dma_target_sram = 2'b00; // 00=Vec
     dma_bytes_total = 32'h0; // 初始化DMA总字节数
     mem_rst = 1'b0; // 内存复位信号
+    cmd_block_size = 0;
+    cmd_block_count = 0;
+    cmd_stride = 0;
+    cmd_padding_en = 1'b0; // 不需要填充
+    cmd_padding_words = 0; // 不需要填充
 
     case (state)
         S_IDLE: begin
-            mem_rst = 1'b1; // 内存复位信号
-            if (start_signal) next_state = S_DMA_VI;
+             // 内存复位信号
+            if (start_signal) begin 
+                mem_rst = 1'b1;
+                next_state = S_DMA_VI;
+            end
         end
         // 向量加载仅在开始的时候加载一次即可
         S_DMA_VI: begin
@@ -392,7 +398,12 @@ always @(*) begin
             cmd_valid = 1'b1;
             cmd_src_addr = current_vi_addr; //ddr中的地址
             cmd_rw = 1'b0;  //read
-            cmd_len = csr_cols * 4; // cols个32位浮点数
+            cmd_len = current_cols * 4; // cols个32位浮点数
+            cmd_block_size = current_cols * 4; // cols个32位浮点数
+            cmd_block_count = 0; // 计算需要多少个块
+            cmd_stride = 0; // 目前不需要步长
+            cmd_padding_en = 1'b0; // 不需要填充
+            cmd_padding_words = 0; // 不需要填充
             if (cmd_ready) begin //dma控制器准备
                 next_state = S_WAIT_VI_DONE;
             end
@@ -424,13 +435,31 @@ always @(*) begin
             mac_access_mode = 1'b1; // 取数据
             dma_target_sram = 2'b01; // 01=Weight
             dma_bytes_total = current_rows * current_cols * 4;
-            if (dma_bytes_transferred < dma_bytes_total) begin
-                cmd_valid = 1'b1;
-                cmd_rw = 1'b0; // Read from DDR
-                if (cmd_ready) next_state = S_DMA_MI_WAIT; // 等待DMA传输完成
+            
+            cmd_valid = 1'b1;
+            cmd_rw = 1'b0; // Read from DDR
+                
+            if (csr_cols > 64) begin
+                cmd_block_size = current_cols * 4; // 当前块的总字节数
+                cmd_block_count = HW_ROWS-1; // 计算需要多少个块
+                cmd_stride = csr_cols * 4; // 目前不需要步长
+                if (current_cols < HW_COLS) begin
+                    cmd_padding_en = 1'b1; // 需要填充
+                    cmd_padding_words = num_tiles_reg * HW_COLS - csr_cols; // 需要填充的字数
+                end
+                else begin
+                    cmd_padding_en = 1'b0; // 不需要填充
+                    cmd_padding_words = 0; // 不需要填充
+                end
             end else begin
-                next_state = S_COMPUTE;
+                cmd_block_size = HW_COLS * 4; // 当前块的总字节数
+                cmd_block_count = current_rows - 1; // 当前块的总字节数
+                cmd_stride = 0; // 目前不需要步长
+                cmd_padding_en = 1'b0; // 不需要填充
+                cmd_padding_words = 0; // 不需要填充
             end
+
+            if (cmd_ready) next_state = S_DMA_MI_WAIT; // 等待DMA传输完成
         end
         S_DMA_MI_WAIT: begin
             mac_access_mode = 1'b1; // 取数据
@@ -438,7 +467,7 @@ always @(*) begin
             dma_bytes_total = current_rows * csr_cols * 4;
             // cmd_len = current_rows * csr_cols * 4; // 128字节，32个浮点数
             if (dma_done) begin //remove error
-                next_state = S_DMA_MI_ISSUE;
+                next_state = S_COMPUTE;
             end
         end
         S_COMPUTE: begin
