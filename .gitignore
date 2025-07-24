@@ -6,6 +6,7 @@
 /rtl/ip/PLL_2019_2/
 /fpga/
 /sim/module_sim/
+/sdk/software/apps/*/obj
 
 #ignoring files
 *.log

@@ -155,6 +155,8 @@ handle_hwi0:
 
 # HWI1 处理程序
 handle_hwi1:
+    bl HWI1_IntrHandler
+
     b trap_jump_exit
 
 # HWI2 处理程序

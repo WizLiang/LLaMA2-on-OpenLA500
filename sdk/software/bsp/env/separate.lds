@@ -4,7 +4,7 @@ ENTRY(_start)
 MEMORY
 {
   isram (rwxai) : ORIGIN = 0x1c000000, LENGTH = 512K
-  dsram (rwxai) : ORIGIN = 0x1c080000, LENGTH = 512K
+  dsram (rwxai) : ORIGIN = 0x1c080000, LENGTH = 3584K
 }
 SECTIONS
 {
@@ -146,7 +146,7 @@ SECTIONS
     *(.srodata.cst4)
     *(.srodata.cst2)
     *(.srodata .srodata.*)
-  } >dsram AT>isram
+  } >dsram AT>dsram
   . = ALIGN(16);
   PROVIDE( _edata = . );
   PROVIDE( edata = . );

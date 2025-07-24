@@ -161,7 +161,6 @@ else begin: pll_clk
 end
 endgenerate
 
-//TODO: add your code
 // CPUtop AXI signals (before CDC)
 wire         cpu_awvalid;
 wire         cpu_awready;
@@ -217,12 +216,13 @@ wire [31:0] debug0_wb_rf_wdata;
 wire [31:0] debug0_wb_inst;
 
 wire confreg_int;
+wire CB_done;
 
 core_top #(.TLBNUM(32)) u_core_top (
     .aclk         (cpu_clk),
     .aresetn      (cpu_resetn),
 
-    .intrpt       ({7'h0,confreg_int}),
+    .intrpt       ({6'h0,CB_done,(confreg_int & (debug_CB_state== 'b0))}),
     // AXI Read Request
     .arid         (cpu_arid),
     .araddr       (cpu_araddr),
@@ -470,37 +470,195 @@ wire  [1:0]   axiIn1_r_payload_resp;
 wire          axiIn1_r_payload_last;
 
 
-// Dummy-master tie-off：axiIn1 永不发起事务，接收通道 always idle
-assign axiIn1_aw_valid             = 1'b0;
-assign axiIn1_aw_payload_addr      = 32'b0;
-assign axiIn1_aw_payload_id        = 4'b0;
-assign axiIn1_aw_payload_len       = 8'b0;
-assign axiIn1_aw_payload_size      = 3'b0;
-assign axiIn1_aw_payload_burst     = 2'b0;
-assign axiIn1_aw_payload_lock      = 1'b0;
-assign axiIn1_aw_payload_cache     = 4'b0;
-assign axiIn1_aw_payload_prot      = 3'b0;
+// // Dummy-master tie-off：axiIn1 永不发起事务，接收通道 always idle
+// assign axiIn1_aw_valid             = 1'b0;
+// assign axiIn1_aw_payload_addr      = 32'b0;
+// assign axiIn1_aw_payload_id        = 4'b0;
+// assign axiIn1_aw_payload_len       = 8'b0;
+// assign axiIn1_aw_payload_size      = 3'b0;
+// assign axiIn1_aw_payload_burst     = 2'b0;
+// assign axiIn1_aw_payload_lock      = 1'b0;
+// assign axiIn1_aw_payload_cache     = 4'b0;
+// assign axiIn1_aw_payload_prot      = 3'b0;
 
-assign axiIn1_w_valid              = 1'b0;
-assign axiIn1_w_payload_data       = 32'b0;
-assign axiIn1_w_payload_strb       = 4'b0;
-assign axiIn1_w_payload_last       = 1'b0;
+// assign axiIn1_w_valid              = 1'b0;
+// assign axiIn1_w_payload_data       = 32'b0;
+// assign axiIn1_w_payload_strb       = 4'b0;
+// assign axiIn1_w_payload_last       = 1'b0;
 
-// 响应通道不用发 ready，直接 tie-off
-assign axiIn1_b_ready              = 1'b0;
+// // 响应通道不用发 ready，直接 tie-off
+// assign axiIn1_b_ready              = 1'b0;
 
-assign axiIn1_ar_valid             = 1'b0;
-assign axiIn1_ar_payload_addr      = 32'b0;
-assign axiIn1_ar_payload_id        = 4'b0;
-assign axiIn1_ar_payload_len       = 8'b0;
-assign axiIn1_ar_payload_size      = 3'b0;
-assign axiIn1_ar_payload_burst     = 2'b0;
-assign axiIn1_ar_payload_lock      = 1'b0;
-assign axiIn1_ar_payload_cache     = 4'b0;
-assign axiIn1_ar_payload_prot      = 3'b0;
+// assign axiIn1_ar_valid             = 1'b0;
+// assign axiIn1_ar_payload_addr      = 32'b0;
+// assign axiIn1_ar_payload_id        = 4'b0;
+// assign axiIn1_ar_payload_len       = 8'b0;
+// assign axiIn1_ar_payload_size      = 3'b0;
+// assign axiIn1_ar_payload_burst     = 2'b0;
+// assign axiIn1_ar_payload_lock      = 1'b0;
+// assign axiIn1_ar_payload_cache     = 4'b0;
+// assign axiIn1_ar_payload_prot      = 3'b0;
 
-assign axiIn1_r_ready              = 1'b0;
+// assign axiIn1_r_ready              = 1'b0;
 
+
+// AXI Slave 2 (Output) signals
+wire         axiOut_2_awvalid;
+wire         axiOut_2_awready;
+wire [31:0]  axiOut_2_awaddr;
+wire [4:0]   axiOut_2_awid;
+wire [7:0]   axiOut_2_awlen;
+wire [2:0]   axiOut_2_awsize;
+wire [1:0]   axiOut_2_awburst;
+wire [0:0]   axiOut_2_awlock;
+wire [3:0]   axiOut_2_awcache;
+wire [2:0]   axiOut_2_awprot;
+
+wire         axiOut_2_wvalid;
+wire         axiOut_2_wready;
+wire [31:0]  axiOut_2_wdata;
+wire [3:0]   axiOut_2_wstrb;
+wire         axiOut_2_wlast;
+
+wire         axiOut_2_bvalid;
+wire         axiOut_2_bready;
+wire [4:0]   axiOut_2_bid;
+wire [1:0]   axiOut_2_bresp;
+
+wire         axiOut_2_arvalid;
+wire         axiOut_2_arready;
+wire [31:0]  axiOut_2_araddr;
+wire [4:0]   axiOut_2_arid;
+wire [7:0]   axiOut_2_arlen;
+wire [2:0]   axiOut_2_arsize;
+wire [1:0]   axiOut_2_arburst;
+wire [0:0]   axiOut_2_arlock;
+wire [3:0]   axiOut_2_arcache;
+wire [2:0]   axiOut_2_arprot;
+
+wire         axiOut_2_rvalid;
+wire         axiOut_2_rready;
+wire [31:0]  axiOut_2_rdata;
+wire [4:0]   axiOut_2_rid;
+wire [1:0]   axiOut_2_rresp;
+wire         axiOut_2_rlast;
+
+// //Dummy Slave Output (Slave -> Cross Bus)
+// assign axiOut_2_awready = 1'b1;
+// assign axiOut_2_wready  = 1'b1;
+
+// assign axiOut_2_bvalid  = 1'b0;
+// assign axiOut_2_bid     = 5'b0;
+// assign axiOut_2_bresp   = 2'b0;
+
+// assign axiOut_2_arready = 1'b1;
+
+// assign axiOut_2_rvalid  = 1'b0;
+// assign axiOut_2_rid     = 5'b0;
+// assign axiOut_2_rdata   = 32'b0;
+// assign axiOut_2_rresp   = 2'b0;
+// assign axiOut_2_rlast   = 1'b0;
+
+wire [3:0]   debug_CB_state;
+wire [15:0] debug_data;
+
+CB_top u_cb_top(
+    .clk                (sys_clk),          
+    .rst_n              (sys_resetn),    
+    .CB_done            (CB_done),  
+
+    // Write Address Channel (AW)
+    .m_awid             (axiIn1_aw_payload_id   ),
+    .m_awaddr           (axiIn1_aw_payload_addr ),
+    .m_awlen            (axiIn1_aw_payload_len  ),
+    .m_awsize           (axiIn1_aw_payload_size ),
+    .m_awburst          (axiIn1_aw_payload_burst),
+    .m_awlock           (axiIn1_aw_payload_lock ),
+    .m_awcache          (axiIn1_aw_payload_cache),
+    .m_awprot           (axiIn1_aw_payload_prot ),
+    .m_awvalid          (axiIn1_aw_valid        ),
+    .m_awready          (axiIn1_aw_ready        ),
+
+    // Write Data Channel (W)
+    .m_wdata            (axiIn1_w_payload_data ),
+    .m_wstrb            (axiIn1_w_payload_strb ),
+    .m_wlast            (axiIn1_w_payload_last ),
+    .m_wvalid           (axiIn1_w_valid        ),
+    .m_wready           (axiIn1_w_ready        ),
+
+    // Write Response Channel (B)
+    .m_bid              (axiIn1_b_payload_id  ),
+    .m_bresp            (axiIn1_b_payload_resp),
+    .m_bvalid           (axiIn1_b_valid       ),
+    .m_bready           (axiIn1_b_ready       ),
+
+    // Read Address Channel (AR)
+    .m_arid             (axiIn1_ar_payload_id   ),
+    .m_araddr           (axiIn1_ar_payload_addr ),
+    .m_arlen            (axiIn1_ar_payload_len  ),
+    .m_arsize           (axiIn1_ar_payload_size ),
+    .m_arburst          (axiIn1_ar_payload_burst),
+    .m_arlock           (axiIn1_ar_payload_lock ),
+    .m_arcache          (axiIn1_ar_payload_cache),
+    .m_arprot           (axiIn1_ar_payload_prot ),
+    .m_arvalid          (axiIn1_ar_valid        ),
+    .m_arready          (axiIn1_ar_ready        ),
+
+    // Read Data Channel (R)
+    .m_rid              (axiIn1_r_payload_id  ),
+    .m_rdata            (axiIn1_r_payload_data),
+    .m_rresp            (axiIn1_r_payload_resp),
+    .m_rlast            (axiIn1_r_payload_last),
+    .m_rvalid           (axiIn1_r_valid       ),
+    .m_rready           (axiIn1_r_ready       ),
+
+//AXI Slave interface
+    .s_awid             (axiOut_2_awid   ),
+    .s_awaddr           (axiOut_2_awaddr ),
+    .s_awlen            (axiOut_2_awlen  ),
+    .s_awsize           (axiOut_2_awsize ),
+    .s_awburst          (axiOut_2_awburst),
+    .s_awlock           (axiOut_2_awlock ),
+    .s_awcache          (axiOut_2_awcache),
+    .s_awprot           (axiOut_2_awprot ),
+    .s_awvalid          (axiOut_2_awvalid),
+    .s_awready          (axiOut_2_awready),
+
+    .s_wdata            (axiOut_2_wdata ),
+    .s_wstrb            (axiOut_2_wstrb ),
+    .s_wlast            (axiOut_2_wlast ),
+    .s_wvalid           (axiOut_2_wvalid),
+    .s_wready           (axiOut_2_wready),
+
+    .s_bid              (axiOut_2_bid   ),
+    .s_bresp            (axiOut_2_bresp ),
+    .s_bvalid           (axiOut_2_bvalid),
+    .s_bready           (axiOut_2_bready),
+
+    .s_arid             (axiOut_2_arid   ),
+    .s_araddr           (axiOut_2_araddr ),
+    .s_arlen            (axiOut_2_arlen  ),
+    .s_arsize           (axiOut_2_arsize ),
+    .s_arburst          (axiOut_2_arburst),
+    .s_arlock           (axiOut_2_arlock ),
+    .s_arcache          (axiOut_2_arcache),
+    .s_arprot           (axiOut_2_arprot ),
+    .s_arvalid          (axiOut_2_arvalid),
+    .s_arready          (axiOut_2_arready),
+
+    .s_rid              (axiOut_2_rid   ),
+    .s_rdata            (axiOut_2_rdata ),
+    .s_rresp            (axiOut_2_rresp ),
+    .s_rlast            (axiOut_2_rlast ),
+    .s_rvalid           (axiOut_2_rvalid),
+    .s_rready           (axiOut_2_rready),
+
+    //Debug
+    .debug_state        (debug_CB_state),
+    .debug_data (debug_data)
+);
+
+assign leds_o = {{12{1'b0}},debug_CB_state};
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;
@@ -788,108 +946,7 @@ axi_uart_controller u_axi_uart_controller
 
 
 
-// AXI Slave 2 (Output) signals
-wire         axiOut_2_awvalid;
-wire         axiOut_2_awready;
-wire [31:0]  axiOut_2_awaddr;
-wire [4:0]   axiOut_2_awid;
-wire [7:0]   axiOut_2_awlen;
-wire [2:0]   axiOut_2_awsize;
-wire [1:0]   axiOut_2_awburst;
-wire [0:0]   axiOut_2_awlock;
-wire [3:0]   axiOut_2_awcache;
-wire [2:0]   axiOut_2_awprot;
 
-wire         axiOut_2_wvalid;
-wire         axiOut_2_wready;
-wire [31:0]  axiOut_2_wdata;
-wire [3:0]   axiOut_2_wstrb;
-wire         axiOut_2_wlast;
-
-wire         axiOut_2_bvalid;
-wire         axiOut_2_bready;
-wire [4:0]   axiOut_2_bid;
-wire [1:0]   axiOut_2_bresp;
-
-wire         axiOut_2_arvalid;
-wire         axiOut_2_arready;
-wire [31:0]  axiOut_2_araddr;
-wire [4:0]   axiOut_2_arid;
-wire [7:0]   axiOut_2_arlen;
-wire [2:0]   axiOut_2_arsize;
-wire [1:0]   axiOut_2_arburst;
-wire [0:0]   axiOut_2_arlock;
-wire [3:0]   axiOut_2_arcache;
-wire [2:0]   axiOut_2_arprot;
-
-wire         axiOut_2_rvalid;
-wire         axiOut_2_rready;
-wire [31:0]  axiOut_2_rdata;
-wire [4:0]   axiOut_2_rid;
-wire [1:0]   axiOut_2_rresp;
-wire         axiOut_2_rlast;
-
-// //Dummy Slave Output (Slave -> Cross Bus)
-// assign axiOut_2_awready = 1'b1;
-// assign axiOut_2_wready  = 1'b1;
-
-// assign axiOut_2_bvalid  = 1'b0;
-// assign axiOut_2_bid     = 5'b0;
-// assign axiOut_2_bresp   = 2'b0;
-
-// assign axiOut_2_arready = 1'b1;
-
-// assign axiOut_2_rvalid  = 1'b0;
-// assign axiOut_2_rid     = 5'b0;
-// assign axiOut_2_rdata   = 32'b0;
-// assign axiOut_2_rresp   = 2'b0;
-// assign axiOut_2_rlast   = 1'b0;
-
-CB_top u_cb_top(
-    .clk                (sys_clk),          
-    .rst_n              (sys_resetn),    
-
-//AXI Slave interface
-    .s_awid             (axiOut_2_awid   ),
-    .s_awaddr           (axiOut_2_awaddr ),
-    .s_awlen            (axiOut_2_awlen  ),
-    .s_awsize           (axiOut_2_awsize ),
-    .s_awburst          (axiOut_2_awburst),
-    .s_awlock           (axiOut_2_awlock ),
-    .s_awcache          (axiOut_2_awcache),
-    .s_awprot           (axiOut_2_awprot ),
-    .s_awvalid          (axiOut_2_awvalid),
-    .s_awready          (axiOut_2_awready),
-
-    .s_wdata            (axiOut_2_wdata ),
-    .s_wstrb            (axiOut_2_wstrb ),
-    .s_wlast            (axiOut_2_wlast ),
-    .s_wvalid           (axiOut_2_wvalid),
-    .s_wready           (axiOut_2_wready),
-
-    .s_bid              (axiOut_2_bid   ),
-    .s_bresp            (axiOut_2_bresp ),
-    .s_bvalid           (axiOut_2_bvalid),
-    .s_bready           (axiOut_2_bready),
-
-    .s_arid             (axiOut_2_arid   ),
-    .s_araddr           (axiOut_2_araddr ),
-    .s_arlen            (axiOut_2_arlen  ),
-    .s_arsize           (axiOut_2_arsize ),
-    .s_arburst          (axiOut_2_arburst),
-    .s_arlock           (axiOut_2_arlock ),
-    .s_arcache          (axiOut_2_arcache),
-    .s_arprot           (axiOut_2_arprot ),
-    .s_arvalid          (axiOut_2_arvalid),
-    .s_arready          (axiOut_2_arready),
-
-    .s_rid              (axiOut_2_rid   ),
-    .s_rdata            (axiOut_2_rdata ),
-    .s_rresp            (axiOut_2_rresp ),
-    .s_rlast            (axiOut_2_rlast ),
-    .s_rvalid           (axiOut_2_rvalid),
-    .s_rready           (axiOut_2_rready)
-);
 
 
 
@@ -986,7 +1043,7 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
     //board 
     .switch         (dip_sw_i           ),
     .touch_btn      (touch_btn_i        ),
-    .led            (leds_o             ),
+    //.led            (leds_o             ),
     .dpy0           (dpy0_o             ),
     .dpy1           (dpy1_o             ),
     .confreg_int    (confreg_int        )
