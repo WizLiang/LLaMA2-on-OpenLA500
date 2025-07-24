@@ -41,6 +41,8 @@ unsigned long CB_BASE = 0xbf100000;
 unsigned long CONFREG_TIMER_BASE = 0xbf20f100;      // CONFREG计数器的虚地址
 unsigned long CONFREG_CLOCKS_PER_SEC = 50000000L;   // CONFREG时钟频率
 unsigned long CORE_CLOCKS_PER_SEC = 33000000L;      // 处理器核时钟频率
+unsigned long RANDOM_BASE = 0x1f20f600;
+unsigned long SWITCH_BASE = 0x1f20f400;
 
 // ----------------------------------------------------------------------------
 // Embedded Data Headers
@@ -1070,7 +1072,8 @@ int main(int argc, char *argv[]) {
     }
 
     // parameter validation/overrides
-    if (rng_seed <= 0) rng_seed = (unsigned int)time(NULL);
+    if (rng_seed <= 0) rng_seed = (unsigned int)RegRead(RANDOM_BASE);
+    printf("radon seed is %x",RegRead(RANDOM_BASE));
     if (temperature < 0.0) temperature = 0.0;
     if (topp < 0.0 || 1.0 < topp) topp = 0.9;
     if (steps < 0) steps = 0;

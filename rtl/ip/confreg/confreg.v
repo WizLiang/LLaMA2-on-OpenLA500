@@ -36,6 +36,7 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define LED_ADDR            16'hf300 //1f20_f300
 `define SWITCH_ADDR         16'hf400 //1f20_f400
 `define SIMU_FLAG_ADDR      16'hf500 //1f20_f500 
+`define RANDOM_FLAG_ADDR    16'hf600 //1f20_f600
 
 module confreg #(
     parameter   SIMULATION=1'b0
@@ -96,6 +97,7 @@ wire [3:0] touch_btn_data;//按键中断信号，上升沿触发
 reg  [31:0] led_data;
 wire [31:0] switch_data;
 reg  [31:0] simu_flag;
+wire [31:0] random;
 
 reg [31:0] confreg_int_en,confreg_int_edge,confreg_int_pol,confreg_int_clr,confreg_int_set;
 wire [31:0] confreg_int_state;
@@ -182,6 +184,7 @@ wire [31:0] rdata_d =   buf_addr[15:0] == (`CONFREG_INT_ADDR + 16'h0)     ? conf
                         buf_addr[15:0] == `LED_ADDR                       ? led_data              :
                         buf_addr[15:0] == `SWITCH_ADDR                    ? switch_data           :
                         buf_addr[15:0] == `SIMU_FLAG_ADDR                 ? simu_flag             :
+                        buf_addr[15:0] == `RANDOM_FLAG_ADDR               ? random                :
                         32'd0;
 
 always@(posedge aclk)
@@ -357,6 +360,13 @@ always @(posedge aclk) begin
   end
 end
 
+lfsr32 u_lfsr32(
+    .clk(aclk),
+    .rst_n(aresetn),
+    .load(1'b0),
+    .seed(32'b0),
+    .random(random)
+);
 
 ext_int_ctrl u_ext_int_ctrl(
     .sys_clk    (aclk),
@@ -373,5 +383,36 @@ ext_int_ctrl u_ext_int_ctrl(
 );
 
 //--------------------------------{int_ctrl}end-----------------------------//
+
+endmodule
+
+module lfsr32 (
+    input           clk,       // 时钟上升沿触发
+    input           rst_n,       // 同步复位，高电平时清零或载入初始种子
+    input           load,      // 载入新种子，当高电平时在下一个时钟载入 seed
+    input  [31:0]   seed,      // 外部提供的种子
+    output [31:0]   random     // 当前 LFSR 状态，也可作为随机数输出
+);
+
+    reg [31:0] lfsr;
+
+    // 反馈位计算：tap 位 31, 21, 1, 0
+    wire feedback = lfsr[31] ^ lfsr[21] ^ lfsr[16] ^ lfsr[1] ^ lfsr[0];
+
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            // 复位时可以选择清零或载入种子；
+            // 这里先清零，如果希望复位时也载入 seed，可改为 `lfsr <= seed;`
+            lfsr <= 32'h111;  
+        end else if (load) begin
+            // 在 load 有效时，用外部 seed 重新设定状态
+            lfsr <= seed;
+        end else begin
+            // 正常移位并注入反馈位
+            lfsr <= {lfsr[30:0], feedback};
+        end
+    end
+
+    assign random = lfsr;
 
 endmodule
