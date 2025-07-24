@@ -68,7 +68,8 @@ module CB_Controller (
     output reg          mac_access_mode, // 连接到 mac_top 的 dma_access_mode
     output reg  [1:0]   dma_target_sram, // 00=Vec, 01=Weight, 10=Out
     output reg          acc_en,
-    output reg          mem_rst,    // 内存复位信号 
+    output reg          w_mem_rst,    // 内存复位信号 
+    output reg          v_mem_rst,    // 内存复位信号
 
     // --- AXI4-Lite Slave Bus ---
     //aw
@@ -376,7 +377,8 @@ always @(*) begin
     mac_access_mode = 1'b0; // mac_access_mode 0的时候进行计算操作并将结果写到ram中，以及从主存写到ram中，1的时候从outram中读数据，将数据写入2个buffer
     dma_target_sram = 2'b00; // 00=Vec
     dma_bytes_total = 32'h0; // 初始化DMA总字节数
-    mem_rst = 1'b0; // 内存复位信号
+    w_mem_rst = 1'b0; // 内存复位信号
+    v_mem_rst = 1'b0; // 内存复位信号
     cmd_block_size = 0;
     cmd_block_count = 0;
     cmd_stride = 0;
@@ -387,7 +389,8 @@ always @(*) begin
         S_IDLE: begin
              // 内存复位信号
             if (start_signal) begin 
-                mem_rst = 1'b1;
+                w_mem_rst = 1'b1;
+                v_mem_rst = 1'b1;
                 next_state = S_DMA_VI;
             end
         end
@@ -481,11 +484,14 @@ always @(*) begin
                 next_state = S_ERROR; 
             end
             else if (mac_done && csr_cols > 64) begin 
-                mem_rst = 1'b1; // 计算完成后复位内存
+                w_mem_rst = 1'b1; // 计算完成后复位内存
+                v_mem_rst = 1'b1; // 计算完成后复位内存
                 next_state = S_ACCUMULATE;
             end
             else if (mac_done) begin
-                mem_rst = 1'b1; // 计算完成后复位内存
+                // mem_rst = 1'b1; // 计算完成后复位内存
+                w_mem_rst = 1'b1; // 计算完成后复位内存
+                //由于需要复用，不清除vmem
                 next_state = S_DMA_VO_INIT; // 计算完成，进入输出状态
             end
         end
@@ -524,7 +530,11 @@ always @(*) begin
         end
 
         S_UPDATE_OFFSET: begin
-            next_state = S_LOOP_START; // 返回循环起点
+            if (csr_cols > 64) begin
+                next_state = S_DMA_VI; // 重新加载向量
+            end else begin
+                next_state = S_LOOP_START; // 返回循环起点
+            end
         end
 
         S_DONE: begin

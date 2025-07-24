@@ -126,7 +126,8 @@ module CB_top #(
 wire mac_start, mac_done;
 wire mac_error = 1'b0;
 wire acc_en;    //从controller送到mac的累加信号
-wire mem_rst; // 内存复位信号
+wire w_mem_rst; // 内存复位信号
+wire v_mem_rst; // 内存复位信号
 
 wire [31:0] current_cols; // 当前列数
 
@@ -342,8 +343,8 @@ CB_Controller u_controller(
     .mac_access_mode(mac_access_mode), // 0=计算模式, 1=DMA访问模式
     .dma_target_sram(dma_target_sram), // 00=Vec, 01=Weight, 10=Output, 11=Reserved
     .acc_en(acc_en),
-    .mem_rst(mem_rst),    // 内存复位信号
-
+    .w_mem_rst(w_mem_rst),    // 内存复位信号
+    .v_mem_rst(v_mem_rst),    // 内存复位信号
 
     //TODO: Debug
     
@@ -397,7 +398,8 @@ CB_Controller u_controller(
         .start_processing(mac_start),
         .processing_done(mac_done),
         .acc_en(acc_en),
-        .mem_rst(mem_rst), // 内存复位信号
+        .w_mem_rst(w_mem_rst), // 内存复位信号
+        .v_mem_rst(v_mem_rst), // 内存复位信号
 
         .dma_access_mode(mac_access_mode),
         .dma_w_sram_bank_we(mac_w_sram_bank_we),
