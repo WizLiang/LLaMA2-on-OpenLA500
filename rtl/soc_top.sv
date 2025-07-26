@@ -658,7 +658,7 @@ CB_top u_cb_top(
     .debug_data (debug_data)
 );
 
-assign leds_o = {{12{1'b0}},debug_CB_state};
+// assign leds_o = {{12{1'b0}},debug_CB_state};
 
 // Wire declarations for AXI Slave 0 (RAM)
 wire         ram_awvalid;
@@ -1043,7 +1043,7 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
     //board 
     .switch         (dip_sw_i           ),
     .touch_btn      (touch_btn_i        ),
-    //.led            (leds_o             ),
+    .led            (leds_o             ),
     .dpy0           (dpy0_o             ),
     .dpy1           (dpy1_o             ),
     .confreg_int    (confreg_int        )
