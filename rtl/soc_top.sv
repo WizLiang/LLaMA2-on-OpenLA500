@@ -1052,283 +1052,1445 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
 
 
 
-AxiCrossbar_2x4 u_axi_crossbar (
+// AxiCrossbar_2x4 u_axi_crossbar (
+//     //clock signal
+//     .clk(sys_clk),
+//     .resetn(sys_resetn),
+
+//     // AXI Master (Input) - Write Address Channel
+//     .axiIn0_aw_valid            (cpu_sync_awvalid),
+//     .axiIn0_aw_ready            (cpu_sync_awready),
+//     .axiIn0_aw_payload_addr     (cpu_sync_awaddr),
+//     .axiIn0_aw_payload_id       (cpu_sync_awid),
+//     .axiIn0_aw_payload_len      (cpu_sync_awlen),
+//     .axiIn0_aw_payload_size     (cpu_sync_awsize),
+//     .axiIn0_aw_payload_burst    (cpu_sync_awburst),
+//     .axiIn0_aw_payload_lock     (cpu_sync_awlock),
+//     .axiIn0_aw_payload_cache    (cpu_sync_awcache),
+//     .axiIn0_aw_payload_prot     (cpu_sync_awprot),
+
+//     // AXI Master (Input) - Write Data Channel
+//     .axiIn0_w_valid             (cpu_sync_wvalid),
+//     .axiIn0_w_ready             (cpu_sync_wready),
+//     .axiIn0_w_payload_data      (cpu_sync_wdata),
+//     .axiIn0_w_payload_strb      (cpu_sync_wstrb),
+//     .axiIn0_w_payload_last      (cpu_sync_wlast),
+
+//     // AXI Master (Input) - Write Response Channel
+//     .axiIn0_b_valid             (cpu_sync_bvalid),
+//     .axiIn0_b_ready             (cpu_sync_bready),
+//     .axiIn0_b_payload_id        (cpu_sync_bid),
+//     .axiIn0_b_payload_resp      (cpu_sync_bresp),
+
+//     // AXI Master (Input) - Read Address Channel
+//     .axiIn0_ar_valid            (cpu_sync_arvalid),
+//     .axiIn0_ar_ready            (cpu_sync_arready),
+//     .axiIn0_ar_payload_addr     (cpu_sync_araddr),
+//     .axiIn0_ar_payload_id       (cpu_sync_arid),
+//     .axiIn0_ar_payload_len      (cpu_sync_arlen),
+//     .axiIn0_ar_payload_size     (cpu_sync_arsize),
+//     .axiIn0_ar_payload_burst    (cpu_sync_arburst),
+//     .axiIn0_ar_payload_lock     (cpu_sync_arlock),
+//     .axiIn0_ar_payload_cache    (cpu_sync_arcache),
+//     .axiIn0_ar_payload_prot     (cpu_sync_arprot),
+
+//     // AXI Master (Input) - Read Data Channel
+//     .axiIn0_r_valid             (cpu_sync_rvalid),
+//     .axiIn0_r_ready             (cpu_sync_rready),
+//     .axiIn0_r_payload_data      (cpu_sync_rdata),
+//     .axiIn0_r_payload_id        (cpu_sync_rid),
+//     .axiIn0_r_payload_resp      (cpu_sync_rresp),
+//     .axiIn0_r_payload_last      (cpu_sync_rlast),
+
+
+//     // --- AXI Master Input 1 (Dummy Master) ---
+//     // Write Address Channel
+//     .axiIn1_aw_valid           (axiIn1_aw_valid),
+//     .axiIn1_aw_ready           (axiIn1_aw_ready),
+//     .axiIn1_aw_payload_addr    (axiIn1_aw_payload_addr),
+//     .axiIn1_aw_payload_id      (axiIn1_aw_payload_id),
+//     .axiIn1_aw_payload_len     (axiIn1_aw_payload_len),
+//     .axiIn1_aw_payload_size    (axiIn1_aw_payload_size),
+//     .axiIn1_aw_payload_burst   (axiIn1_aw_payload_burst),
+//     .axiIn1_aw_payload_lock    (axiIn1_aw_payload_lock),
+//     .axiIn1_aw_payload_cache   (axiIn1_aw_payload_cache),
+//     .axiIn1_aw_payload_prot    (axiIn1_aw_payload_prot),
+
+//     // Write Data Channel
+//     .axiIn1_w_valid            (axiIn1_w_valid),
+//     .axiIn1_w_ready            (axiIn1_w_ready),
+//     .axiIn1_w_payload_data     (axiIn1_w_payload_data),
+//     .axiIn1_w_payload_strb     (axiIn1_w_payload_strb),
+//     .axiIn1_w_payload_last     (axiIn1_w_payload_last),
+
+//     // Write Response Channel
+//     .axiIn1_b_valid            (axiIn1_b_valid),
+//     .axiIn1_b_ready            (axiIn1_b_ready),
+//     .axiIn1_b_payload_id       (axiIn1_b_payload_id),
+//     .axiIn1_b_payload_resp     (axiIn1_b_payload_resp),
+
+//     // Read Address Channel
+//     .axiIn1_ar_valid           (axiIn1_ar_valid),
+//     .axiIn1_ar_ready           (axiIn1_ar_ready),
+//     .axiIn1_ar_payload_addr    (axiIn1_ar_payload_addr),
+//     .axiIn1_ar_payload_id      (axiIn1_ar_payload_id),
+//     .axiIn1_ar_payload_len     (axiIn1_ar_payload_len),
+//     .axiIn1_ar_payload_size    (axiIn1_ar_payload_size),
+//     .axiIn1_ar_payload_burst   (axiIn1_ar_payload_burst),
+//     .axiIn1_ar_payload_lock    (axiIn1_ar_payload_lock),
+//     .axiIn1_ar_payload_cache   (axiIn1_ar_payload_cache),
+//     .axiIn1_ar_payload_prot    (axiIn1_ar_payload_prot),
+
+//     // Read Data Channel
+//     .axiIn1_r_valid            (axiIn1_r_valid),
+//     .axiIn1_r_ready            (axiIn1_r_ready),
+//     .axiIn1_r_payload_data     (axiIn1_r_payload_data),
+//     .axiIn1_r_payload_id       (axiIn1_r_payload_id),
+//     .axiIn1_r_payload_resp     (axiIn1_r_payload_resp),
+//     .axiIn1_r_payload_last     (axiIn1_r_payload_last),
+
+//     // AXI Slave 0 (RAM) - Write Address Channel
+//     .axiOut_0_aw_valid          (ram_awvalid),
+//     .axiOut_0_aw_ready          (ram_awready),
+//     .axiOut_0_aw_payload_addr   (ram_awaddr),
+//     .axiOut_0_aw_payload_id     (ram_awid),
+//     .axiOut_0_aw_payload_len    (ram_awlen),
+//     .axiOut_0_aw_payload_size   (ram_awsize),
+//     .axiOut_0_aw_payload_burst  (ram_awburst),
+//     .axiOut_0_aw_payload_lock   (ram_awlock),
+//     .axiOut_0_aw_payload_cache  (ram_awcache),
+//     .axiOut_0_aw_payload_prot   (ram_awprot),
+
+//     // AXI Slave 0 (Output) - Write Data Channel (RAM)
+//     .axiOut_0_w_valid           (ram_wvalid),
+//     .axiOut_0_w_ready           (ram_wready),
+//     .axiOut_0_w_payload_data    (ram_wdata),
+//     .axiOut_0_w_payload_strb    (ram_wstrb),
+//     .axiOut_0_w_payload_last    (ram_wlast),
+
+//     // AXI Slave 0 (Output) - Write Response Channel (RAM)
+//     .axiOut_0_b_valid           (ram_bvalid),
+//     .axiOut_0_b_ready           (ram_bready),
+//     .axiOut_0_b_payload_id      (ram_bid),
+//     .axiOut_0_b_payload_resp    (ram_bresp),
+
+//     // AXI Slave 0 (Output) - Read Address Channel (RAM)
+//     .axiOut_0_ar_valid          (ram_arvalid),
+//     .axiOut_0_ar_ready          (ram_arready),
+//     .axiOut_0_ar_payload_addr   (ram_araddr),
+//     .axiOut_0_ar_payload_id     (ram_arid),
+//     .axiOut_0_ar_payload_len    (ram_arlen),
+//     .axiOut_0_ar_payload_size   (ram_arsize),
+//     .axiOut_0_ar_payload_burst  (ram_arburst),
+//     .axiOut_0_ar_payload_lock   (ram_arlock),
+//     .axiOut_0_ar_payload_cache  (ram_arcache),
+//     .axiOut_0_ar_payload_prot   (ram_arprot),
+
+//     // AXI Slave 0 (Output) - Read Data Channel (RAM)
+//     .axiOut_0_r_valid           (ram_rvalid),
+//     .axiOut_0_r_ready           (ram_rready),
+//     .axiOut_0_r_payload_data    (ram_rdata),
+//     .axiOut_0_r_payload_id      (ram_rid),
+//     .axiOut_0_r_payload_resp    (ram_rresp),
+//     .axiOut_0_r_payload_last    (ram_rlast),
+
+//     // AXI Slave 1 (Output) - Write Address Channel (UART)
+//     .axiOut_1_aw_valid          (uart_awvalid),
+//     .axiOut_1_aw_ready          (uart_awready),
+//     .axiOut_1_aw_payload_addr   (uart_awaddr),
+//     .axiOut_1_aw_payload_id     (uart_awid),
+//     .axiOut_1_aw_payload_len    (uart_awlen),
+//     .axiOut_1_aw_payload_size   (uart_awsize),
+//     .axiOut_1_aw_payload_burst  (uart_awburst),
+//     .axiOut_1_aw_payload_lock   (uart_awlock),
+//     .axiOut_1_aw_payload_cache  (uart_awcache),
+//     .axiOut_1_aw_payload_prot   (uart_awprot),
+
+//     // AXI Slave 1 (Output) - Write Data Channel (UART)
+//     .axiOut_1_w_valid           (uart_wvalid),
+//     .axiOut_1_w_ready           (uart_wready),
+//     .axiOut_1_w_payload_data    (uart_wdata),
+//     .axiOut_1_w_payload_strb    (uart_wstrb),
+//     .axiOut_1_w_payload_last    (uart_wlast),
+
+//     // AXI Slave 1 (Output) - Write Response Channel (UART)
+//     .axiOut_1_b_valid           (uart_bvalid),
+//     .axiOut_1_b_ready           (uart_bready),
+//     .axiOut_1_b_payload_id      (uart_bid),
+//     .axiOut_1_b_payload_resp    (uart_bresp),
+
+//     // AXI Slave 1 (Output) - Read Address Channel (UART)
+//     .axiOut_1_ar_valid          (uart_arvalid),
+//     .axiOut_1_ar_ready          (uart_arready),
+//     .axiOut_1_ar_payload_addr   (uart_araddr),
+//     .axiOut_1_ar_payload_id     (uart_arid),
+//     .axiOut_1_ar_payload_len    (uart_arlen),
+//     .axiOut_1_ar_payload_size   (uart_arsize),
+//     .axiOut_1_ar_payload_burst  (uart_arburst),
+//     .axiOut_1_ar_payload_lock   (uart_arlock),
+//     .axiOut_1_ar_payload_cache  (uart_arcache),
+//     .axiOut_1_ar_payload_prot   (uart_arprot),
+
+//     // AXI Slave 1 (Output) - Read Data Channel (UART)
+//     .axiOut_1_r_valid           (uart_rvalid),
+//     .axiOut_1_r_ready           (uart_rready),
+//     .axiOut_1_r_payload_data    (uart_rdata),
+//     .axiOut_1_r_payload_id      (uart_rid),
+//     .axiOut_1_r_payload_resp    (uart_rresp),
+//     .axiOut_1_r_payload_last    (uart_rlast),
+
+//     // AXI Slave 2 (Output) - Write Address Channel
+//     .axiOut_2_aw_valid          (axiOut_2_awvalid),
+//     .axiOut_2_aw_ready          (axiOut_2_awready),
+//     .axiOut_2_aw_payload_addr   (axiOut_2_awaddr),
+//     .axiOut_2_aw_payload_id     (axiOut_2_awid),
+//     .axiOut_2_aw_payload_len    (axiOut_2_awlen),
+//     .axiOut_2_aw_payload_size   (axiOut_2_awsize),
+//     .axiOut_2_aw_payload_burst  (axiOut_2_awburst),
+//     .axiOut_2_aw_payload_lock   (axiOut_2_awlock),
+//     .axiOut_2_aw_payload_cache  (axiOut_2_awcache),
+//     .axiOut_2_aw_payload_prot   (axiOut_2_awprot),
+
+//     // AXI Slave 2 (Output) - Write Data Channel
+//     .axiOut_2_w_valid           (axiOut_2_wvalid),
+//     .axiOut_2_w_ready           (axiOut_2_wready),
+//     .axiOut_2_w_payload_data    (axiOut_2_wdata),
+//     .axiOut_2_w_payload_strb    (axiOut_2_wstrb),
+//     .axiOut_2_w_payload_last    (axiOut_2_wlast),
+
+//     // AXI Slave 2 (Output) - Write Response Channel
+//     .axiOut_2_b_valid           (axiOut_2_bvalid),
+//     .axiOut_2_b_ready           (axiOut_2_bready),
+//     .axiOut_2_b_payload_id      (axiOut_2_bid),
+//     .axiOut_2_b_payload_resp    (axiOut_2_bresp),
+
+//     // AXI Slave 2 (Output) - Read Address Channel
+//     .axiOut_2_ar_valid          (axiOut_2_arvalid),
+//     .axiOut_2_ar_ready          (axiOut_2_arready),
+//     .axiOut_2_ar_payload_addr   (axiOut_2_araddr),
+//     .axiOut_2_ar_payload_id     (axiOut_2_arid),
+//     .axiOut_2_ar_payload_len    (axiOut_2_arlen),
+//     .axiOut_2_ar_payload_size   (axiOut_2_arsize),
+//     .axiOut_2_ar_payload_burst  (axiOut_2_arburst),
+//     .axiOut_2_ar_payload_lock   (axiOut_2_arlock),
+//     .axiOut_2_ar_payload_cache  (axiOut_2_arcache),
+//     .axiOut_2_ar_payload_prot   (axiOut_2_arprot),
+
+//     // AXI Slave 2 (Output) - Read Data Channel
+//     .axiOut_2_r_valid           (axiOut_2_rvalid),
+//     .axiOut_2_r_ready           (axiOut_2_rready),
+//     .axiOut_2_r_payload_data    (axiOut_2_rdata),
+//     .axiOut_2_r_payload_id      (axiOut_2_rid),
+//     .axiOut_2_r_payload_resp    (axiOut_2_rresp),
+//     .axiOut_2_r_payload_last    (axiOut_2_rlast),
+
+
+//     // AXI Slave 3 (Output) - Write Address Channel (ConfReg)
+//     .axiOut_3_aw_valid          (confreg_awvalid),
+//     .axiOut_3_aw_ready          (confreg_awready),
+//     .axiOut_3_aw_payload_addr   (confreg_awaddr),
+//     .axiOut_3_aw_payload_id     (confreg_awid),
+//     .axiOut_3_aw_payload_len    (confreg_awlen),
+//     .axiOut_3_aw_payload_size   (confreg_awsize),
+//     .axiOut_3_aw_payload_burst  (confreg_awburst),
+//     .axiOut_3_aw_payload_lock   (confreg_awlock),
+//     .axiOut_3_aw_payload_cache  (confreg_awcache),
+//     .axiOut_3_aw_payload_prot   (confreg_awprot),
+
+//     // AXI Slave 3 (Output) - Write Data Channel (ConfReg)
+//     .axiOut_3_w_valid           (confreg_wvalid),
+//     .axiOut_3_w_ready           (confreg_wready),
+//     .axiOut_3_w_payload_data    (confreg_wdata),
+//     .axiOut_3_w_payload_strb    (confreg_wstrb),
+//     .axiOut_3_w_payload_last    (confreg_wlast),
+
+//     // AXI Slave 3 (Output) - Write Response Channel (ConfReg)
+//     .axiOut_3_b_valid           (confreg_bvalid),
+//     .axiOut_3_b_ready           (confreg_bready),
+//     .axiOut_3_b_payload_id      (confreg_bid),
+//     .axiOut_3_b_payload_resp    (confreg_bresp),
+
+//     // AXI Slave 3 (Output) - Read Address Channel (ConfReg)
+//     .axiOut_3_ar_valid          (confreg_arvalid),
+//     .axiOut_3_ar_ready          (confreg_arready),
+//     .axiOut_3_ar_payload_addr   (confreg_araddr),
+//     .axiOut_3_ar_payload_id     (confreg_arid),
+//     .axiOut_3_ar_payload_len    (confreg_arlen),
+//     .axiOut_3_ar_payload_size   (confreg_arsize),
+//     .axiOut_3_ar_payload_burst  (confreg_arburst),
+//     .axiOut_3_ar_payload_lock   (confreg_arlock),
+//     .axiOut_3_ar_payload_cache  (confreg_arcache),
+//     .axiOut_3_ar_payload_prot   (confreg_arprot),
+
+//     // AXI Slave 3 (Output) - Read Data Channel (ConfReg)
+//     .axiOut_3_r_valid           (confreg_rvalid),
+//     .axiOut_3_r_ready           (confreg_rready),
+//     .axiOut_3_r_payload_data    (confreg_rdata),
+//     .axiOut_3_r_payload_id      (confreg_rid),
+//     .axiOut_3_r_payload_resp    (confreg_rresp),
+//     .axiOut_3_r_payload_last    (confreg_rlast)
+// );
+
+// 64位AXI Crossbar接口信号声明
+
+// cpu_sync_64_* 信号
+wire         cpu_sync_64_awvalid;
+wire         cpu_sync_64_awready;
+wire  [63:0] cpu_sync_64_awaddr;
+wire  [3:0]  cpu_sync_64_awid;
+wire  [7:0]  cpu_sync_64_awlen;
+wire  [2:0]  cpu_sync_64_awsize;
+wire  [1:0]  cpu_sync_64_awburst;
+wire  [0:0]  cpu_sync_64_awlock;
+wire  [3:0]  cpu_sync_64_awcache;
+wire  [2:0]  cpu_sync_64_awprot;
+
+wire         cpu_sync_64_wvalid;
+wire         cpu_sync_64_wready;
+wire  [63:0] cpu_sync_64_wdata;
+wire  [7:0]  cpu_sync_64_wstrb;
+wire         cpu_sync_64_wlast;
+
+wire         cpu_sync_64_bvalid;
+wire         cpu_sync_64_bready;
+wire  [3:0]  cpu_sync_64_bid;
+wire  [1:0]  cpu_sync_64_bresp;
+
+wire         cpu_sync_64_arvalid;
+wire         cpu_sync_64_arready;
+wire  [63:0] cpu_sync_64_araddr;
+wire  [3:0]  cpu_sync_64_arid;
+wire  [7:0]  cpu_sync_64_arlen;
+wire  [2:0]  cpu_sync_64_arsize;
+wire  [1:0]  cpu_sync_64_arburst;
+wire  [0:0]  cpu_sync_64_arlock;
+wire  [3:0]  cpu_sync_64_arcache;
+wire  [2:0]  cpu_sync_64_arprot;
+
+wire         cpu_sync_64_rvalid;
+wire         cpu_sync_64_rready;
+wire  [63:0] cpu_sync_64_rdata;
+wire  [3:0]  cpu_sync_64_rid;
+wire  [1:0]  cpu_sync_64_rresp;
+wire         cpu_sync_64_rlast;
+
+// axiIn1_aw_64_* 等 Dummy Master 64位信号
+wire          axiIn1_aw_64_valid;
+wire          axiIn1_aw_64_ready;
+wire  [63:0]  axiIn1_aw_64_payload_addr;
+wire  [3:0]   axiIn1_aw_64_payload_id;
+wire  [7:0]   axiIn1_aw_64_payload_len;
+wire  [2:0]   axiIn1_aw_64_payload_size;
+wire  [1:0]   axiIn1_aw_64_payload_burst;
+wire          axiIn1_aw_64_payload_lock;
+wire  [3:0]   axiIn1_aw_64_payload_cache;
+wire  [2:0]   axiIn1_aw_64_payload_prot;
+
+wire          axiIn1_w_64_valid;
+wire          axiIn1_w_64_ready;
+wire  [63:0]  axiIn1_w_64_payload_data;
+wire  [7:0]   axiIn1_w_64_payload_strb;
+wire          axiIn1_w_64_payload_last;
+
+wire          axiIn1_b_64_valid;
+wire          axiIn1_b_64_ready;
+wire  [3:0]   axiIn1_b_64_payload_id;
+wire  [1:0]   axiIn1_b_64_payload_resp;
+
+wire          axiIn1_ar_64_valid;
+wire          axiIn1_ar_64_ready;
+wire  [63:0]  axiIn1_ar_64_payload_addr;
+wire  [3:0]   axiIn1_ar_64_payload_id;
+wire  [7:0]   axiIn1_ar_64_payload_len;
+wire  [2:0]   axiIn1_ar_64_payload_size;
+wire  [1:0]   axiIn1_ar_64_payload_burst;
+wire          axiIn1_ar_64_payload_lock;
+wire  [3:0]   axiIn1_ar_64_payload_cache;
+wire  [2:0]   axiIn1_ar_64_payload_prot;
+
+wire          axiIn1_r_64_valid;
+wire          axiIn1_r_64_ready;
+wire  [63:0]  axiIn1_r_64_payload_data;
+wire  [3:0]   axiIn1_r_64_payload_id;
+wire  [1:0]   axiIn1_r_64_payload_resp;
+wire          axiIn1_r_64_payload_last;
+
+// ram_64_* 信号
+wire         ram_64_awvalid;
+wire         ram_64_awready;
+wire  [63:0] ram_64_awaddr;
+wire  [4:0]  ram_64_awid;
+wire  [7:0]  ram_64_awlen;
+wire  [2:0]  ram_64_awsize;
+wire  [1:0]  ram_64_awburst;
+wire  [0:0]  ram_64_awlock;
+wire  [3:0]  ram_64_awcache;
+wire  [2:0]  ram_64_awprot;
+
+wire         ram_64_wvalid;
+wire         ram_64_wready;
+wire  [63:0] ram_64_wdata;
+wire  [7:0]  ram_64_wstrb;
+wire         ram_64_wlast;
+
+wire         ram_64_bvalid;
+wire         ram_64_bready;
+wire  [4:0]  ram_64_bid;
+wire  [1:0]  ram_64_bresp;
+
+wire         ram_64_arvalid;
+wire         ram_64_arready;
+wire  [63:0] ram_64_araddr;
+wire  [4:0]  ram_64_arid;
+wire  [7:0]  ram_64_arlen;
+wire  [2:0]  ram_64_arsize;
+wire  [1:0]  ram_64_arburst;
+wire  [0:0]  ram_64_arlock;
+wire  [3:0]  ram_64_arcache;
+wire  [2:0]  ram_64_arprot;
+
+wire         ram_64_rvalid;
+wire         ram_64_rready;
+wire  [63:0] ram_64_rdata;
+wire  [4:0]  ram_64_rid;
+wire  [1:0]  ram_64_rresp;
+wire         ram_64_rlast;
+
+// uart_64_* 信号
+wire         uart_64_awvalid;
+wire         uart_64_awready;
+wire  [63:0] uart_64_awaddr;
+wire  [4:0]  uart_64_awid;
+wire  [7:0]  uart_64_awlen;
+wire  [2:0]  uart_64_awsize;
+wire  [1:0]  uart_64_awburst;
+wire  [0:0]  uart_64_awlock;
+wire  [3:0]  uart_64_awcache;
+wire  [2:0]  uart_64_awprot;
+
+wire         uart_64_wvalid;
+wire         uart_64_wready;
+wire  [63:0] uart_64_wdata;
+wire  [7:0]  uart_64_wstrb;
+wire         uart_64_wlast;
+
+wire         uart_64_bvalid;
+wire         uart_64_bready;
+wire  [4:0]  uart_64_bid;
+wire  [1:0]  uart_64_bresp;
+
+wire         uart_64_arvalid;
+wire         uart_64_arready;
+wire  [63:0] uart_64_araddr;
+wire  [4:0]  uart_64_arid;
+wire  [7:0]  uart_64_arlen;
+wire  [2:0]  uart_64_arsize;
+wire  [1:0]  uart_64_arburst;
+wire  [0:0]  uart_64_arlock;
+wire  [3:0]  uart_64_arcache;
+wire  [2:0]  uart_64_arprot;
+
+wire         uart_64_rvalid;
+wire         uart_64_rready;
+wire  [63:0] uart_64_rdata;
+wire  [4:0]  uart_64_rid;
+wire  [1:0]  uart_64_rresp;
+wire         uart_64_rlast;
+
+// axiOut_2_64_* 信号
+wire         axiOut_2_64_awvalid;
+wire         axiOut_2_64_awready;
+wire  [63:0] axiOut_2_64_awaddr;
+wire  [4:0]  axiOut_2_64_awid;
+wire  [7:0]  axiOut_2_64_awlen;
+wire  [2:0]  axiOut_2_64_awsize;
+wire  [1:0]  axiOut_2_64_awburst;
+wire  [0:0]  axiOut_2_64_awlock;
+wire  [3:0]  axiOut_2_64_awcache;
+wire  [2:0]  axiOut_2_64_awprot;
+
+wire         axiOut_2_64_wvalid;
+wire         axiOut_2_64_wready;
+wire  [63:0] axiOut_2_64_wdata;
+wire  [7:0]  axiOut_2_64_wstrb;
+wire         axiOut_2_64_wlast;
+
+wire         axiOut_2_64_bvalid;
+wire         axiOut_2_64_bready;
+wire  [4:0]  axiOut_2_64_bid;
+wire  [1:0]  axiOut_2_64_bresp;
+
+wire         axiOut_2_64_arvalid;
+wire         axiOut_2_64_arready;
+wire  [63:0] axiOut_2_64_araddr;
+wire  [4:0]  axiOut_2_64_arid;
+wire  [7:0]  axiOut_2_64_arlen;
+wire  [2:0]  axiOut_2_64_arsize;
+wire  [1:0]  axiOut_2_64_arburst;
+wire  [0:0]  axiOut_2_64_arlock;
+wire  [3:0]  axiOut_2_64_arcache;
+wire  [2:0]  axiOut_2_64_arprot;
+
+wire         axiOut_2_64_rvalid;
+wire         axiOut_2_64_rready;
+wire  [63:0] axiOut_2_64_rdata;
+wire  [4:0]  axiOut_2_64_rid;
+wire  [1:0]  axiOut_2_64_rresp;
+wire         axiOut_2_64_rlast;
+
+// confreg_64_* 信号
+wire         confreg_64_awvalid;
+wire         confreg_64_awready;
+wire  [63:0] confreg_64_awaddr;
+wire  [4:0]  confreg_64_awid;
+wire  [7:0]  confreg_64_awlen;
+wire  [2:0]  confreg_64_awsize;
+wire  [1:0]  confreg_64_awburst;
+wire  [0:0]  confreg_64_awlock;
+wire  [3:0]  confreg_64_awcache;
+wire  [2:0]  confreg_64_awprot;
+
+wire         confreg_64_wvalid;
+wire         confreg_64_wready;
+wire  [63:0] confreg_64_wdata;
+wire  [7:0]  confreg_64_wstrb;
+wire         confreg_64_wlast;
+
+wire         confreg_64_bvalid;
+wire         confreg_64_bready;
+wire  [4:0]  confreg_64_bid;
+wire  [1:0]  confreg_64_bresp;
+
+wire         confreg_64_arvalid;
+wire         confreg_64_arready;
+wire  [63:0] confreg_64_araddr;
+wire  [4:0]  confreg_64_arid;
+wire  [7:0]  confreg_64_arlen;
+wire  [2:0]  confreg_64_arsize;
+wire  [1:0]  confreg_64_arburst;
+wire  [0:0]  confreg_64_arlock;
+wire  [3:0]  confreg_64_arcache;
+wire  [2:0]  confreg_64_arprot;
+
+wire         confreg_64_rvalid;
+wire         confreg_64_rready;
+wire  [63:0] confreg_64_rdata;
+wire  [4:0]  confreg_64_rid;
+wire  [1:0]  confreg_64_rresp;
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (32),
+    .S_STRB_WIDTH    (4),
+    .M_DATA_WIDTH    (64),
+    .M_STRB_WIDTH    (8),
+    .ID_WIDTH        (4),
+    .FORWARD_ID      (1)
+) u_axi_adapter_cpu2crossbar (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (CPU 32位)
+    .s_axi_awid         (cpu_sync_awid),
+    .s_axi_awaddr       (cpu_sync_awaddr),
+    .s_axi_awlen        (cpu_sync_awlen),
+    .s_axi_awsize       (cpu_sync_awsize),
+    .s_axi_awburst      (cpu_sync_awburst),
+    .s_axi_awlock       (cpu_sync_awlock),
+    .s_axi_awcache      (cpu_sync_awcache),
+    .s_axi_awprot       (cpu_sync_awprot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (cpu_sync_awvalid),
+    .s_axi_awready      (cpu_sync_awready),
+    .s_axi_wdata        (cpu_sync_wdata),
+    .s_axi_wstrb        (cpu_sync_wstrb),
+    .s_axi_wlast        (cpu_sync_wlast),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (cpu_sync_wvalid),
+    .s_axi_wready       (cpu_sync_wready),
+    .s_axi_bid          (cpu_sync_bid),
+    .s_axi_bresp        (cpu_sync_bresp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (cpu_sync_bvalid),
+    .s_axi_bready       (cpu_sync_bready),
+    .s_axi_arid         (cpu_sync_arid),
+    .s_axi_araddr       (cpu_sync_araddr),
+    .s_axi_arlen        (cpu_sync_arlen),
+    .s_axi_arsize       (cpu_sync_arsize),
+    .s_axi_arburst      (cpu_sync_arburst),
+    .s_axi_arlock       (cpu_sync_arlock),
+    .s_axi_arcache      (cpu_sync_arcache),
+    .s_axi_arprot       (cpu_sync_arprot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (cpu_sync_arvalid),
+    .s_axi_arready      (cpu_sync_arready),
+    .s_axi_rid          (cpu_sync_rid),
+    .s_axi_rdata        (cpu_sync_rdata),
+    .s_axi_rresp        (cpu_sync_rresp),
+    .s_axi_rlast        (cpu_sync_rlast),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (cpu_sync_rvalid),
+    .s_axi_rready       (cpu_sync_rready),
+
+    // AXI master interface (64位，连crossbar)
+    .m_axi_awid         (cpu_sync_64_awid),
+    .m_axi_awaddr       (cpu_sync_64_awaddr),
+    .m_axi_awlen        (cpu_sync_64_awlen),
+    .m_axi_awsize       (cpu_sync_64_awsize),
+    .m_axi_awburst      (cpu_sync_64_awburst),
+    .m_axi_awlock       (cpu_sync_64_awlock),
+    .m_axi_awcache      (cpu_sync_64_awcache),
+    .m_axi_awprot       (cpu_sync_64_awprot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (cpu_sync_64_awvalid),
+    .m_axi_awready      (cpu_sync_64_awready),
+    .m_axi_wdata        (cpu_sync_64_wdata),
+    .m_axi_wstrb        (cpu_sync_64_wstrb),
+    .m_axi_wlast        (cpu_sync_64_wlast),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (cpu_sync_64_wvalid),
+    .m_axi_wready       (cpu_sync_64_wready),
+    .m_axi_bid          (cpu_sync_64_bid),
+    .m_axi_bresp        (cpu_sync_64_bresp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (cpu_sync_64_bvalid),
+    .m_axi_bready       (cpu_sync_64_bready),
+    .m_axi_arid         (cpu_sync_64_arid),
+    .m_axi_araddr       (cpu_sync_64_araddr),
+    .m_axi_arlen        (cpu_sync_64_arlen),
+    .m_axi_arsize       (cpu_sync_64_arsize),
+    .m_axi_arburst      (cpu_sync_64_arburst),
+    .m_axi_arlock       (cpu_sync_64_arlock),
+    .m_axi_arcache      (cpu_sync_64_arcache),
+    .m_axi_arprot       (cpu_sync_64_arprot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (cpu_sync_64_arvalid),
+    .m_axi_arready      (cpu_sync_64_arready),
+    .m_axi_rid          (cpu_sync_64_rid),
+    .m_axi_rdata        (cpu_sync_64_rdata),
+    .m_axi_rresp        (cpu_sync_64_rresp),
+    .m_axi_rlast        (cpu_sync_64_rlast),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (cpu_sync_64_rvalid),
+    .m_axi_rready       (cpu_sync_64_rready)
+);
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (32),
+    .S_STRB_WIDTH    (4),
+    .M_DATA_WIDTH    (64),
+    .M_STRB_WIDTH    (8),
+    .ID_WIDTH        (4),
+    .FORWARD_ID      (1)
+) u_axi_adapter_axiIn1 (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (axiIn1 32位)
+    .s_axi_awid         (axiIn1_aw_payload_id),
+    .s_axi_awaddr       (axiIn1_aw_payload_addr),
+    .s_axi_awlen        (axiIn1_aw_payload_len),
+    .s_axi_awsize       (axiIn1_aw_payload_size),
+    .s_axi_awburst      (axiIn1_aw_payload_burst),
+    .s_axi_awlock       (axiIn1_aw_payload_lock),
+    .s_axi_awcache      (axiIn1_aw_payload_cache),
+    .s_axi_awprot       (axiIn1_aw_payload_prot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (axiIn1_aw_valid),
+    .s_axi_awready      (axiIn1_aw_ready),
+    .s_axi_wdata        (axiIn1_w_payload_data),
+    .s_axi_wstrb        (axiIn1_w_payload_strb),
+    .s_axi_wlast        (axiIn1_w_payload_last),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (axiIn1_w_valid),
+    .s_axi_wready       (axiIn1_w_ready),
+    .s_axi_bid          (axiIn1_b_payload_id),
+    .s_axi_bresp        (axiIn1_b_payload_resp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (axiIn1_b_valid),
+    .s_axi_bready       (axiIn1_b_ready),
+    .s_axi_arid         (axiIn1_ar_payload_id),
+    .s_axi_araddr       (axiIn1_ar_payload_addr),
+    .s_axi_arlen        (axiIn1_ar_payload_len),
+    .s_axi_arsize       (axiIn1_ar_payload_size),
+    .s_axi_arburst      (axiIn1_ar_payload_burst),
+    .s_axi_arlock       (axiIn1_ar_payload_lock),
+    .s_axi_arcache      (axiIn1_ar_payload_cache),
+    .s_axi_arprot       (axiIn1_ar_payload_prot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (axiIn1_ar_valid),
+    .s_axi_arready      (axiIn1_ar_ready),
+    .s_axi_rid          (axiIn1_r_payload_id),
+    .s_axi_rdata        (axiIn1_r_payload_data),
+    .s_axi_rresp        (axiIn1_r_payload_resp),
+    .s_axi_rlast        (axiIn1_r_payload_last),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (axiIn1_r_valid),
+    .s_axi_rready       (axiIn1_r_ready),
+
+    // AXI master interface (64位，连crossbar)
+    .m_axi_awid         (axiIn1_aw_64_payload_id),
+    .m_axi_awaddr       (axiIn1_aw_64_payload_addr),
+    .m_axi_awlen        (axiIn1_aw_64_payload_len),
+    .m_axi_awsize       (axiIn1_aw_64_payload_size),
+    .m_axi_awburst      (axiIn1_aw_64_payload_burst),
+    .m_axi_awlock       (axiIn1_aw_64_payload_lock),
+    .m_axi_awcache      (axiIn1_aw_64_payload_cache),
+    .m_axi_awprot       (axiIn1_aw_64_payload_prot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (axiIn1_aw_64_valid),
+    .m_axi_awready      (axiIn1_aw_64_ready),
+    .m_axi_wdata        (axiIn1_w_64_payload_data),
+    .m_axi_wstrb        (axiIn1_w_64_payload_strb),
+    .m_axi_wlast        (axiIn1_w_64_payload_last),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (axiIn1_w_64_valid),
+    .m_axi_wready       (axiIn1_w_64_ready),
+    .m_axi_bid          (axiIn1_b_64_payload_id),
+    .m_axi_bresp        (axiIn1_b_64_payload_resp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (axiIn1_b_64_valid),
+    .m_axi_bready       (axiIn1_b_64_ready),
+    .m_axi_arid         (axiIn1_ar_64_payload_id),
+    .m_axi_araddr       (axiIn1_ar_64_payload_addr),
+    .m_axi_arlen        (axiIn1_ar_64_payload_len),
+    .m_axi_arsize       (axiIn1_ar_64_payload_size),
+    .m_axi_arburst      (axiIn1_ar_64_payload_burst),
+    .m_axi_arlock       (axiIn1_ar_64_payload_lock),
+    .m_axi_arcache      (axiIn1_ar_64_payload_cache),
+    .m_axi_arprot       (axiIn1_ar_64_payload_prot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (axiIn1_ar_64_valid),
+    .m_axi_arready      (axiIn1_ar_64_ready),
+    .m_axi_rid          (axiIn1_r_64_payload_id),
+    .m_axi_rdata        (axiIn1_r_64_payload_data),
+    .m_axi_rresp        (axiIn1_r_64_payload_resp),
+    .m_axi_rlast        (axiIn1_r_64_payload_last),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (axiIn1_r_64_valid),
+    .m_axi_rready       (axiIn1_r_64_ready)
+);
+
+
+
+
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (64),
+    .S_STRB_WIDTH    (8),
+    .M_DATA_WIDTH    (32),
+    .M_STRB_WIDTH    (4),
+    .ID_WIDTH        (5),
+    .FORWARD_ID      (1)
+) u_axi_adapter_crossbar2ram (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (Crossbar 64位)
+    .s_axi_awid         (ram_64_awid),
+    .s_axi_awaddr       (ram_64_awaddr),
+    .s_axi_awlen        (ram_64_awlen),
+    .s_axi_awsize       (ram_64_awsize),
+    .s_axi_awburst      (ram_64_awburst),
+    .s_axi_awlock       (ram_64_awlock),
+    .s_axi_awcache      (ram_64_awcache),
+    .s_axi_awprot       (ram_64_awprot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (ram_64_awvalid),
+    .s_axi_awready      (ram_64_awready),
+    .s_axi_wdata        (ram_64_wdata),
+    .s_axi_wstrb        (ram_64_wstrb),
+    .s_axi_wlast        (ram_64_wlast),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (ram_64_wvalid),
+    .s_axi_wready       (ram_64_wready),
+    .s_axi_bid          (ram_64_bid),
+    .s_axi_bresp        (ram_64_bresp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (ram_64_bvalid),
+    .s_axi_bready       (ram_64_bready),
+    .s_axi_arid         (ram_64_arid),
+    .s_axi_araddr       (ram_64_araddr),
+    .s_axi_arlen        (ram_64_arlen),
+    .s_axi_arsize       (ram_64_arsize),
+    .s_axi_arburst      (ram_64_arburst),
+    .s_axi_arlock       (ram_64_arlock),
+    .s_axi_arcache      (ram_64_arcache),
+    .s_axi_arprot       (ram_64_arprot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (ram_64_arvalid),
+    .s_axi_arready      (ram_64_arready),
+    .s_axi_rid          (ram_64_rid),
+    .s_axi_rdata        (ram_64_rdata),
+    .s_axi_rresp        (ram_64_rresp),
+    .s_axi_rlast        (ram_64_rlast),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (ram_64_rvalid),
+    .s_axi_rready       (ram_64_rready),
+
+    // AXI master interface (32位，连RAM)
+    .m_axi_awid         (ram_awid),
+    .m_axi_awaddr       (ram_awaddr),
+    .m_axi_awlen        (ram_awlen),
+    .m_axi_awsize       (ram_awsize),
+    .m_axi_awburst      (ram_awburst),
+    .m_axi_awlock       (ram_awlock),
+    .m_axi_awcache      (ram_awcache),
+    .m_axi_awprot       (ram_awprot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (ram_awvalid),
+    .m_axi_awready      (ram_awready),
+    .m_axi_wdata        (ram_wdata),
+    .m_axi_wstrb        (ram_wstrb),
+    .m_axi_wlast        (ram_wlast),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (ram_wvalid),
+    .m_axi_wready       (ram_wready),
+    .m_axi_bid          (ram_bid),
+    .m_axi_bresp        (ram_bresp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (ram_bvalid),
+    .m_axi_bready       (ram_bready),
+    .m_axi_arid         (ram_arid),
+    .m_axi_araddr       (ram_araddr),
+    .m_axi_arlen        (ram_arlen),
+    .m_axi_arsize       (ram_arsize),
+    .m_axi_arburst      (ram_arburst),
+    .m_axi_arlock       (ram_arlock),
+    .m_axi_arcache      (ram_arcache),
+    .m_axi_arprot       (ram_arprot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (ram_arvalid),
+    .m_axi_arready      (ram_arready),
+    .m_axi_rid          (ram_rid),
+    .m_axi_rdata        (ram_rdata),
+    .m_axi_rresp        (ram_rresp),
+    .m_axi_rlast        (ram_rlast),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (ram_rvalid),
+    .m_axi_rready       (ram_rready)
+);
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (64),
+    .S_STRB_WIDTH    (8),
+    .M_DATA_WIDTH    (32),
+    .M_STRB_WIDTH    (4),
+    .ID_WIDTH        (5),
+    .FORWARD_ID      (1)
+) u_axi_adapter_crossbar2uart (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (Crossbar 64位)
+    .s_axi_awid         (uart_64_awid),
+    .s_axi_awaddr       (uart_64_awaddr),
+    .s_axi_awlen        (uart_64_awlen),
+    .s_axi_awsize       (uart_64_awsize),
+    .s_axi_awburst      (uart_64_awburst),
+    .s_axi_awlock       (uart_64_awlock),
+    .s_axi_awcache      (uart_64_awcache),
+    .s_axi_awprot       (uart_64_awprot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (uart_64_awvalid),
+    .s_axi_awready      (uart_64_awready),
+    .s_axi_wdata        (uart_64_wdata),
+    .s_axi_wstrb        (uart_64_wstrb),
+    .s_axi_wlast        (uart_64_wlast),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (uart_64_wvalid),
+    .s_axi_wready       (uart_64_wready),
+    .s_axi_bid          (uart_64_bid),
+    .s_axi_bresp        (uart_64_bresp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (uart_64_bvalid),
+    .s_axi_bready       (uart_64_bready),
+    .s_axi_arid         (uart_64_arid),
+    .s_axi_araddr       (uart_64_araddr),
+    .s_axi_arlen        (uart_64_arlen),
+    .s_axi_arsize       (uart_64_arsize),
+    .s_axi_arburst      (uart_64_arburst),
+    .s_axi_arlock       (uart_64_arlock),
+    .s_axi_arcache      (uart_64_arcache),
+    .s_axi_arprot       (uart_64_arprot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (uart_64_arvalid),
+    .s_axi_arready      (uart_64_arready),
+    .s_axi_rid          (uart_64_rid),
+    .s_axi_rdata        (uart_64_rdata),
+    .s_axi_rresp        (uart_64_rresp),
+    .s_axi_rlast        (uart_64_rlast),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (uart_64_rvalid),
+    .s_axi_rready       (uart_64_rready),
+
+    // AXI master interface (32位，连UART)
+    .m_axi_awid         (uart_awid),
+    .m_axi_awaddr       (uart_awaddr),
+    .m_axi_awlen        (uart_awlen),
+    .m_axi_awsize       (uart_awsize),
+    .m_axi_awburst      (uart_awburst),
+    .m_axi_awlock       (uart_awlock),
+    .m_axi_awcache      (uart_awcache),
+    .m_axi_awprot       (uart_awprot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (uart_awvalid),
+    .m_axi_awready      (uart_awready),
+    .m_axi_wdata        (uart_wdata),
+    .m_axi_wstrb        (uart_wstrb),
+    .m_axi_wlast        (uart_wlast),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (uart_wvalid),
+    .m_axi_wready       (uart_wready),
+    .m_axi_bid          (uart_bid),
+    .m_axi_bresp        (uart_bresp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (uart_bvalid),
+    .m_axi_bready       (uart_bready),
+    .m_axi_arid         (uart_arid),
+    .m_axi_araddr       (uart_araddr),
+    .m_axi_arlen        (uart_arlen),
+    .m_axi_arsize       (uart_arsize),
+    .m_axi_arburst      (uart_arburst),
+    .m_axi_arlock       (uart_arlock),
+    .m_axi_arcache      (uart_arcache),
+    .m_axi_arprot       (uart_arprot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (uart_arvalid),
+    .m_axi_arready      (uart_arready),
+    .m_axi_rid          (uart_rid),
+    .m_axi_rdata        (uart_rdata),
+    .m_axi_rresp        (uart_rresp),
+    .m_axi_rlast        (uart_rlast),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (uart_rvalid),
+    .m_axi_rready       (uart_rready)
+);
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (64),
+    .S_STRB_WIDTH    (8),
+    .M_DATA_WIDTH    (32),
+    .M_STRB_WIDTH    (4),
+    .ID_WIDTH        (5),
+    .FORWARD_ID      (1)
+) u_axi_adapter_crossbar2axiOut2 (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (Crossbar 64位)
+    .s_axi_awid         (axiOut_2_64_awid),
+    .s_axi_awaddr       (axiOut_2_64_awaddr),
+    .s_axi_awlen        (axiOut_2_64_awlen),
+    .s_axi_awsize       (axiOut_2_64_awsize),
+    .s_axi_awburst      (axiOut_2_64_awburst),
+    .s_axi_awlock       (axiOut_2_64_awlock),
+    .s_axi_awcache      (axiOut_2_64_awcache),
+    .s_axi_awprot       (axiOut_2_64_awprot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (axiOut_2_64_awvalid),
+    .s_axi_awready      (axiOut_2_64_awready),
+    .s_axi_wdata        (axiOut_2_64_wdata),
+    .s_axi_wstrb        (axiOut_2_64_wstrb),
+    .s_axi_wlast        (axiOut_2_64_wlast),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (axiOut_2_64_wvalid),
+    .s_axi_wready       (axiOut_2_64_wready),
+    .s_axi_bid          (axiOut_2_64_bid),
+    .s_axi_bresp        (axiOut_2_64_bresp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (axiOut_2_64_bvalid),
+    .s_axi_bready       (axiOut_2_64_bready),
+    .s_axi_arid         (axiOut_2_64_arid),
+    .s_axi_araddr       (axiOut_2_64_araddr),
+    .s_axi_arlen        (axiOut_2_64_arlen),
+    .s_axi_arsize       (axiOut_2_64_arsize),
+    .s_axi_arburst      (axiOut_2_64_arburst),
+    .s_axi_arlock       (axiOut_2_64_arlock),
+    .s_axi_arcache      (axiOut_2_64_arcache),
+    .s_axi_arprot       (axiOut_2_64_arprot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (axiOut_2_64_arvalid),
+    .s_axi_arready      (axiOut_2_64_arready),
+    .s_axi_rid          (axiOut_2_64_rid),
+    .s_axi_rdata        (axiOut_2_64_rdata),
+    .s_axi_rresp        (axiOut_2_64_rresp),
+    .s_axi_rlast        (axiOut_2_64_rlast),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (axiOut_2_64_rvalid),
+    .s_axi_rready       (axiOut_2_64_rready),
+
+    // AXI master interface (32位，连axiOut_2)
+    .m_axi_awid         (axiOut_2_awid),
+    .m_axi_awaddr       (axiOut_2_awaddr),
+    .m_axi_awlen        (axiOut_2_awlen),
+    .m_axi_awsize       (axiOut_2_awsize),
+    .m_axi_awburst      (axiOut_2_awburst),
+    .m_axi_awlock       (axiOut_2_awlock),
+    .m_axi_awcache      (axiOut_2_awcache),
+    .m_axi_awprot       (axiOut_2_awprot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (axiOut_2_awvalid),
+    .m_axi_awready      (axiOut_2_awready),
+    .m_axi_wdata        (axiOut_2_wdata),
+    .m_axi_wstrb        (axiOut_2_wstrb),
+    .m_axi_wlast        (axiOut_2_wlast),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (axiOut_2_wvalid),
+    .m_axi_wready       (axiOut_2_wready),
+    .m_axi_bid          (axiOut_2_bid),
+    .m_axi_bresp        (axiOut_2_bresp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (axiOut_2_bvalid),
+    .m_axi_bready       (axiOut_2_bready),
+    .m_axi_arid         (axiOut_2_arid),
+    .m_axi_araddr       (axiOut_2_araddr),
+    .m_axi_arlen        (axiOut_2_arlen),
+    .m_axi_arsize       (axiOut_2_arsize),
+    .m_axi_arburst      (axiOut_2_arburst),
+    .m_axi_arlock       (axiOut_2_arlock),
+    .m_axi_arcache      (axiOut_2_arcache),
+    .m_axi_arprot       (axiOut_2_arprot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (axiOut_2_arvalid),
+    .m_axi_arready      (axiOut_2_arready),
+    .m_axi_rid          (axiOut_2_rid),
+    .m_axi_rdata        (axiOut_2_rdata),
+    .m_axi_rresp        (axiOut_2_rresp),
+    .m_axi_rlast        (axiOut_2_rlast),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (axiOut_2_rvalid),
+    .m_axi_rready       (axiOut_2_rready)
+);
+
+axi_adapter #(
+    .ADDR_WIDTH      (32),
+    .S_DATA_WIDTH    (64),
+    .S_STRB_WIDTH    (8),
+    .M_DATA_WIDTH    (32),
+    .M_STRB_WIDTH    (4),
+    .ID_WIDTH        (5),
+    .FORWARD_ID      (1)
+) u_axi_adapter_crossbar2confreg (
+    .clk                (sys_clk),
+    .rst                (~sys_resetn),
+
+    // AXI slave interface (Crossbar 64位)
+    .s_axi_awid         (confreg_64_awid),
+    .s_axi_awaddr       (confreg_64_awaddr),
+    .s_axi_awlen        (confreg_64_awlen),
+    .s_axi_awsize       (confreg_64_awsize),
+    .s_axi_awburst      (confreg_64_awburst),
+    .s_axi_awlock       (confreg_64_awlock),
+    .s_axi_awcache      (confreg_64_awcache),
+    .s_axi_awprot       (confreg_64_awprot),
+    .s_axi_awqos        (4'b0),
+    .s_axi_awregion     (4'b0),
+    .s_axi_awuser       (1'b0),
+    .s_axi_awvalid      (confreg_64_awvalid),
+    .s_axi_awready      (confreg_64_awready),
+    .s_axi_wdata        (confreg_64_wdata),
+    .s_axi_wstrb        (confreg_64_wstrb),
+    .s_axi_wlast        (confreg_64_wlast),
+    .s_axi_wuser        (1'b0),
+    .s_axi_wvalid       (confreg_64_wvalid),
+    .s_axi_wready       (confreg_64_wready),
+    .s_axi_bid          (confreg_64_bid),
+    .s_axi_bresp        (confreg_64_bresp),
+    .s_axi_buser        (),
+    .s_axi_bvalid       (confreg_64_bvalid),
+    .s_axi_bready       (confreg_64_bready),
+    .s_axi_arid         (confreg_64_arid),
+    .s_axi_araddr       (confreg_64_araddr),
+    .s_axi_arlen        (confreg_64_arlen),
+    .s_axi_arsize       (confreg_64_arsize),
+    .s_axi_arburst      (confreg_64_arburst),
+    .s_axi_arlock       (confreg_64_arlock),
+    .s_axi_arcache      (confreg_64_arcache),
+    .s_axi_arprot       (confreg_64_arprot),
+    .s_axi_arqos        (4'b0),
+    .s_axi_arregion     (4'b0),
+    .s_axi_aruser       (1'b0),
+    .s_axi_arvalid      (confreg_64_arvalid),
+    .s_axi_arready      (confreg_64_arready),
+    .s_axi_rid          (confreg_64_rid),
+    .s_axi_rdata        (confreg_64_rdata),
+    .s_axi_rresp        (confreg_64_rresp),
+    .s_axi_rlast        (confreg_64_rlast),
+    .s_axi_ruser        (),
+    .s_axi_rvalid       (confreg_64_rvalid),
+    .s_axi_rready       (confreg_64_rready),
+
+    // AXI master interface (32位，连confreg)
+    .m_axi_awid         (confreg_awid),
+    .m_axi_awaddr       (confreg_awaddr),
+    .m_axi_awlen        (confreg_awlen),
+    .m_axi_awsize       (confreg_awsize),
+    .m_axi_awburst      (confreg_awburst),
+    .m_axi_awlock       (confreg_awlock),
+    .m_axi_awcache      (confreg_awcache),
+    .m_axi_awprot       (confreg_awprot),
+    .m_axi_awqos        (),
+    .m_axi_awregion     (),
+    .m_axi_awuser       (),
+    .m_axi_awvalid      (confreg_awvalid),
+    .m_axi_awready      (confreg_awready),
+    .m_axi_wdata        (confreg_wdata),
+    .m_axi_wstrb        (confreg_wstrb),
+    .m_axi_wlast        (confreg_wlast),
+    .m_axi_wuser        (),
+    .m_axi_wvalid       (confreg_wvalid),
+    .m_axi_wready       (confreg_wready),
+    .m_axi_bid          (confreg_bid),
+    .m_axi_bresp        (confreg_bresp),
+    .m_axi_buser        (),
+    .m_axi_bvalid       (confreg_bvalid),
+    .m_axi_bready       (confreg_bready),
+    .m_axi_arid         (confreg_arid),
+    .m_axi_araddr       (confreg_araddr),
+    .m_axi_arlen        (confreg_arlen),
+    .m_axi_arsize       (confreg_arsize),
+    .m_axi_arburst      (confreg_arburst),
+    .m_axi_arlock       (confreg_arlock),
+    .m_axi_arcache      (confreg_arcache),
+    .m_axi_arprot       (confreg_arprot),
+    .m_axi_arqos        (),
+    .m_axi_arregion     (),
+    .m_axi_aruser       (),
+    .m_axi_arvalid      (confreg_arvalid),
+    .m_axi_arready      (confreg_arready),
+    .m_axi_rid          (confreg_rid),
+    .m_axi_rdata        (confreg_rdata),
+    .m_axi_rresp        (confreg_rresp),
+    .m_axi_rlast        (confreg_rlast),
+    .m_axi_ruser        (),
+    .m_axi_rvalid       (confreg_rvalid),
+    .m_axi_rready       (confreg_rready)
+);
+
+
+
+AxiCrossbar64_2x4 u_axi_crossbar (
     //clock signal
     .clk(sys_clk),
     .resetn(sys_resetn),
 
     // AXI Master (Input) - Write Address Channel
-    .axiIn0_aw_valid            (cpu_sync_awvalid),
-    .axiIn0_aw_ready            (cpu_sync_awready),
-    .axiIn0_aw_payload_addr     (cpu_sync_awaddr),
-    .axiIn0_aw_payload_id       (cpu_sync_awid),
-    .axiIn0_aw_payload_len      (cpu_sync_awlen),
-    .axiIn0_aw_payload_size     (cpu_sync_awsize),
-    .axiIn0_aw_payload_burst    (cpu_sync_awburst),
-    .axiIn0_aw_payload_lock     (cpu_sync_awlock),
-    .axiIn0_aw_payload_cache    (cpu_sync_awcache),
-    .axiIn0_aw_payload_prot     (cpu_sync_awprot),
+    .axiIn0_aw_valid            (cpu_sync_64_awvalid),
+    .axiIn0_aw_ready            (cpu_sync_64_awready),
+    .axiIn0_aw_payload_addr     (cpu_sync_64_awaddr),
+    .axiIn0_aw_payload_id       (cpu_sync_64_awid),
+    .axiIn0_aw_payload_len      (cpu_sync_64_awlen),
+    .axiIn0_aw_payload_size     (cpu_sync_64_awsize),
+    .axiIn0_aw_payload_burst    (cpu_sync_64_awburst),
+    .axiIn0_aw_payload_lock     (cpu_sync_64_awlock),
+    .axiIn0_aw_payload_cache    (cpu_sync_64_awcache),
+    .axiIn0_aw_payload_prot     (cpu_sync_64_awprot),
 
     // AXI Master (Input) - Write Data Channel
-    .axiIn0_w_valid             (cpu_sync_wvalid),
-    .axiIn0_w_ready             (cpu_sync_wready),
-    .axiIn0_w_payload_data      (cpu_sync_wdata),
-    .axiIn0_w_payload_strb      (cpu_sync_wstrb),
-    .axiIn0_w_payload_last      (cpu_sync_wlast),
+    .axiIn0_w_valid             (cpu_sync_64_wvalid),
+    .axiIn0_w_ready             (cpu_sync_64_wready),
+    .axiIn0_w_payload_data      (cpu_sync_64_wdata),
+    .axiIn0_w_payload_strb      (cpu_sync_64_wstrb),
+    .axiIn0_w_payload_last      (cpu_sync_64_wlast),
 
     // AXI Master (Input) - Write Response Channel
-    .axiIn0_b_valid             (cpu_sync_bvalid),
-    .axiIn0_b_ready             (cpu_sync_bready),
-    .axiIn0_b_payload_id        (cpu_sync_bid),
-    .axiIn0_b_payload_resp      (cpu_sync_bresp),
+    .axiIn0_b_valid             (cpu_sync_64_bvalid),
+    .axiIn0_b_ready             (cpu_sync_64_bready),
+    .axiIn0_b_payload_id        (cpu_sync_64_bid),
+    .axiIn0_b_payload_resp      (cpu_sync_64_bresp),
 
     // AXI Master (Input) - Read Address Channel
-    .axiIn0_ar_valid            (cpu_sync_arvalid),
-    .axiIn0_ar_ready            (cpu_sync_arready),
-    .axiIn0_ar_payload_addr     (cpu_sync_araddr),
-    .axiIn0_ar_payload_id       (cpu_sync_arid),
-    .axiIn0_ar_payload_len      (cpu_sync_arlen),
-    .axiIn0_ar_payload_size     (cpu_sync_arsize),
-    .axiIn0_ar_payload_burst    (cpu_sync_arburst),
-    .axiIn0_ar_payload_lock     (cpu_sync_arlock),
-    .axiIn0_ar_payload_cache    (cpu_sync_arcache),
-    .axiIn0_ar_payload_prot     (cpu_sync_arprot),
+    .axiIn0_ar_valid            (cpu_sync_64_arvalid),
+    .axiIn0_ar_ready            (cpu_sync_64_arready),
+    .axiIn0_ar_payload_addr     (cpu_sync_64_araddr),
+    .axiIn0_ar_payload_id       (cpu_sync_64_arid),
+    .axiIn0_ar_payload_len      (cpu_sync_64_arlen),
+    .axiIn0_ar_payload_size     (cpu_sync_64_arsize),
+    .axiIn0_ar_payload_burst    (cpu_sync_64_arburst),
+    .axiIn0_ar_payload_lock     (cpu_sync_64_arlock),
+    .axiIn0_ar_payload_cache    (cpu_sync_64_arcache),
+    .axiIn0_ar_payload_prot     (cpu_sync_64_arprot),
 
     // AXI Master (Input) - Read Data Channel
-    .axiIn0_r_valid             (cpu_sync_rvalid),
-    .axiIn0_r_ready             (cpu_sync_rready),
-    .axiIn0_r_payload_data      (cpu_sync_rdata),
-    .axiIn0_r_payload_id        (cpu_sync_rid),
-    .axiIn0_r_payload_resp      (cpu_sync_rresp),
-    .axiIn0_r_payload_last      (cpu_sync_rlast),
+    .axiIn0_r_valid             (cpu_sync_64_rvalid),
+    .axiIn0_r_ready             (cpu_sync_64_rready),
+    .axiIn0_r_payload_data      (cpu_sync_64_rdata),
+    .axiIn0_r_payload_id        (cpu_sync_64_rid),
+    .axiIn0_r_payload_resp      (cpu_sync_64_rresp),
+    .axiIn0_r_payload_last      (cpu_sync_64_rlast),
 
 
-    // --- AXI Master Input 1 (Dummy Master) ---
+    // --- AXI Master Input 1 ---
     // Write Address Channel
-    .axiIn1_aw_valid           (axiIn1_aw_valid),
-    .axiIn1_aw_ready           (axiIn1_aw_ready),
-    .axiIn1_aw_payload_addr    (axiIn1_aw_payload_addr),
-    .axiIn1_aw_payload_id      (axiIn1_aw_payload_id),
-    .axiIn1_aw_payload_len     (axiIn1_aw_payload_len),
-    .axiIn1_aw_payload_size    (axiIn1_aw_payload_size),
-    .axiIn1_aw_payload_burst   (axiIn1_aw_payload_burst),
-    .axiIn1_aw_payload_lock    (axiIn1_aw_payload_lock),
-    .axiIn1_aw_payload_cache   (axiIn1_aw_payload_cache),
-    .axiIn1_aw_payload_prot    (axiIn1_aw_payload_prot),
+    .axiIn1_aw_valid           (axiIn1_aw_64_valid),
+    .axiIn1_aw_ready           (axiIn1_aw_64_ready),
+    .axiIn1_aw_payload_addr    (axiIn1_aw_64_payload_addr),
+    .axiIn1_aw_payload_id      (axiIn1_aw_64_payload_id),
+    .axiIn1_aw_payload_len     (axiIn1_aw_64_payload_len),
+    .axiIn1_aw_payload_size    (axiIn1_aw_64_payload_size),
+    .axiIn1_aw_payload_burst   (axiIn1_aw_64_payload_burst),
+    .axiIn1_aw_payload_lock    (axiIn1_aw_64_payload_lock),
+    .axiIn1_aw_payload_cache   (axiIn1_aw_64_payload_cache),
+    .axiIn1_aw_payload_prot    (axiIn1_aw_64_payload_prot),
 
     // Write Data Channel
-    .axiIn1_w_valid            (axiIn1_w_valid),
-    .axiIn1_w_ready            (axiIn1_w_ready),
-    .axiIn1_w_payload_data     (axiIn1_w_payload_data),
-    .axiIn1_w_payload_strb     (axiIn1_w_payload_strb),
-    .axiIn1_w_payload_last     (axiIn1_w_payload_last),
+    .axiIn1_w_valid            (axiIn1_w_64_valid),
+    .axiIn1_w_ready            (axiIn1_w_64_ready),
+    .axiIn1_w_payload_data     (axiIn1_w_64_payload_data),
+    .axiIn1_w_payload_strb     (axiIn1_w_64_payload_strb),
+    .axiIn1_w_payload_last     (axiIn1_w_64_payload_last),
 
     // Write Response Channel
-    .axiIn1_b_valid            (axiIn1_b_valid),
-    .axiIn1_b_ready            (axiIn1_b_ready),
-    .axiIn1_b_payload_id       (axiIn1_b_payload_id),
-    .axiIn1_b_payload_resp     (axiIn1_b_payload_resp),
+    .axiIn1_b_valid            (axiIn1_b_64_valid),
+    .axiIn1_b_ready            (axiIn1_b_64_ready),
+    .axiIn1_b_payload_id       (axiIn1_b_64_payload_id),
+    .axiIn1_b_payload_resp     (axiIn1_b_64_payload_resp),
 
     // Read Address Channel
-    .axiIn1_ar_valid           (axiIn1_ar_valid),
-    .axiIn1_ar_ready           (axiIn1_ar_ready),
-    .axiIn1_ar_payload_addr    (axiIn1_ar_payload_addr),
-    .axiIn1_ar_payload_id      (axiIn1_ar_payload_id),
-    .axiIn1_ar_payload_len     (axiIn1_ar_payload_len),
-    .axiIn1_ar_payload_size    (axiIn1_ar_payload_size),
-    .axiIn1_ar_payload_burst   (axiIn1_ar_payload_burst),
-    .axiIn1_ar_payload_lock    (axiIn1_ar_payload_lock),
-    .axiIn1_ar_payload_cache   (axiIn1_ar_payload_cache),
-    .axiIn1_ar_payload_prot    (axiIn1_ar_payload_prot),
+    .axiIn1_ar_valid           (axiIn1_ar_64_valid),
+    .axiIn1_ar_ready           (axiIn1_ar_64_ready),
+    .axiIn1_ar_payload_addr    (axiIn1_ar_64_payload_addr),
+    .axiIn1_ar_payload_id      (axiIn1_ar_64_payload_id),
+    .axiIn1_ar_payload_len     (axiIn1_ar_64_payload_len),
+    .axiIn1_ar_payload_size    (axiIn1_ar_64_payload_size),
+    .axiIn1_ar_payload_burst   (axiIn1_ar_64_payload_burst),
+    .axiIn1_ar_payload_lock    (axiIn1_ar_64_payload_lock),
+    .axiIn1_ar_payload_cache   (axiIn1_ar_64_payload_cache),
+    .axiIn1_ar_payload_prot    (axiIn1_ar_64_payload_prot),
 
     // Read Data Channel
-    .axiIn1_r_valid            (axiIn1_r_valid),
-    .axiIn1_r_ready            (axiIn1_r_ready),
-    .axiIn1_r_payload_data     (axiIn1_r_payload_data),
-    .axiIn1_r_payload_id       (axiIn1_r_payload_id),
-    .axiIn1_r_payload_resp     (axiIn1_r_payload_resp),
-    .axiIn1_r_payload_last     (axiIn1_r_payload_last),
+    .axiIn1_r_valid            (axiIn1_r_64_valid),
+    .axiIn1_r_ready            (axiIn1_r_64_ready),
+    .axiIn1_r_payload_data     (axiIn1_r_64_payload_data),
+    .axiIn1_r_payload_id       (axiIn1_r_64_payload_id),
+    .axiIn1_r_payload_resp     (axiIn1_r_64_payload_resp),
+    .axiIn1_r_payload_last     (axiIn1_r_64_payload_last),
 
     // AXI Slave 0 (RAM) - Write Address Channel
-    .axiOut_0_aw_valid          (ram_awvalid),
-    .axiOut_0_aw_ready          (ram_awready),
-    .axiOut_0_aw_payload_addr   (ram_awaddr),
-    .axiOut_0_aw_payload_id     (ram_awid),
-    .axiOut_0_aw_payload_len    (ram_awlen),
-    .axiOut_0_aw_payload_size   (ram_awsize),
-    .axiOut_0_aw_payload_burst  (ram_awburst),
-    .axiOut_0_aw_payload_lock   (ram_awlock),
-    .axiOut_0_aw_payload_cache  (ram_awcache),
-    .axiOut_0_aw_payload_prot   (ram_awprot),
+    .axiOut_0_aw_valid          (ram_64_awvalid),
+    .axiOut_0_aw_ready          (ram_64_awready),
+    .axiOut_0_aw_payload_addr   (ram_64_awaddr),
+    .axiOut_0_aw_payload_id     (ram_64_awid),
+    .axiOut_0_aw_payload_len    (ram_64_awlen),
+    .axiOut_0_aw_payload_size   (ram_64_awsize),
+    .axiOut_0_aw_payload_burst  (ram_64_awburst),
+    .axiOut_0_aw_payload_lock   (ram_64_awlock),
+    .axiOut_0_aw_payload_cache  (ram_64_awcache),
+    .axiOut_0_aw_payload_prot   (ram_64_awprot),
 
     // AXI Slave 0 (Output) - Write Data Channel (RAM)
-    .axiOut_0_w_valid           (ram_wvalid),
-    .axiOut_0_w_ready           (ram_wready),
-    .axiOut_0_w_payload_data    (ram_wdata),
-    .axiOut_0_w_payload_strb    (ram_wstrb),
-    .axiOut_0_w_payload_last    (ram_wlast),
+    .axiOut_0_w_valid           (ram_64_wvalid),
+    .axiOut_0_w_ready           (ram_64_wready),
+    .axiOut_0_w_payload_data    (ram_64_wdata),
+    .axiOut_0_w_payload_strb    (ram_64_wstrb),
+    .axiOut_0_w_payload_last    (ram_64_wlast),
 
     // AXI Slave 0 (Output) - Write Response Channel (RAM)
-    .axiOut_0_b_valid           (ram_bvalid),
-    .axiOut_0_b_ready           (ram_bready),
-    .axiOut_0_b_payload_id      (ram_bid),
-    .axiOut_0_b_payload_resp    (ram_bresp),
+    .axiOut_0_b_valid           (ram_64_bvalid),
+    .axiOut_0_b_ready           (ram_64_bready),
+    .axiOut_0_b_payload_id      (ram_64_bid),
+    .axiOut_0_b_payload_resp    (ram_64_bresp),
 
     // AXI Slave 0 (Output) - Read Address Channel (RAM)
-    .axiOut_0_ar_valid          (ram_arvalid),
-    .axiOut_0_ar_ready          (ram_arready),
-    .axiOut_0_ar_payload_addr   (ram_araddr),
-    .axiOut_0_ar_payload_id     (ram_arid),
-    .axiOut_0_ar_payload_len    (ram_arlen),
-    .axiOut_0_ar_payload_size   (ram_arsize),
-    .axiOut_0_ar_payload_burst  (ram_arburst),
-    .axiOut_0_ar_payload_lock   (ram_arlock),
-    .axiOut_0_ar_payload_cache  (ram_arcache),
-    .axiOut_0_ar_payload_prot   (ram_arprot),
+    .axiOut_0_ar_valid          (ram_64_arvalid),
+    .axiOut_0_ar_ready          (ram_64_arready),
+    .axiOut_0_ar_payload_addr   (ram_64_araddr),
+    .axiOut_0_ar_payload_id     (ram_64_arid),
+    .axiOut_0_ar_payload_len    (ram_64_arlen),
+    .axiOut_0_ar_payload_size   (ram_64_arsize),
+    .axiOut_0_ar_payload_burst  (ram_64_arburst),
+    .axiOut_0_ar_payload_lock   (ram_64_arlock),
+    .axiOut_0_ar_payload_cache  (ram_64_arcache),
+    .axiOut_0_ar_payload_prot   (ram_64_arprot),
 
     // AXI Slave 0 (Output) - Read Data Channel (RAM)
-    .axiOut_0_r_valid           (ram_rvalid),
-    .axiOut_0_r_ready           (ram_rready),
-    .axiOut_0_r_payload_data    (ram_rdata),
-    .axiOut_0_r_payload_id      (ram_rid),
-    .axiOut_0_r_payload_resp    (ram_rresp),
-    .axiOut_0_r_payload_last    (ram_rlast),
+    .axiOut_0_r_valid           (ram_64_rvalid),
+    .axiOut_0_r_ready           (ram_64_rready),
+    .axiOut_0_r_payload_data    (ram_64_rdata),
+    .axiOut_0_r_payload_id      (ram_64_rid),
+    .axiOut_0_r_payload_resp    (ram_64_rresp),
+    .axiOut_0_r_payload_last    (ram_64_rlast),
 
     // AXI Slave 1 (Output) - Write Address Channel (UART)
-    .axiOut_1_aw_valid          (uart_awvalid),
-    .axiOut_1_aw_ready          (uart_awready),
-    .axiOut_1_aw_payload_addr   (uart_awaddr),
-    .axiOut_1_aw_payload_id     (uart_awid),
-    .axiOut_1_aw_payload_len    (uart_awlen),
-    .axiOut_1_aw_payload_size   (uart_awsize),
-    .axiOut_1_aw_payload_burst  (uart_awburst),
-    .axiOut_1_aw_payload_lock   (uart_awlock),
-    .axiOut_1_aw_payload_cache  (uart_awcache),
-    .axiOut_1_aw_payload_prot   (uart_awprot),
+    .axiOut_1_aw_valid          (uart_64_awvalid),
+    .axiOut_1_aw_ready          (uart_64_awready),
+    .axiOut_1_aw_payload_addr   (uart_64_awaddr),
+    .axiOut_1_aw_payload_id     (uart_64_awid),
+    .axiOut_1_aw_payload_len    (uart_64_awlen),
+    .axiOut_1_aw_payload_size   (uart_64_awsize),
+    .axiOut_1_aw_payload_burst  (uart_64_awburst),
+    .axiOut_1_aw_payload_lock   (uart_64_awlock),
+    .axiOut_1_aw_payload_cache  (uart_64_awcache),
+    .axiOut_1_aw_payload_prot   (uart_64_awprot),
 
     // AXI Slave 1 (Output) - Write Data Channel (UART)
-    .axiOut_1_w_valid           (uart_wvalid),
-    .axiOut_1_w_ready           (uart_wready),
-    .axiOut_1_w_payload_data    (uart_wdata),
-    .axiOut_1_w_payload_strb    (uart_wstrb),
-    .axiOut_1_w_payload_last    (uart_wlast),
+    .axiOut_1_w_valid           (uart_64_wvalid),
+    .axiOut_1_w_ready           (uart_64_wready),
+    .axiOut_1_w_payload_data    (uart_64_wdata),
+    .axiOut_1_w_payload_strb    (uart_64_wstrb),
+    .axiOut_1_w_payload_last    (uart_64_wlast),
 
     // AXI Slave 1 (Output) - Write Response Channel (UART)
-    .axiOut_1_b_valid           (uart_bvalid),
-    .axiOut_1_b_ready           (uart_bready),
-    .axiOut_1_b_payload_id      (uart_bid),
-    .axiOut_1_b_payload_resp    (uart_bresp),
+    .axiOut_1_b_valid           (uart_64_bvalid),
+    .axiOut_1_b_ready           (uart_64_bready),
+    .axiOut_1_b_payload_id      (uart_64_bid),
+    .axiOut_1_b_payload_resp    (uart_64_bresp),
 
     // AXI Slave 1 (Output) - Read Address Channel (UART)
-    .axiOut_1_ar_valid          (uart_arvalid),
-    .axiOut_1_ar_ready          (uart_arready),
-    .axiOut_1_ar_payload_addr   (uart_araddr),
-    .axiOut_1_ar_payload_id     (uart_arid),
-    .axiOut_1_ar_payload_len    (uart_arlen),
-    .axiOut_1_ar_payload_size   (uart_arsize),
-    .axiOut_1_ar_payload_burst  (uart_arburst),
-    .axiOut_1_ar_payload_lock   (uart_arlock),
-    .axiOut_1_ar_payload_cache  (uart_arcache),
-    .axiOut_1_ar_payload_prot   (uart_arprot),
+    .axiOut_1_ar_valid          (uart_64_arvalid),
+    .axiOut_1_ar_ready          (uart_64_arready),
+    .axiOut_1_ar_payload_addr   (uart_64_araddr),
+    .axiOut_1_ar_payload_id     (uart_64_arid),
+    .axiOut_1_ar_payload_len    (uart_64_arlen),
+    .axiOut_1_ar_payload_size   (uart_64_arsize),
+    .axiOut_1_ar_payload_burst  (uart_64_arburst),
+    .axiOut_1_ar_payload_lock   (uart_64_arlock),
+    .axiOut_1_ar_payload_cache  (uart_64_arcache),
+    .axiOut_1_ar_payload_prot   (uart_64_arprot),
 
     // AXI Slave 1 (Output) - Read Data Channel (UART)
-    .axiOut_1_r_valid           (uart_rvalid),
-    .axiOut_1_r_ready           (uart_rready),
-    .axiOut_1_r_payload_data    (uart_rdata),
-    .axiOut_1_r_payload_id      (uart_rid),
-    .axiOut_1_r_payload_resp    (uart_rresp),
-    .axiOut_1_r_payload_last    (uart_rlast),
+    .axiOut_1_r_valid           (uart_64_rvalid),
+    .axiOut_1_r_ready           (uart_64_rready),
+    .axiOut_1_r_payload_data    (uart_64_rdata),
+    .axiOut_1_r_payload_id      (uart_64_rid),
+    .axiOut_1_r_payload_resp    (uart_64_rresp),
+    .axiOut_1_r_payload_last    (uart_64_rlast),
 
     // AXI Slave 2 (Output) - Write Address Channel
-    .axiOut_2_aw_valid          (axiOut_2_awvalid),
-    .axiOut_2_aw_ready          (axiOut_2_awready),
-    .axiOut_2_aw_payload_addr   (axiOut_2_awaddr),
-    .axiOut_2_aw_payload_id     (axiOut_2_awid),
-    .axiOut_2_aw_payload_len    (axiOut_2_awlen),
-    .axiOut_2_aw_payload_size   (axiOut_2_awsize),
-    .axiOut_2_aw_payload_burst  (axiOut_2_awburst),
-    .axiOut_2_aw_payload_lock   (axiOut_2_awlock),
-    .axiOut_2_aw_payload_cache  (axiOut_2_awcache),
-    .axiOut_2_aw_payload_prot   (axiOut_2_awprot),
+    .axiOut_2_aw_valid          (axiOut_2_64_awvalid),
+    .axiOut_2_aw_ready          (axiOut_2_64_awready),
+    .axiOut_2_aw_payload_addr   (axiOut_2_64_awaddr),
+    .axiOut_2_aw_payload_id     (axiOut_2_64_awid),
+    .axiOut_2_aw_payload_len    (axiOut_2_64_awlen),
+    .axiOut_2_aw_payload_size   (axiOut_2_64_awsize),
+    .axiOut_2_aw_payload_burst  (axiOut_2_64_awburst),
+    .axiOut_2_aw_payload_lock   (axiOut_2_64_awlock),
+    .axiOut_2_aw_payload_cache  (axiOut_2_64_awcache),
+    .axiOut_2_aw_payload_prot   (axiOut_2_64_awprot),
 
     // AXI Slave 2 (Output) - Write Data Channel
-    .axiOut_2_w_valid           (axiOut_2_wvalid),
-    .axiOut_2_w_ready           (axiOut_2_wready),
-    .axiOut_2_w_payload_data    (axiOut_2_wdata),
-    .axiOut_2_w_payload_strb    (axiOut_2_wstrb),
-    .axiOut_2_w_payload_last    (axiOut_2_wlast),
+    .axiOut_2_w_valid           (axiOut_2_64_wvalid),
+    .axiOut_2_w_ready           (axiOut_2_64_wready),
+    .axiOut_2_w_payload_data    (axiOut_2_64_wdata),
+    .axiOut_2_w_payload_strb    (axiOut_2_64_wstrb),
+    .axiOut_2_w_payload_last    (axiOut_2_64_wlast),
 
     // AXI Slave 2 (Output) - Write Response Channel
-    .axiOut_2_b_valid           (axiOut_2_bvalid),
-    .axiOut_2_b_ready           (axiOut_2_bready),
-    .axiOut_2_b_payload_id      (axiOut_2_bid),
-    .axiOut_2_b_payload_resp    (axiOut_2_bresp),
+    .axiOut_2_b_valid           (axiOut_2_64_bvalid),
+    .axiOut_2_b_ready           (axiOut_2_64_bready),
+    .axiOut_2_b_payload_id      (axiOut_2_64_bid),
+    .axiOut_2_b_payload_resp    (axiOut_2_64_bresp),
 
     // AXI Slave 2 (Output) - Read Address Channel
-    .axiOut_2_ar_valid          (axiOut_2_arvalid),
-    .axiOut_2_ar_ready          (axiOut_2_arready),
-    .axiOut_2_ar_payload_addr   (axiOut_2_araddr),
-    .axiOut_2_ar_payload_id     (axiOut_2_arid),
-    .axiOut_2_ar_payload_len    (axiOut_2_arlen),
-    .axiOut_2_ar_payload_size   (axiOut_2_arsize),
-    .axiOut_2_ar_payload_burst  (axiOut_2_arburst),
-    .axiOut_2_ar_payload_lock   (axiOut_2_arlock),
-    .axiOut_2_ar_payload_cache  (axiOut_2_arcache),
-    .axiOut_2_ar_payload_prot   (axiOut_2_arprot),
+    .axiOut_2_ar_valid          (axiOut_2_64_arvalid),
+    .axiOut_2_ar_ready          (axiOut_2_64_arready),
+    .axiOut_2_ar_payload_addr   (axiOut_2_64_araddr),
+    .axiOut_2_ar_payload_id     (axiOut_2_64_arid),
+    .axiOut_2_ar_payload_len    (axiOut_2_64_arlen),
+    .axiOut_2_ar_payload_size   (axiOut_2_64_arsize),
+    .axiOut_2_ar_payload_burst  (axiOut_2_64_arburst),
+    .axiOut_2_ar_payload_lock   (axiOut_2_64_arlock),
+    .axiOut_2_ar_payload_cache  (axiOut_2_64_arcache),
+    .axiOut_2_ar_payload_prot   (axiOut_2_64_arprot),
 
     // AXI Slave 2 (Output) - Read Data Channel
-    .axiOut_2_r_valid           (axiOut_2_rvalid),
-    .axiOut_2_r_ready           (axiOut_2_rready),
-    .axiOut_2_r_payload_data    (axiOut_2_rdata),
-    .axiOut_2_r_payload_id      (axiOut_2_rid),
-    .axiOut_2_r_payload_resp    (axiOut_2_rresp),
-    .axiOut_2_r_payload_last    (axiOut_2_rlast),
+    .axiOut_2_r_valid           (axiOut_2_64_rvalid),
+    .axiOut_2_r_ready           (axiOut_2_64_rready),
+    .axiOut_2_r_payload_data    (axiOut_2_64_rdata),
+    .axiOut_2_r_payload_id      (axiOut_2_64_rid),
+    .axiOut_2_r_payload_resp    (axiOut_2_64_rresp),
+    .axiOut_2_r_payload_last    (axiOut_2_64_rlast),
 
 
     // AXI Slave 3 (Output) - Write Address Channel (ConfReg)
-    .axiOut_3_aw_valid          (confreg_awvalid),
-    .axiOut_3_aw_ready          (confreg_awready),
-    .axiOut_3_aw_payload_addr   (confreg_awaddr),
-    .axiOut_3_aw_payload_id     (confreg_awid),
-    .axiOut_3_aw_payload_len    (confreg_awlen),
-    .axiOut_3_aw_payload_size   (confreg_awsize),
-    .axiOut_3_aw_payload_burst  (confreg_awburst),
-    .axiOut_3_aw_payload_lock   (confreg_awlock),
-    .axiOut_3_aw_payload_cache  (confreg_awcache),
-    .axiOut_3_aw_payload_prot   (confreg_awprot),
+    .axiOut_3_aw_valid          (confreg_64_awvalid),
+    .axiOut_3_aw_ready          (confreg_64_awready),
+    .axiOut_3_aw_payload_addr   (confreg_64_awaddr),
+    .axiOut_3_aw_payload_id     (confreg_64_awid),
+    .axiOut_3_aw_payload_len    (confreg_64_awlen),
+    .axiOut_3_aw_payload_size   (confreg_64_awsize),
+    .axiOut_3_aw_payload_burst  (confreg_64_awburst),
+    .axiOut_3_aw_payload_lock   (confreg_64_awlock),
+    .axiOut_3_aw_payload_cache  (confreg_64_awcache),
+    .axiOut_3_aw_payload_prot   (confreg_64_awprot),
 
     // AXI Slave 3 (Output) - Write Data Channel (ConfReg)
-    .axiOut_3_w_valid           (confreg_wvalid),
-    .axiOut_3_w_ready           (confreg_wready),
-    .axiOut_3_w_payload_data    (confreg_wdata),
-    .axiOut_3_w_payload_strb    (confreg_wstrb),
-    .axiOut_3_w_payload_last    (confreg_wlast),
+    .axiOut_3_w_valid           (confreg_64_wvalid),
+    .axiOut_3_w_ready           (confreg_64_wready),
+    .axiOut_3_w_payload_data    (confreg_64_wdata),
+    .axiOut_3_w_payload_strb    (confreg_64_wstrb),
+    .axiOut_3_w_payload_last    (confreg_64_wlast),
 
     // AXI Slave 3 (Output) - Write Response Channel (ConfReg)
-    .axiOut_3_b_valid           (confreg_bvalid),
-    .axiOut_3_b_ready           (confreg_bready),
-    .axiOut_3_b_payload_id      (confreg_bid),
-    .axiOut_3_b_payload_resp    (confreg_bresp),
+    .axiOut_3_b_valid           (confreg_64_bvalid),
+    .axiOut_3_b_ready           (confreg_64_bready),
+    .axiOut_3_b_payload_id      (confreg_64_bid),
+    .axiOut_3_b_payload_resp    (confreg_64_bresp),
 
     // AXI Slave 3 (Output) - Read Address Channel (ConfReg)
-    .axiOut_3_ar_valid          (confreg_arvalid),
-    .axiOut_3_ar_ready          (confreg_arready),
-    .axiOut_3_ar_payload_addr   (confreg_araddr),
-    .axiOut_3_ar_payload_id     (confreg_arid),
-    .axiOut_3_ar_payload_len    (confreg_arlen),
-    .axiOut_3_ar_payload_size   (confreg_arsize),
-    .axiOut_3_ar_payload_burst  (confreg_arburst),
-    .axiOut_3_ar_payload_lock   (confreg_arlock),
-    .axiOut_3_ar_payload_cache  (confreg_arcache),
-    .axiOut_3_ar_payload_prot   (confreg_arprot),
+    .axiOut_3_ar_valid          (confreg_64_arvalid),
+    .axiOut_3_ar_ready          (confreg_64_arready),
+    .axiOut_3_ar_payload_addr   (confreg_64_araddr),
+    .axiOut_3_ar_payload_id     (confreg_64_arid),
+    .axiOut_3_ar_payload_len    (confreg_64_arlen),
+    .axiOut_3_ar_payload_size   (confreg_64_arsize),
+    .axiOut_3_ar_payload_burst  (confreg_64_arburst),
+    .axiOut_3_ar_payload_lock   (confreg_64_arlock),
+    .axiOut_3_ar_payload_cache  (confreg_64_arcache),
+    .axiOut_3_ar_payload_prot   (confreg_64_arprot),
 
     // AXI Slave 3 (Output) - Read Data Channel (ConfReg)
-    .axiOut_3_r_valid           (confreg_rvalid),
-    .axiOut_3_r_ready           (confreg_rready),
-    .axiOut_3_r_payload_data    (confreg_rdata),
-    .axiOut_3_r_payload_id      (confreg_rid),
-    .axiOut_3_r_payload_resp    (confreg_rresp),
-    .axiOut_3_r_payload_last    (confreg_rlast)
+    .axiOut_3_r_valid           (confreg_64_rvalid),
+    .axiOut_3_r_ready           (confreg_64_rready),
+    .axiOut_3_r_payload_data    (confreg_64_rdata),
+    .axiOut_3_r_payload_id      (confreg_64_rid),
+    .axiOut_3_r_payload_resp    (confreg_64_rresp),
+    .axiOut_3_r_payload_last    (confreg_64_rlast)
 );
 
 

@@ -1073,7 +1073,7 @@ int main(int argc, char *argv[]) {
 
     // parameter validation/overrides
     if (rng_seed <= 0) rng_seed = (unsigned int)RegRead(RANDOM_BASE);
-    printf("radon seed is %x",RegRead(RANDOM_BASE));
+    printf("random seed is %x",RegRead(RANDOM_BASE));
     if (temperature < 0.0) temperature = 0.0;
     if (topp < 0.0 || 1.0 < topp) topp = 0.9;
     if (steps < 0) steps = 0;
