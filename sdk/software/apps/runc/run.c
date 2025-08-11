@@ -288,6 +288,12 @@ void softmax(float* x, int size) {
 static int matmul_mismatch_count = 0;
 static int matmul_call_count = 0;
 #define EPSILON 1e-6f
+
+static inline size_t misalign_of(const void *p, size_t align) {
+    // align 必须是 2 的幂，这里你用 8 就行
+    return (size_t)((uintptr_t)p & (align - 1));
+}
+#define REQ_ALIGN 8u
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // // 硬件控制器将负责内部的分块循环和地址计算。
     // matmul_call_count++;
@@ -313,7 +319,19 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     //     }
     //     cpu_out[i] = sum;
     // }
+    size_t off;
+    if ((off = misalign_of(xout, REQ_ALIGN)) != 0)
+        printf("[matmul] xout NOT 8B-aligned: %p (offset=%zu)\n", (void*)xout, off);
 
+    if ((off = misalign_of(x, REQ_ALIGN)) != 0)
+        printf("[matmul] x    NOT 8B-aligned: %p (offset=%zu)\n", (void*)x, off);
+
+    if ((off = misalign_of(w, REQ_ALIGN)) != 0)
+        printf("[matmul] w    NOT 8B-aligned: %p (offset=%zu)\n", (void*)w, off);
+
+
+    if (n & 1)
+        printf("[matmul] n is odd (%d): 64-bit reads may have a 4B tail.\n", n);
 
     // 设置整个权重矩阵 w、输入向量 x 和输出向量 xout 的起始基地址。
     cb_write(REG_MI_BASE_ADDR, (unsigned long)w);
