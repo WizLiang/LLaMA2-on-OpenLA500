@@ -50,7 +50,7 @@ C_OBJS := $(C_SRCS:.c=.o)
 LINK_OBJS += $(ASM_OBJS) $(C_OBJS)
 LINK_DEPS += $(LINKER_SCRIPT)
 
-CLEAN_OBJS += $(OBJDIR)/$(TARGET).elf $(LINK_OBJS) $(OBJDIR)/$(TARGET).s $(OBJDIR)/$(TARGET).bin $(OBJDIR)/convert $(OBJDIR)/axi_ram.coe $(OBJDIR)/base_ram.mif $(OBJDIR)/ext_ram.mif $(OBJDIR)/rom.vlog
+CLEAN_OBJS += $(OBJDIR)/$(TARGET).elf $(LINK_OBJS) $(OBJDIR)/$(TARGET).s $(OBJDIR)/$(TARGET).bin $(OBJDIR)/convert $(OBJDIR)/axi_ram.coe $(OBJDIR)/base_ram.* $(OBJDIR)/ext_ram.* $(OBJDIR)/rom.vlog
 
 $(TARGET): $(LINK_OBJS) $(LINK_DEPS) convert Makefile
 	$(LA32R_GCC) $(CFLAGS) $(INCLUDES) $(LINK_OBJS) -o $(OBJDIR)/$@.elf $(LDFLAGS)
@@ -63,6 +63,10 @@ $(TARGET): $(LINK_OBJS) $(LINK_DEPS) convert Makefile
 	cp ./$(OBJDIR)/ext_ram.mif $(CICIEC_WINDOWS_HOME)/sdk
 	cp ./$(OBJDIR)/$@.bin $(COMMON_DIR)/../../
 	cp ./$(OBJDIR)/$@.bin $(CICIEC_WINDOWS_HOME)/sdk
+	cp ./$(OBJDIR)/base_ram.bin $(COMMON_DIR)/../../
+	cp ./$(OBJDIR)/base_ram.bin $(CICIEC_WINDOWS_HOME)/sdk
+	cp ./$(OBJDIR)/ext_ram.bin $(COMMON_DIR)/../../
+	cp ./$(OBJDIR)/ext_ram.bin $(CICIEC_WINDOWS_HOME)/sdk
 	rm -f $(LINK_OBJS)
 	rm -f $(OBJDIR)/convert
 
