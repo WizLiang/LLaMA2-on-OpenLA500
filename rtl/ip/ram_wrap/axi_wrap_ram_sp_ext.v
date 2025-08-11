@@ -47,7 +47,7 @@ module axi_wrap_ram_sp_ext (
     output        axi_arready,
     //r
     output [4 :0] axi_rid    ,
-    output [31:0] axi_rdata  ,
+    output [63:0] axi_rdata  ,
     output [1 :0] axi_rresp  ,
     output        axi_rlast  ,
     output        axi_rvalid ,
@@ -64,8 +64,8 @@ module axi_wrap_ram_sp_ext (
     input         axi_awvalid,
     output        axi_awready,
     //w
-    input  [31:0] axi_wdata  ,
-    input  [3 :0] axi_wstrb  ,
+    input  [63:0] axi_wdata  ,
+    input  [ 7:0] axi_wstrb  ,
     input         axi_wlast  ,
     input         axi_wvalid ,
     output        axi_wready ,
@@ -111,7 +111,7 @@ wire        ram_arvalid;
 wire        ram_arready;
 //r
 wire [4 :0] ram_rid    ;
-wire [31:0] ram_rdata  ;
+wire [63:0] ram_rdata  ;
 wire [1 :0] ram_rresp  ;
 wire        ram_rlast  ;
 wire        ram_rvalid ;
@@ -128,8 +128,8 @@ wire [2 :0] ram_awprot ;
 wire        ram_awvalid;
 wire        ram_awready;
 //w
-wire [31:0] ram_wdata  ;
-wire [3 :0] ram_wstrb  ;
+wire [63:0] ram_wdata  ;
+wire [7:0]  ram_wstrb  ;
 wire        ram_wlast  ;
 wire        ram_wvalid ;
 wire        ram_wready ;
@@ -143,9 +143,9 @@ wire        ram_bready ;
 wire  [31:0]    soc_sram_addr;
 wire            soc_sram_cs;
 wire            soc_sram_we;
-wire  [3:0]     soc_sram_be;
-wire  [31:0]    soc_sram_wdata;
-wire  [31:0]    soc_sram_rdata;
+wire  [7:0]     soc_sram_be;
+wire  [63:0]    soc_sram_wdata;
+wire  [63:0]    soc_sram_rdata;
 
 //ar
 assign ram_arid    = axi_arid   ;
@@ -192,7 +192,7 @@ assign ram_bready = axi_bready ;
 axi2sram_sp_ext #(
     .AXI_ID_WIDTH   ( 5  ),
     .AXI_ADDR_WIDTH ( 32 ),
-    .AXI_DATA_WIDTH ( 32 ))
+    .AXI_DATA_WIDTH ( 64 ))
  u_axi_sram_sp (
     .clk                     ( aclk         ),
     .resetn                  ( aresetn      ),
@@ -241,25 +241,45 @@ axi2sram_sp_ext #(
     .data_i                  ( soc_sram_rdata    )
 );
 
-wire choose_sram = soc_sram_addr[22];//1:ExtRAM 0:BaseRAM
-wire [3:0] be_out = soc_sram_we ? soc_sram_be : 4'b1111;
+// wire choose_sram = soc_sram_addr[22];//1:ExtRAM 0:BaseRAM
+// wire [3:0] be_out = soc_sram_we ? soc_sram_be : 4'b1111;
 
-assign base_ram_addr = soc_sram_addr[21:2];
-assign base_ram_be_n = choose_sram ? 4'b1111 : ~be_out;
-assign base_ram_ce_n = ~(soc_sram_cs & (~choose_sram));
-assign base_ram_oe_n = soc_sram_we | choose_sram;
-assign base_ram_we_n = ~(soc_sram_we & (~choose_sram));
-assign base_ram_data_oe = {32{~((~choose_sram) & soc_sram_cs & soc_sram_we)}};
-assign base_ram_data_o  = soc_sram_wdata;
+// assign base_ram_addr = soc_sram_addr[21:2];
+// assign base_ram_be_n = choose_sram ? 4'b1111 : ~be_out;
+// assign base_ram_ce_n = ~(soc_sram_cs & (~choose_sram));
+// assign base_ram_oe_n = soc_sram_we | choose_sram;
+// assign base_ram_we_n = ~(soc_sram_we & (~choose_sram));
+// assign base_ram_data_oe = {32{~((~choose_sram) & soc_sram_cs & soc_sram_we)}};
+// assign base_ram_data_o  = soc_sram_wdata;
 
-assign ext_ram_addr = soc_sram_addr[21:2];
-assign ext_ram_be_n = choose_sram ? ~be_out : 4'b1111;
-assign ext_ram_ce_n = choose_sram ? ~soc_sram_cs : 1'b1;
-assign ext_ram_oe_n = choose_sram ? soc_sram_we : 1'b1;
-assign ext_ram_we_n = choose_sram ? ~soc_sram_we : 1'b1;
-assign ext_ram_data_oe = {32{~((choose_sram) & soc_sram_cs & soc_sram_we)}};
-assign ext_ram_data_o  = soc_sram_wdata;
+// assign ext_ram_addr = soc_sram_addr[21:2];
+// assign ext_ram_be_n = choose_sram ? ~be_out : 4'b1111;
+// assign ext_ram_ce_n = choose_sram ? ~soc_sram_cs : 1'b1;
+// assign ext_ram_oe_n = choose_sram ? soc_sram_we : 1'b1;
+// assign ext_ram_we_n = choose_sram ? ~soc_sram_we : 1'b1;
+// assign ext_ram_data_oe = {32{~((choose_sram) & soc_sram_cs & soc_sram_we)}};
+// assign ext_ram_data_o  = soc_sram_wdata;
 
-assign soc_sram_rdata = choose_sram ? ext_ram_data_i : base_ram_data_i;
+// assign soc_sram_rdata = choose_sram ? ext_ram_data_i : base_ram_data_i;
+
+wire [7:0] be_out = soc_sram_we ? soc_sram_be : 8'b11111111;
+
+assign base_ram_addr = soc_sram_addr[22:3];
+assign base_ram_be_n =  ~be_out[3:0];
+assign base_ram_ce_n = ~(soc_sram_cs);
+assign base_ram_oe_n = soc_sram_we;
+assign base_ram_we_n = ~(soc_sram_we);
+assign base_ram_data_oe = {32{~(soc_sram_cs & soc_sram_we)}};
+assign base_ram_data_o  = soc_sram_wdata[31:0];
+
+assign ext_ram_addr = soc_sram_addr[22:3];
+assign ext_ram_be_n =  ~be_out[7:4];
+assign ext_ram_ce_n = ~soc_sram_cs;
+assign ext_ram_oe_n =  soc_sram_we;
+assign ext_ram_we_n = ~soc_sram_we;
+assign ext_ram_data_oe = {32{~(soc_sram_cs & soc_sram_we)}};
+assign ext_ram_data_o  = soc_sram_wdata[63:32];
+
+assign soc_sram_rdata = {ext_ram_data_i, base_ram_data_i};
 
 endmodule

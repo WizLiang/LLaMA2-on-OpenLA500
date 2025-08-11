@@ -31,7 +31,9 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 ------------------------------------------------------------------------------*/
 
-`define SRAM_Init_File "../../../../../../sdk/axi_ram.mif"
+// `define SRAM_Init_File "../../../../../../sdk/axi_ram.mif"
+`define BASE_SRAM_Init_File "../../../../../../sdk/base_ram.mif"
+`define EXT_SRAM_Init_File  "../../../../../../sdk/ext_ram.mif"
 
 `define USE_CACHE
 
