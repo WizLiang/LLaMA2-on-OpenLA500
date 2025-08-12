@@ -4,9 +4,9 @@
  //`default_nettype none
   module axi_dma_controller #(
       parameter integer ADDR_WD = 32,
-      parameter integer DATA_WD = 32,
+      parameter integer DATA_WD = 64,
       parameter integer ID_WD   = 4,
-      parameter integer SRAM_ADDR_WD = 32, // SRAM 地址宽度为32位
+      parameter integer SRAM_ADDR_WD = 64, // SRAM 地址宽度为64位
       localparam integer DATA_WD_BYTE = DATA_WD / 8,
       localparam integer STRB_WD =  DATA_WD / 8,
       localparam [ID_WD-1:0] DMA_ID = {ID_WD{1'b0}}

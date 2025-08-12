@@ -81,8 +81,8 @@ module CB_top #(
     input          m_awready,
 
 // Write data channel (W)
-    output [31:0]  m_wdata,
-    output [3 :0]  m_wstrb,
+    output [63:0]  m_wdata,
+    output [7 :0]  m_wstrb,
     output         m_wlast,
     output         m_wvalid,
     input          m_wready,
@@ -107,7 +107,7 @@ module CB_top #(
 
 // Read data channel (R)
     input  [3 :0]  m_rid,
-    input  [31:0]  m_rdata,
+    input  [63:0]  m_rdata,
     input  [1 :0]  m_rresp,
     input          m_rlast,
     input          m_rvalid,
@@ -429,7 +429,7 @@ wire [7:0]           cmd_padding_words;
 
     axi_dma_controller #(
         .ADDR_WD (32),  
-        .DATA_WD (32),   
+        .DATA_WD (64),   
         .ID_WD   (4)     
     ) u_axi_dma_controller (
     //-------------------------------------------------
