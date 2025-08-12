@@ -14,8 +14,10 @@ module PE_core#(
     parameter ARRAY_SIZE = 32,
     parameter SRAM_DATA_WIDTH = 32,
     parameter DATA_WIDTH = 32,
+    parameter VECTOR_WIDTH = 64,
     parameter K_ACCUM_DEPTH = 64,
     parameter OUTCOME_WIDTH = 32,
+    parameter BUS_WIDTH = 64,
     // Total MAC latency is 4 cycles.
     // (2 cycles for multiplier + 1 cycle for adder + 1 for acc register update)
     parameter MAC_LATENCY = 3
@@ -25,8 +27,8 @@ module PE_core#(
     input srstn, // Active-low synchronous reset
     input alu_start,
     input [8:0] cycle_num,
-    input [SRAM_DATA_WIDTH * ARRAY_SIZE - 1:0] sram_rdata_w,
-    input [DATA_WIDTH-1:0] sram_rdata_v,
+    input [BUS_WIDTH * ARRAY_SIZE - 1:0] sram_rdata_w,
+    input [BUS_WIDTH-1:0] sram_rdata_v,
     input acc_en, // Enable signal for the MAC units
     output [(ARRAY_SIZE * OUTCOME_WIDTH) - 1:0] mul_outcome
 );
@@ -36,6 +38,7 @@ module PE_core#(
     reg [DATA_WIDTH-1:0] vec_reg;
     integer i;
     reg [ARRAY_SIZE * DATA_WIDTH - 1:0] partial_sum_in;
+    reg vec_cnt;
 
     //锁存逻辑
     always @(posedge clk) begin
@@ -57,12 +60,14 @@ module PE_core#(
             for (i = 0; i < ARRAY_SIZE; i = i + 1) begin
                 weight_queue[i] <= 32'b0;
             end
-            vec_reg <= 32'b0;
+            vec_reg <= 0;
+            vec_cnt <= 0;
         end else if (alu_start) begin
             for (i = 0; i < ARRAY_SIZE; i = i + 1) begin
-                weight_queue[i] <= sram_rdata_w[i*DATA_WIDTH +: DATA_WIDTH];
+                weight_queue[i] <= (vec_cnt == 1'b0) ? sram_rdata_w[i*BUS_WIDTH +: DATA_WIDTH] : sram_rdata_w[(i*BUS_WIDTH + DATA_WIDTH) +: DATA_WIDTH];
             end
-            vec_reg <= sram_rdata_v;
+            vec_reg <= (vec_cnt == 1'b0) ? sram_rdata_v[31:0] : sram_rdata_v[63:32];
+            vec_cnt <= ~vec_cnt;
         end else begin
             // Maintain the current state if not starting a new operation
             for (i = 0; i < ARRAY_SIZE; i = i + 1) begin

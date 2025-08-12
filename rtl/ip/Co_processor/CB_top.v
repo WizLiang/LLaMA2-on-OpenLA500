@@ -9,13 +9,14 @@ module CB_top #(
     parameter MAC_SRAM_W_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_W_DEPTH) = 6
     parameter MAC_SRAM_V_ADDR_WIDTH = 6, // 假设 $clog2(SRAM_V_DEPTH) = 6
     parameter MAC_SRAM_O_ADDR_WIDTH = 1, // 假设 $clog2(SRAM_O_DEPTH) = 5
-    parameter MAC_SRAM_W_DATA_WIDTH = 32,
-    parameter MAC_SRAM_V_DATA_WIDTH = 32,
+    parameter MAC_SRAM_W_DATA_WIDTH = 64,
+    parameter MAC_SRAM_V_DATA_WIDTH = 64,
     parameter MAC_SRAM_O_DATA_WIDTH = 1024,
     parameter ADDR_WD = 32,  // DMA地址宽度
     parameter MAC_SRAM_W_BANK_NUM = 32, // 假设有32个SRAM bank
     parameter K_ACCUM_DEPTH = 64, // 假设累加深度为64
-    parameter DATA_WD = 32  // DMA数据宽度
+    parameter VECTOR_WIDTH = 64, // 假设向量宽度为64
+    parameter DATA_WD = 64  // DMA数据宽度
 )
 (
     
@@ -193,22 +194,6 @@ wire                       ctrl_done;       // DMA 启动信号
 
 assign cmd_size = 2'b11;
 
-
-// assign mac_v_sram_we    = (dma_target_sram == 2'b00) ? dma_sram_we    : 1'b0;
-// assign mac_v_sram_waddr = (dma_target_sram == 2'b00) ? dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0]  : 0;
-// assign mac_v_sram_wdata = (dma_target_sram == 2'b00) ? dma_sram_wdata : 0;
-
-
-// assign mac_w_sram_we    = (dma_target_sram == 2'b01) ? dma_sram_we    : 1'b0;
-// assign mac_w_sram_waddr = (dma_target_sram == 2'b01) ? dma_sram_waddr[MAC_SRAM_W_ADDR_WIDTH-1:0]  : 0;
-// assign mac_w_sram_wdata = (dma_target_sram == 2'b01) ? dma_sram_wdata : 0;
-
-
-// assign mac_o_sram_raddr = (dma_target_sram == 2'b10) ? dma_sram_raddr[MAC_SRAM_O_ADDR_WIDTH-1:0]  : 0;
-
-// assign dma_sram_rdata   = (dma_target_sram == 2'b10) ? mac_o_sram_rdata : 0;
-
-
 // --- 路径 1: DMA 读 (DDR -> SRAM)，数据写入本地 SRAM ---
 
 always @(posedge clk or negedge rst_n) begin
@@ -235,7 +220,7 @@ always @(posedge clk or negedge rst_n) begin
                 2'b00: begin // 目标: Vector SRAM (直接写入)
                     mac_v_sram_we    <= 1'b1;
                     // 注意: 这里的地址位宽需要匹配Vector SRAM的定义
-                    mac_v_sram_waddr <= dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH-1:0];
+                    mac_v_sram_waddr <= dma_sram_waddr[MAC_SRAM_V_ADDR_WIDTH:0] >> 1;
                     mac_v_sram_wdata <= dma_sram_wdata;
                 end
                 
@@ -251,7 +236,7 @@ always @(posedge clk or negedge rst_n) begin
                     mac_w_sram_wdata <= dma_sram_wdata;
 
                     // 3. 更新计数器
-                    if (dma_w_addr_in_bank_cnt == current_cols - 1) begin
+                    if (dma_w_addr_in_bank_cnt == 31) begin
                         // 当前 Bank 已写满 (地址从0到63，共64个)
                         dma_w_addr_in_bank_cnt <= 0; // Bank 内地址清零
                         // 切换到下一个 Bank (如果已经是最后一个Bank，则会自然溢出回到0)
@@ -305,10 +290,10 @@ end
 // Part C: 数据选择 MUX (组合逻辑)
 // 根据目标SRAM和切片计数器，将正确的数据喂给DMA
 assign muxed_sram_rdata = (dma_target_sram == 2'b10) 
-                        ? out_sram_read_buffer >> ((31 - out_read_sub_cnt) * 32)    //TODO 如果宽度更大，可以调整
-                        : 32'hDEADBEEF; // 默认或用于其他SRAM的路径
+                        ? out_sram_read_buffer >> ((15 - out_read_sub_cnt) * 64)    //TODO 如果宽度更大，可以调整
+                        : 64'hDEADBEEFDEADBEEF; // 默认或用于其他SRAM的路径
 
-assign dma_sram_rdata = muxed_sram_rdata;
+assign dma_sram_rdata = {muxed_sram_rdata[31:0], muxed_sram_rdata[63:32]};
 
 
 CB_Controller u_controller(
