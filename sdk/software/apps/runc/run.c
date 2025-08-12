@@ -294,6 +294,19 @@ static inline size_t misalign_of(const void *p, size_t align) {
     return (size_t)((uintptr_t)p & (align - 1));
 }
 #define REQ_ALIGN 8u
+// #define cache_offset_width 4
+
+static inline void cache_flush(void *addr, size_t size)
+{
+    unsigned long line = 1 << cache_offset_width;
+    unsigned long start = ((unsigned long)addr) & ~(line - 1);
+    unsigned long end = ((unsigned long)addr + size + line - 1) & ~(line - 1);
+    for (unsigned long p = start; p < end; p += line) {
+        __asm__ __volatile__("cacop 0x11, %0, 0" :: "r"(p) : "memory");
+    }
+    __asm__ __volatile__("dbar 0" ::: "memory");
+}
+
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // // 硬件控制器将负责内部的分块循环和地址计算。
     // matmul_call_count++;
@@ -319,24 +332,31 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     //     }
     //     cpu_out[i] = sum;
     // }
-    size_t off;
-    if ((off = misalign_of(xout, REQ_ALIGN)) != 0)
-        printf("[matmul] xout NOT 8B-aligned: %p (offset=%zu)\n", (void*)xout, off);
+    /*          check the alignment               */
+    // size_t off;
+    // if ((off = misalign_of(xout, REQ_ALIGN)) != 0)
+    //     printf("[matmul] xout NOT 8B-aligned: %p (offset=%zu)\n", (void*)xout, off);
 
-    if ((off = misalign_of(x, REQ_ALIGN)) != 0)
-        printf("[matmul] x    NOT 8B-aligned: %p (offset=%zu)\n", (void*)x, off);
+    // if ((off = misalign_of(x, REQ_ALIGN)) != 0)
+    //     printf("[matmul] x    NOT 8B-aligned: %p (offset=%zu)\n", (void*)x, off);
 
-    if ((off = misalign_of(w, REQ_ALIGN)) != 0)
-        printf("[matmul] w    NOT 8B-aligned: %p (offset=%zu)\n", (void*)w, off);
+    // if ((off = misalign_of(w, REQ_ALIGN)) != 0)
+    //     printf("[matmul] w    NOT 8B-aligned: %p (offset=%zu)\n", (void*)w, off);
 
 
-    if (n & 1)
-        printf("[matmul] n is odd (%d): 64-bit reads may have a 4B tail.\n", n);
+    // if (n & 1)
+    //     printf("[matmul] n is odd (%d): 64-bit reads may have a 4B tail.\n", n);
 
     // 设置整个权重矩阵 w、输入向量 x 和输出向量 xout 的起始基地址。
     cb_write(REG_MI_BASE_ADDR, (unsigned long)w);
     cb_write(REG_VI_BASE_ADDR, (unsigned long)x);
     cb_write(REG_VO_BASE_ADDR, (unsigned long)xout);
+
+    //Sofeware Cache flush try 
+    cache_flush(x, (size_t)n * sizeof(float));
+    cache_flush(w, (size_t)n * (size_t)d * sizeof(float));
+    cache_flush(xout, (size_t)d * sizeof(float));
+
 
     // 设置整个任务的总维度 (例如，对于64x64矩阵，d=64, n=64)。
     cb_write(REG_ROWS_ADDR, d);
