@@ -191,7 +191,7 @@ wire                       ctrl_done;       // DMA 启动信号
     wire [DATA_WD-1:0] muxed_sram_rdata;
     wire [15:0] debug_data;
 
-assign cmd_size = 2'b10;
+assign cmd_size = 2'b11;
 
 
 // assign mac_v_sram_we    = (dma_target_sram == 2'b00) ? dma_sram_we    : 1'b0;

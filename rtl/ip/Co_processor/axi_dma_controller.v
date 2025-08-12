@@ -109,13 +109,13 @@
     reg                       r_m_axi_wvalid            ; 
     reg [STRB_WD -1:0]        r_m_axi_wstrb             ; 
     //reg [STRB_WD -1:0]        r_m_axi_wstrb_1             ; 
-    reg [8:0]                 r_write_cnt               ;  
-    reg [8:0]                 r_read_cnt                ;  
+    reg [8:0]                 r_write_cnt               ;//cnt 64bits 
+    reg [8:0]                 r_read_cnt                ;//cnt 32bits  
 
     reg                       r_read_start              ;
     reg                       r_write_start             ; 
     reg [7:0]                 w_trans_num               ;
-    reg [DATA_WD-1:0]         R_strobe_word                ;
+    reg [DATA_WD-1:0]         R_strobe_word             ;
 
     wire [7:0]                  TRANS_PER_DATA          ;
     wire [7:0]                r_cmd_size_byte           ;
@@ -366,7 +366,7 @@ end
             r_read_cnt <= 1'b0;
         end
         else if (M_AXI_RVALID && M_AXI_RREADY) begin
-            r_read_cnt <= r_read_cnt + 1;       
+            r_read_cnt <= r_read_cnt + r_cmd_size_byte/4;       
         end 
         else
             r_read_cnt <= r_read_cnt;  
