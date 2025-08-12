@@ -449,7 +449,7 @@ wire [7:0]           cmd_padding_words;
     .cmd_rw         (cmd_rw),      // 0 = read, 1 = write
     .cmd_len        (cmd_len),     // 单位：Byte Use in write 
     .cmd_size       (cmd_size),    // AXI beat size
-    .R_strobe       (4'b1111),    // 读通道 byte-enable
+    .R_strobe       (8'b11111111),    // 读通道 byte-enable
     .dma_done       (dma_done), 
     .cmd_block_size (cmd_block_size), // 单位：Byte e.g. 32 32bits-floating should be 32*32/8=128 (B)
     .cmd_stride     (cmd_stride),// ADDR, e.g 32 float is 32*4 = 128, 
