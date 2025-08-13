@@ -14,7 +14,7 @@ module axi_bridge(
     input              arready,
 
     input    [ 3:0] rid,
-    input    [63:0] rdata,
+    input    [31:0] rdata,
     input    [ 1:0] rresp,
     input           rlast,
     input           rvalid,
@@ -32,8 +32,8 @@ module axi_bridge(
     input              awready,
 
     output      [ 3:0] wid,
-    output   reg[63:0] wdata,
-    output   reg[ 7:0] wstrb,
+    output   reg[31:0] wdata,
+    output   reg[ 3:0] wstrb,
     output   reg       wlast,
     output   reg       wvalid,
     input              wready,

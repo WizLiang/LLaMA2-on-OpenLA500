@@ -164,8 +164,6 @@ reg w_half_sel;
 
 // -------- read return half-select --------
 reg        r_half_sel;     // current half for selecting 32b from 64b RDATA
-reg        r_half_base;    // initial half from ARADDR[2]
-reg [7:0]  r_beats_left;   // beats left including current (for completeness)
 wire [31:0] rdata32_sel = r_half_sel ? rdata[63:32] : rdata[31:0];
 
 // ret valid/last are still based on rid[0]
@@ -218,6 +216,7 @@ always @(posedge clk) begin
                         arsize <= inst_real_rd_size;
                         arlen  <= inst_real_rd_len;
                         arvalid <= 1'b1;
+                        // r_half_sel <= araddr[2];
                     end
                 end
                 else begin
@@ -227,6 +226,7 @@ always @(posedge clk) begin
                     arsize <= inst_real_rd_size;
                     arlen  <= inst_real_rd_len;
                     arvalid <= 1'b1;
+                    // r_half_sel <= araddr[2];
                 end
             end
         end
@@ -242,10 +242,8 @@ always @(posedge clk) begin
             if (arready) begin
                 read_requst_state <= read_requst_empty;
                 arvalid <= 1'b0;
-                // latch half-select base & beats for return path
-                r_half_base  <= araddr[2];
-                r_half_sel   <= araddr[2];
-                r_beats_left <= arlen + 8'd1; // 0 -> 1 beat; 3 -> 4 beats
+                // // latch half-select base & beats for return path
+                // r_half_sel   <= araddr[2];
             end
         end
     endcase
@@ -253,11 +251,28 @@ end
 
 // -------------------- READ DATA FSM --------------------
 always @(posedge clk) begin
+    if(reset)begin
+        r_half_sel <= 1'b0;
+    end
+    else if (arready & arvalid)begin
+        r_half_sel <= araddr[2];
+    end
+    else if (rvalid && rready) begin
+        // flip half-select on each beat, except for the first one
+        if (!rlast) begin
+            r_half_sel <= ~r_half_sel;
+        end
+    end
+    else begin
+        r_half_sel <= r_half_sel; // keep current half
+    end
+end
+
+always @(posedge clk) begin
     if (reset) begin
         read_respond_state <= read_respond_empty;
         rready <= 1'b1;
         r_half_sel <= 1'b0;
-        r_beats_left <= 8'd0;
     end
     else case (read_respond_state)
         read_respond_empty: begin
@@ -265,7 +280,6 @@ always @(posedge clk) begin
                 read_respond_state <= read_respond_transfer;
                 // first beat already uses r_half_sel preset at AR handshake
                 if (!rlast) begin
-                    r_beats_left <= r_beats_left - 8'd1;
                     r_half_sel   <= ~r_half_sel; // +4B -> flip half
                 end
             end
@@ -278,7 +292,6 @@ always @(posedge clk) begin
                 if (rlast) begin
                     read_respond_state <= read_respond_empty;
                 end else begin
-                    r_beats_left <= r_beats_left - 8'd1;
                     r_half_sel   <= ~r_half_sel;
                 end
             end

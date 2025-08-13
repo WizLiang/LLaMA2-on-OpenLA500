@@ -1418,7 +1418,7 @@ wire          axiIn1_r_64_payload_last;
 // ram_64_* 信号
 wire         ram_64_awvalid;
 wire         ram_64_awready;
-wire  [63:0] ram_64_awaddr;
+wire  [31:0] ram_64_awaddr;
 wire  [4:0]  ram_64_awid;
 wire  [7:0]  ram_64_awlen;
 wire  [2:0]  ram_64_awsize;
@@ -1440,7 +1440,7 @@ wire  [1:0]  ram_64_bresp;
 
 wire         ram_64_arvalid;
 wire         ram_64_arready;
-wire  [63:0] ram_64_araddr;
+wire  [31:0] ram_64_araddr;
 wire  [4:0]  ram_64_arid;
 wire  [7:0]  ram_64_arlen;
 wire  [2:0]  ram_64_arsize;
@@ -1459,7 +1459,7 @@ wire         ram_64_rlast;
 // uart_64_* 信号
 wire         uart_64_awvalid;
 wire         uart_64_awready;
-wire  [63:0] uart_64_awaddr;
+wire  [31:0] uart_64_awaddr;
 wire  [4:0]  uart_64_awid;
 wire  [7:0]  uart_64_awlen;
 wire  [2:0]  uart_64_awsize;
@@ -1481,7 +1481,7 @@ wire  [1:0]  uart_64_bresp;
 
 wire         uart_64_arvalid;
 wire         uart_64_arready;
-wire  [63:0] uart_64_araddr;
+wire  [31:0] uart_64_araddr;
 wire  [4:0]  uart_64_arid;
 wire  [7:0]  uart_64_arlen;
 wire  [2:0]  uart_64_arsize;
@@ -1500,7 +1500,7 @@ wire         uart_64_rlast;
 // axiOut_2_64_* 信号
 wire         axiOut_2_64_awvalid;
 wire         axiOut_2_64_awready;
-wire  [63:0] axiOut_2_64_awaddr;
+wire  [31:0] axiOut_2_64_awaddr;
 wire  [4:0]  axiOut_2_64_awid;
 wire  [7:0]  axiOut_2_64_awlen;
 wire  [2:0]  axiOut_2_64_awsize;
@@ -1522,7 +1522,7 @@ wire  [1:0]  axiOut_2_64_bresp;
 
 wire         axiOut_2_64_arvalid;
 wire         axiOut_2_64_arready;
-wire  [63:0] axiOut_2_64_araddr;
+wire  [31:0] axiOut_2_64_araddr;
 wire  [4:0]  axiOut_2_64_arid;
 wire  [7:0]  axiOut_2_64_arlen;
 wire  [2:0]  axiOut_2_64_arsize;
@@ -1541,7 +1541,7 @@ wire         axiOut_2_64_rlast;
 // confreg_64_* 信号
 wire         confreg_64_awvalid;
 wire         confreg_64_awready;
-wire  [63:0] confreg_64_awaddr;
+wire  [31:0] confreg_64_awaddr;
 wire  [4:0]  confreg_64_awid;
 wire  [7:0]  confreg_64_awlen;
 wire  [2:0]  confreg_64_awsize;
@@ -1563,7 +1563,7 @@ wire  [1:0]  confreg_64_bresp;
 
 wire         confreg_64_arvalid;
 wire         confreg_64_arready;
-wire  [63:0] confreg_64_araddr;
+wire  [31:0] confreg_64_araddr;
 wire  [4:0]  confreg_64_arid;
 wire  [7:0]  confreg_64_arlen;
 wire  [2:0]  confreg_64_arsize;

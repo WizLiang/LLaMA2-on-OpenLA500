@@ -134,7 +134,7 @@ module axi2sram_sp_ext #(
         // this will overflow
         upper_wrap_boundary = wrap_boundary + ((ax_req_q_len + 1) << LOG_NR_BYTES);
         // calculate consecutive address
-        cons_addr = aligned_address + (cnt_q << LOG_NR_BYTES);
+        cons_addr = aligned_address + (cnt_q << ax_req_d_size);
 
         // Transaction attributes
         // default assignments
@@ -269,7 +269,8 @@ module axi2sram_sp_ext #(
                             addr_o = wrap_boundary;
                         // address warped beyond boundary
                         end else if (cons_addr > upper_wrap_boundary) begin
-                            addr_o = ax_req_q_addr + ((cnt_q - ax_req_q_len) << LOG_NR_BYTES);
+                            //addr_o = ax_req_q_addr + ((cnt_q - ax_req_q_len) << LOG_NR_BYTES);
+                            addr_o = ax_req_q_addr + ((cnt_q - ax_req_q_len) << ax_req_d_size);
                         // we are still in the incremental regime
                         end else begin
                             addr_o = cons_addr;
@@ -313,7 +314,7 @@ module axi2sram_sp_ext #(
                                 addr_o = wrap_boundary;
                             // address warped beyond boundary
                             end else if (cons_addr > upper_wrap_boundary) begin
-                                addr_o = ax_req_q_addr + ((cnt_q - ax_req_q_len) << LOG_NR_BYTES);
+                                addr_o = ax_req_q_addr + ((cnt_q - ax_req_q_len) << ax_req_d_size);
                             // we are still in the incremental regime
                             end else begin
                                 addr_o = cons_addr;
