@@ -22,7 +22,7 @@ CFLAGS += -DUSE_CPU_CLOCK_COUNT
 #若使用 newlib , 将下面的 -lsemihost 替换为 -lgloss
 LDFLAGS +=  	-T $(LINKER_SCRIPT) \
 				-Wl,--gc-sections -Wl,--check-sections \
-				-lc -lm -lg -lgcc -lsemihost -L$(PICOLIBC_DIR)/lib
+				-lsemihost -lc -lm -lg -lgcc -L$(PICOLIBC_DIR)/lib	#changed
 
 LINKER_SCRIPT := $(COMMON_DIR)/env/separate.lds
 
@@ -50,25 +50,19 @@ C_OBJS := $(C_SRCS:.c=.o)
 LINK_OBJS += $(ASM_OBJS) $(C_OBJS)
 LINK_DEPS += $(LINKER_SCRIPT)
 
-CLEAN_OBJS += $(OBJDIR)/$(TARGET).elf $(LINK_OBJS) $(OBJDIR)/$(TARGET).s $(OBJDIR)/$(TARGET).bin $(OBJDIR)/convert $(OBJDIR)/axi_ram.coe $(OBJDIR)/base_ram.* $(OBJDIR)/ext_ram.* $(OBJDIR)/rom.vlog
+CLEAN_OBJS += $(OBJDIR)/$(TARGET).elf $(LINK_OBJS) $(OBJDIR)/$(TARGET).s $(OBJDIR)/$(TARGET).bin $(OBJDIR)/convert32 $(OBJDIR)/axi_ram.coe $(OBJDIR)/axi_ram.mif $(OBJDIR)/rom.vlog
 
-$(TARGET): $(LINK_OBJS) $(LINK_DEPS) convert Makefile
+$(TARGET): $(LINK_OBJS) $(LINK_DEPS) convert32 Makefile
 	$(LA32R_GCC) $(CFLAGS) $(INCLUDES) $(LINK_OBJS) -o $(OBJDIR)/$@.elf $(LDFLAGS)
 	$(LA32R_OBJCOPY) -O binary $(OBJDIR)/$@.elf $(OBJDIR)/$@.bin
 	$(LA32R_OBJDUMP) --disassemble-all -S $(OBJDIR)/$@.elf > $(OBJDIR)/$@.s
-	$(OBJDIR)/convert $@.bin $(OBJDIR)/
-	cp ./$(OBJDIR)/base_ram.mif $(COMMON_DIR)/../../
-	cp ./$(OBJDIR)/base_ram.mif $(CICIEC_WINDOWS_HOME)/sdk
-	cp ./$(OBJDIR)/ext_ram.mif $(COMMON_DIR)/../../
-	cp ./$(OBJDIR)/ext_ram.mif $(CICIEC_WINDOWS_HOME)/sdk
+	$(OBJDIR)/convert32 $@.bin $(OBJDIR)/
+	cp ./$(OBJDIR)/axi_ram.mif $(COMMON_DIR)/../../
+	cp ./$(OBJDIR)/axi_ram.mif $(CICIEC_WINDOWS_HOME)/sdk
 	cp ./$(OBJDIR)/$@.bin $(COMMON_DIR)/../../
 	cp ./$(OBJDIR)/$@.bin $(CICIEC_WINDOWS_HOME)/sdk
-	cp ./$(OBJDIR)/base_ram.bin $(COMMON_DIR)/../../
-	cp ./$(OBJDIR)/base_ram.bin $(CICIEC_WINDOWS_HOME)/sdk
-	cp ./$(OBJDIR)/ext_ram.bin $(COMMON_DIR)/../../
-	cp ./$(OBJDIR)/ext_ram.bin $(CICIEC_WINDOWS_HOME)/sdk
 	rm -f $(LINK_OBJS)
-	rm -f $(OBJDIR)/convert
+	rm -f $(OBJDIR)/convert32
 
 $(ASM_OBJS): %.o: %.S
 	$(LA32R_GCC) $(CFLAGS) $(INCLUDES) -c -o $@ $< 
@@ -76,9 +70,9 @@ $(ASM_OBJS): %.o: %.S
 $(C_OBJS): %.o: %.c
 	$(LA32R_GCC) $(CFLAGS) $(INCLUDES) -c -o $@ $< 
 
-convert: $(COMMON_DIR)/env/convert.c
+convert32: $(COMMON_DIR)/env/convert32.c
 	mkdir -p $(OBJDIR)/
-	gcc -o $(OBJDIR)/convert $(COMMON_DIR)/env/convert.c
+	gcc -o $(OBJDIR)/convert32 $(COMMON_DIR)/env/convert32.c
 
 .PHONY: clean
 clean:

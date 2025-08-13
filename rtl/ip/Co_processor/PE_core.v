@@ -74,6 +74,7 @@ module PE_core#(
                 weight_queue[i] <= 0;
             end
             vec_reg <= 0;
+            vec_cnt <= 0;
         end
     end
 

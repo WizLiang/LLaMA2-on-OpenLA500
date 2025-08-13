@@ -289,11 +289,13 @@ static int matmul_mismatch_count = 0;
 static int matmul_call_count = 0;
 #define EPSILON 1e-6f
 
-static inline size_t misalign_of(const void *p, size_t align) {
-    // align 必须是 2 的幂，这里你用 8 就行
-    return (size_t)((uintptr_t)p & (align - 1));
-}
-#define REQ_ALIGN 8u
+// static inline size_t misalign_of(const void *p, size_t align) {
+//     // align 必须是 2 的幂，这里你用 8 就行
+//     return (size_t)((uintptr_t)p & (align - 1));
+// }
+// #define REQ_ALIGN 8u
+
+
 // #define cache_offset_width 4
 
 static inline void cache_flush(void *addr, size_t size)
@@ -308,7 +310,7 @@ static inline void cache_flush(void *addr, size_t size)
 }
 
 void matmul(float* xout, float* x, float* w, int n, int d) {
-    // // 硬件控制器将负责内部的分块循环和地址计算。
+    // // // 硬件控制器将负责内部的分块循环和地址计算。
     // matmul_call_count++;
     // printf("matmul call #%d: xout=%p, x=%p, w=%p, n=%d, d=%d\n",
     //        matmul_call_count, (void*)xout, (void*)x, (void*)w, n, d);
@@ -393,7 +395,7 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     // }
 
     // free(cpu_out);
-    // while(1);
+    // while(matmul_call_count == 5);
 }
 
 

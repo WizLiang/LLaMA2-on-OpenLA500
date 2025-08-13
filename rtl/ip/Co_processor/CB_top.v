@@ -236,7 +236,7 @@ always @(posedge clk or negedge rst_n) begin
                     mac_w_sram_wdata <= dma_sram_wdata;
 
                     // 3. 更新计数器
-                    if (dma_w_addr_in_bank_cnt == 31) begin
+                    if (dma_w_addr_in_bank_cnt == (current_cols >> 1) - 1) begin
                         // 当前 Bank 已写满 (地址从0到63，共64个)
                         dma_w_addr_in_bank_cnt <= 0; // Bank 内地址清零
                         // 切换到下一个 Bank (如果已经是最后一个Bank，则会自然溢出回到0)
