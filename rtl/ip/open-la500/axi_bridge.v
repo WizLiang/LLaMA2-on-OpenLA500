@@ -272,16 +272,16 @@ always @(posedge clk) begin
     if (reset) begin
         read_respond_state <= read_respond_empty;
         rready <= 1'b1;
-        r_half_sel <= 1'b0;
+        // r_half_sel <= 1'b0;
     end
     else case (read_respond_state)
         read_respond_empty: begin
             if (rvalid && rready) begin 
                 read_respond_state <= read_respond_transfer;
                 // first beat already uses r_half_sel preset at AR handshake
-                if (!rlast) begin
-                    r_half_sel   <= ~r_half_sel; // +4B -> flip half
-                end
+                // if (!rlast) begin
+                //     r_half_sel   <= ~r_half_sel; // +4B -> flip half
+                // end
             end
         end
         read_respond_transfer: begin
@@ -291,9 +291,10 @@ always @(posedge clk) begin
             if (rvalid && rready) begin
                 if (rlast) begin
                     read_respond_state <= read_respond_empty;
-                end else begin
-                    r_half_sel   <= ~r_half_sel;
-                end
+                end 
+                // else begin
+                //     r_half_sel   <= ~r_half_sel;
+                // end
             end
         end
     endcase

@@ -219,8 +219,8 @@ wire confreg_int;
 wire CB_done;
 
 core_top #(.TLBNUM(32)) u_core_top (
-    .aclk         (cpu_clk),
-    .aresetn      (cpu_resetn),
+    .aclk         (sys_clk),
+    .aresetn      (sys_resetn),
 
     .intrpt       ({6'h0,CB_done,(confreg_int & (debug_CB_state== 'b0))}),
     // AXI Read Request
@@ -1336,7 +1336,7 @@ confreg #(.SIMULATION(SIMULATION)) u_confreg (
 // cpu_sync_64_* 信号
 wire         cpu_sync_64_awvalid;
 wire         cpu_sync_64_awready;
-wire  [63:0] cpu_sync_64_awaddr;
+wire  [31:0] cpu_sync_64_awaddr;
 wire  [3:0]  cpu_sync_64_awid;
 wire  [7:0]  cpu_sync_64_awlen;
 wire  [2:0]  cpu_sync_64_awsize;
@@ -1358,7 +1358,7 @@ wire  [1:0]  cpu_sync_64_bresp;
 
 wire         cpu_sync_64_arvalid;
 wire         cpu_sync_64_arready;
-wire  [63:0] cpu_sync_64_araddr;
+wire  [31:0] cpu_sync_64_araddr;
 wire  [3:0]  cpu_sync_64_arid;
 wire  [7:0]  cpu_sync_64_arlen;
 wire  [2:0]  cpu_sync_64_arsize;
@@ -1377,7 +1377,7 @@ wire         cpu_sync_64_rlast;
 // axiIn1_aw_64_* 等 Dummy Master 64位信号
 wire          axiIn1_aw_64_valid;
 wire          axiIn1_aw_64_ready;
-wire  [63:0]  axiIn1_aw_64_payload_addr;
+wire  [31:0]  axiIn1_aw_64_payload_addr;
 wire  [3:0]   axiIn1_aw_64_payload_id;
 wire  [7:0]   axiIn1_aw_64_payload_len;
 wire  [2:0]   axiIn1_aw_64_payload_size;
@@ -1399,7 +1399,7 @@ wire  [1:0]   axiIn1_b_64_payload_resp;
 
 wire          axiIn1_ar_64_valid;
 wire          axiIn1_ar_64_ready;
-wire  [63:0]  axiIn1_ar_64_payload_addr;
+wire  [31:0]  axiIn1_ar_64_payload_addr;
 wire  [3:0]   axiIn1_ar_64_payload_id;
 wire  [7:0]   axiIn1_ar_64_payload_len;
 wire  [2:0]   axiIn1_ar_64_payload_size;
@@ -2212,7 +2212,94 @@ axi_adapter #(
     .m_axi_rready       (confreg_rready)
 );
 
+// Axi_CDC64  u_axi_cdc_cpu (
+//     // AXI Slave side (CPU时钟域)
+//     .axiInClk         (cpu_clk),
+//     .axiInRst         (~cpu_resetn),
+//     .axiOutClk        (sys_clk),
+//     .axiOutRst        (~sys_resetn),
 
+//     .axiIn_awvalid    (cpu_awvalid),
+//     .axiIn_awready    (cpu_awready),
+//     .axiIn_awaddr     (cpu_awaddr),
+//     .axiIn_awid       (cpu_awid),
+//     .axiIn_awlen      (cpu_awlen),
+//     .axiIn_awsize     (cpu_awsize),
+//     .axiIn_awburst    (cpu_awburst),
+//     .axiIn_awlock     (cpu_awlock[0]), // 只取最低位
+//     .axiIn_awcache    (cpu_awcache),
+//     .axiIn_awprot     (cpu_awprot),
+
+//     .axiIn_wvalid     (cpu_wvalid),
+//     .axiIn_wready     (cpu_wready),
+//     .axiIn_wdata      (cpu_wdata),
+//     .axiIn_wstrb      (cpu_wstrb),
+//     .axiIn_wlast      (cpu_wlast),
+
+//     .axiIn_bvalid     (cpu_bvalid),
+//     .axiIn_bready     (cpu_bready),
+//     .axiIn_bid        (cpu_bid),
+//     .axiIn_bresp      (cpu_bresp),
+
+//     .axiIn_arvalid    (cpu_arvalid),
+//     .axiIn_arready    (cpu_arready),
+//     .axiIn_araddr     (cpu_araddr),
+//     .axiIn_arid       (cpu_arid),
+//     .axiIn_arlen      (cpu_arlen),
+//     .axiIn_arsize     (cpu_arsize),
+//     .axiIn_arburst    (cpu_arburst),
+//     .axiIn_arlock     (cpu_arlock[0]), // 只取最低位
+//     .axiIn_arcache    (cpu_arcache),
+//     .axiIn_arprot     (cpu_arprot),
+
+//     .axiIn_rvalid     (cpu_rvalid),
+//     .axiIn_rready     (cpu_rready),
+//     .axiIn_rdata      (cpu_rdata),
+//     .axiIn_rid        (cpu_rid),
+//     .axiIn_rresp      (cpu_rresp),
+//     .axiIn_rlast      (cpu_rlast),
+
+//     // AXI Master side (sys_clk域，输出到 crossbar)
+//     .axiOut_awvalid   (cpu_sync_64_awvalid),
+//     .axiOut_awready   (cpu_sync_64_awready),
+//     .axiOut_awaddr    (cpu_sync_64_awaddr),
+//     .axiOut_awid      (cpu_sync_64_awid),
+//     .axiOut_awlen     (cpu_sync_64_awlen),
+//     .axiOut_awsize    (cpu_sync_64_awsize),
+//     .axiOut_awburst   (cpu_sync_64_awburst),
+//     .axiOut_awlock    (cpu_sync_64_awlock),
+//     .axiOut_awcache   (cpu_sync_64_awcache),
+//     .axiOut_awprot    (cpu_sync_64_awprot),
+
+//     .axiOut_wvalid    (cpu_sync_64_wvalid),
+//     .axiOut_wready    (cpu_sync_64_wready),
+//     .axiOut_wdata     (cpu_sync_64_wdata),
+//     .axiOut_wstrb     (cpu_sync_64_wstrb),
+//     .axiOut_wlast     (cpu_sync_64_wlast),
+
+//     .axiOut_bvalid    (cpu_sync_64_bvalid),
+//     .axiOut_bready    (cpu_sync_64_bready),
+//     .axiOut_bid       (cpu_sync_64_bid),
+//     .axiOut_bresp     (cpu_sync_64_bresp),
+
+//     .axiOut_arvalid   (cpu_sync_64_arvalid),
+//     .axiOut_arready   (cpu_sync_64_arready),
+//     .axiOut_araddr    (cpu_sync_64_araddr),
+//     .axiOut_arid      (cpu_sync_64_arid),
+//     .axiOut_arlen     (cpu_sync_64_arlen),
+//     .axiOut_arsize    (cpu_sync_64_arsize),
+//     .axiOut_arburst   (cpu_sync_64_arburst),
+//     .axiOut_arlock    (cpu_sync_64_arlock),
+//     .axiOut_arcache   (cpu_sync_64_arcache),
+//     .axiOut_arprot    (cpu_sync_64_arprot),
+
+//     .axiOut_rvalid    (cpu_sync_64_rvalid),
+//     .axiOut_rready    (cpu_sync_64_rready),
+//     .axiOut_rdata     (cpu_sync_64_rdata),
+//     .axiOut_rid       (cpu_sync_64_rid),
+//     .axiOut_rresp     (cpu_sync_64_rresp),
+//     .axiOut_rlast     (cpu_sync_64_rlast)
+// );
 
 AxiCrossbar64_2x4 u_axi_crossbar (
     //clock signal

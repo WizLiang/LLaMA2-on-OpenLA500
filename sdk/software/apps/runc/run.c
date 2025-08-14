@@ -41,8 +41,8 @@ unsigned long CB_BASE = 0xbf100000;
 unsigned long CONFREG_TIMER_BASE = 0xbf20f100;      // CONFREG计数器的虚地址
 unsigned long CONFREG_CLOCKS_PER_SEC = 50000000L;   // CONFREG时钟频率
 unsigned long CORE_CLOCKS_PER_SEC = 33000000L;      // 处理器核时钟频率
-unsigned long RANDOM_BASE = 0x1f20f600;
-unsigned long SWITCH_BASE = 0x1f20f400;
+unsigned long RANDOM_BASE = 0xbf20f600;
+unsigned long SWITCH_BASE = 0xbf20f400;
 
 // ----------------------------------------------------------------------------
 // Embedded Data Headers
