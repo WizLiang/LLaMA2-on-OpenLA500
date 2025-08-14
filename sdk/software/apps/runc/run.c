@@ -288,6 +288,18 @@ void softmax(float* x, int size) {
 static int matmul_mismatch_count = 0;
 static int matmul_call_count = 0;
 #define EPSILON 1e-6f
+
+static inline void cache_flush(void *addr, size_t size)
+{
+    unsigned long line = 1 << cache_offset_width;
+    unsigned long start = ((unsigned long)addr) & ~(line - 1);
+    unsigned long end = ((unsigned long)addr + size + line - 1) & ~(line - 1);
+    for (unsigned long p = start; p < end; p += line) {
+        __asm__ __volatile__("cacop 0x11, %0, 0" :: "r"(p) : "memory");
+    }
+    __asm__ __volatile__("dbar 0" ::: "memory");
+}
+
 void matmul(float* xout, float* x, float* w, int n, int d) {
     // // 硬件控制器将负责内部的分块循环和地址计算。
     // matmul_call_count++;
@@ -319,6 +331,11 @@ void matmul(float* xout, float* x, float* w, int n, int d) {
     cb_write(REG_MI_BASE_ADDR, (unsigned long)w);
     cb_write(REG_VI_BASE_ADDR, (unsigned long)x);
     cb_write(REG_VO_BASE_ADDR, (unsigned long)xout);
+
+    //Software Cache flush
+    cache_flush(x, (size_t)n * sizeof(float));
+    cache_flush(w, (size_t)n * (size_t)d * sizeof(float));
+    cache_flush(xout, (size_t)d * sizeof(float));
 
     // 设置整个任务的总维度 (例如，对于64x64矩阵，d=64, n=64)。
     cb_write(REG_ROWS_ADDR, d);
