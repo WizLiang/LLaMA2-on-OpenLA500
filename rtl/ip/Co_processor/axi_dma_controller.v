@@ -88,6 +88,7 @@
     reg   [2:0]               r_cmd_size                ;
     reg                       r_cmd_ready               ;
     //reg                       r_cmd_rw;          
+    reg   [10:0]              r_cmd_len                 ; //Size of data (B) Use in write
     reg   [8:0]                r_cmd_block_size         ;
     reg    [10:0]              r_cmd_stride             ;
     reg   [6:0]                r_cmd_block_count ;
@@ -165,7 +166,7 @@
             r_cmd_dst_addr <= 0;
             r_cmd_burst <= 0;
             r_cmd_size <= 3'b010;
-            r_m_axi_awlen <= 1;
+            //r_m_axi_awlen <= 1;
             //r_m_axi_arlen <= 1;
             //r_read_start <= 0;
             r_write_start <=  1'b0;
@@ -181,7 +182,8 @@
             r_cmd_dst_addr <= cmd_dst_addr;
             r_cmd_burst <= cmd_burst;
             r_cmd_size <= cmd_size;
-            r_m_axi_awlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
+            r_cmd_len <= cmd_len;
+            //r_m_axi_awlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             //r_m_axi_arlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             //r_read_start <= ~cmd_rw;
             r_write_start <=  cmd_rw;
@@ -199,7 +201,7 @@
             r_cmd_size <= r_cmd_size;
            // r_read_start <=     1'b0;
             r_write_start <=    1'b0;             
-            r_m_axi_awlen <= r_m_axi_awlen;
+            //r_m_axi_awlen <= r_m_axi_awlen;
             //r_m_axi_arlen <= r_m_axi_arlen;
             r_cmd_block_size   <= r_cmd_block_size;
             r_cmd_stride       <= r_cmd_stride;
@@ -394,12 +396,18 @@ end
     end
 
     always@(posedge clk) begin
-        if(rst) 
+        if(rst) begin
             r_m_axi_awaddr <= 0;
-        else if(r_write_start)
+            r_m_axi_awlen <= 0;
+        end
+        else if(r_write_start)begin
             r_m_axi_awaddr <= r_cmd_dst_addr;
-        else
+            r_m_axi_awlen <= r_cmd_len/(DATA_WD_BYTE) - 'b1;
+        end
+        else begin
             r_m_axi_awaddr <= r_m_axi_awaddr;
+            r_m_axi_awlen <= r_m_axi_awlen;
+        end
     end
 
 /*--------------------- write -------------------------------*/
