@@ -2,6 +2,11 @@
 
 队伍编号：CICC0900647
 
+# 致评委
+
+您现在看到的是32bits总线下的设计。FPGA工程文件已经附上，位于fpga文件夹中，打开应可直接看到综合结果，时序报告等。
+比赛时我们的代码可能并未将访问权限设置为publish，如果安装有`git`，可以用`git -log`查看开发历史。
+
 
 ## Project Overview / 项目概述
 
@@ -34,7 +39,7 @@ AI加速器代码位于 `rtl/ip/Co_processor` 目录，其余基本保持不变�
 
 ## Hardware Build / 硬件编译
 1. 安装 Xilinx Vivado（经测试版本为 2019.2/2024.2）。
-2. 运行 `vivado -source fpga/create_project.tcl` 创建工程。
+2. 运行 `vivado -source fpga/create_project.tcl` 创建工程。注意disable掉不需要的文件，例如`./rtl/ip/Bus_interconnects/AxiCrossbar_1x4.v`以免综合报错！
 3. 在 Vivado 中执行 `write_bitstream` 生成 `soc_top.bit`。
 
 
