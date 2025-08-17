@@ -285,6 +285,7 @@ create_generated_clock -name cpu_clk [get_pins pll_clk.u_clk_pll/inst/plle2_adv_
 create_generated_clock -name sys_clk [get_pins pll_clk.u_clk_pll/inst/plle2_adv_inst/CLKOUT1]
 
 set_clock_groups -quiet -asynchronous -group [get_clocks cpu_clk] -group [get_clocks sys_clk]
+set_property CLOCK_BUFFER_TYPE BUFG   [get_nets {u_cb_top/sys_rst_n}]
 
 set_input_delay -clock sys_clk -max 5   [get_ports {base_ram_data[*]}]
 set_input_delay -clock sys_clk -min 3   [get_ports {base_ram_data[*]}]

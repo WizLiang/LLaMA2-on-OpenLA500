@@ -4,9 +4,9 @@
  //`default_nettype none
   module axi_dma_controller #(
       parameter integer ADDR_WD = 32,
-      parameter integer DATA_WD = 64,
+      parameter integer DATA_WD = 32,
       parameter integer ID_WD   = 4,
-      parameter integer SRAM_ADDR_WD = 64, // SRAM 地址宽度为64位
+      parameter integer SRAM_ADDR_WD = 32, // SRAM 地址宽度为32位
       localparam integer DATA_WD_BYTE = DATA_WD / 8,
       localparam integer STRB_WD =  DATA_WD / 8,
       localparam [ID_WD-1:0] DMA_ID = {ID_WD{1'b0}}
@@ -88,6 +88,7 @@
     reg   [2:0]               r_cmd_size                ;
     reg                       r_cmd_ready               ;
     //reg                       r_cmd_rw;          
+    reg   [10:0]              r_cmd_len                 ; //Size of data (B) Use in write
     reg   [8:0]                r_cmd_block_size         ;
     reg    [10:0]              r_cmd_stride             ;
     reg   [6:0]                r_cmd_block_count ;
@@ -109,13 +110,13 @@
     reg                       r_m_axi_wvalid            ; 
     reg [STRB_WD -1:0]        r_m_axi_wstrb             ; 
     //reg [STRB_WD -1:0]        r_m_axi_wstrb_1             ; 
-    reg [8:0]                 r_write_cnt               ;//cnt 64bits 
-    reg [8:0]                 r_read_cnt                ;//cnt 32bits  
+    reg [8:0]                 r_write_cnt               ;  
+    reg [8:0]                 r_read_cnt                ;  
 
     reg                       r_read_start              ;
     reg                       r_write_start             ; 
     reg [7:0]                 w_trans_num               ;
-    reg [DATA_WD-1:0]         R_strobe_word             ;
+    reg [DATA_WD-1:0]         R_strobe_word                ;
 
     wire [7:0]                  TRANS_PER_DATA          ;
     wire [7:0]                r_cmd_size_byte           ;
@@ -165,7 +166,7 @@
             r_cmd_dst_addr <= 0;
             r_cmd_burst <= 0;
             r_cmd_size <= 3'b010;
-            r_m_axi_awlen <= 1;
+            //r_m_axi_awlen <= 1;
             //r_m_axi_arlen <= 1;
             //r_read_start <= 0;
             r_write_start <=  1'b0;
@@ -181,7 +182,8 @@
             r_cmd_dst_addr <= cmd_dst_addr;
             r_cmd_burst <= cmd_burst;
             r_cmd_size <= cmd_size;
-            r_m_axi_awlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
+            r_cmd_len <= cmd_len;
+            //r_m_axi_awlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             //r_m_axi_arlen <= cmd_len/(DATA_WD_BYTE) - 'b1;
             //r_read_start <= ~cmd_rw;
             r_write_start <=  cmd_rw;
@@ -199,7 +201,7 @@
             r_cmd_size <= r_cmd_size;
            // r_read_start <=     1'b0;
             r_write_start <=    1'b0;             
-            r_m_axi_awlen <= r_m_axi_awlen;
+            //r_m_axi_awlen <= r_m_axi_awlen;
             //r_m_axi_arlen <= r_m_axi_arlen;
             r_cmd_block_size   <= r_cmd_block_size;
             r_cmd_stride       <= r_cmd_stride;
@@ -366,7 +368,7 @@ end
             r_read_cnt <= 1'b0;
         end
         else if (M_AXI_RVALID && M_AXI_RREADY) begin
-            r_read_cnt <= r_read_cnt + r_cmd_size_byte/4;       
+            r_read_cnt <= r_read_cnt + 1;       
         end 
         else
             r_read_cnt <= r_read_cnt;  
@@ -394,12 +396,18 @@ end
     end
 
     always@(posedge clk) begin
-        if(rst) 
+        if(rst) begin
             r_m_axi_awaddr <= 0;
-        else if(r_write_start)
+            r_m_axi_awlen <= 0;
+        end
+        else if(r_write_start)begin
             r_m_axi_awaddr <= r_cmd_dst_addr;
-        else
+            r_m_axi_awlen <= r_cmd_len/(DATA_WD_BYTE) - 'b1;
+        end
+        else begin
             r_m_axi_awaddr <= r_m_axi_awaddr;
+            r_m_axi_awlen <= r_m_axi_awlen;
+        end
     end
 
 /*--------------------- write -------------------------------*/
@@ -576,7 +584,6 @@ end
 
 
 endmodule
-
 
 
 

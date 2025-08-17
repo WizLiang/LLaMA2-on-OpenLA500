@@ -4,7 +4,9 @@
 /sdk/software/examples
 /vivado24.2/
 /rtl/ip/PLL_2019_2/
-/fpga/
+/fpga/.Xil
+/fpga/fpga/
+/fpga/project
 /sim/module_sim/
 /sdk/software/apps/*/obj
 
@@ -13,4 +15,6 @@
 *.tmp
 *.bin
 *.mif
-
+*.jou
+*.str
+*.tcl

@@ -20,7 +20,7 @@ module core_top
     input           arready,
     //read back
     input    [ 3:0] rid,
-    input    [63:0] rdata,
+    input    [31:0] rdata,
     input    [ 1:0] rresp,
     input           rlast,
     input           rvalid,
@@ -38,8 +38,8 @@ module core_top
     input           awready,
     //write data
     output   [ 3:0] wid,
-    output   [63:0] wdata,
-    output   [ 7:0] wstrb,
+    output   [31:0] wdata,
+    output   [ 3:0] wstrb,
     output          wlast,
     output          wvalid,
     input           wready,
