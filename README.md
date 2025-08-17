@@ -2,7 +2,18 @@
 
 队伍编号：CICC0900647
 
+# 致评委
+soc_top64.bit 64bits是完成LLaMA2的推理；
+您现在看到的是64bits总线下的系统设计,处于`Dev_bus64`分支下；
+FPGA工程文件已经附上，位于fpga文件夹中，打开应可直接看到综合结果，时序报告等。 比赛时我们的代码可能并未将访问权限设置为publish，如果安装有git，可以用`git -log`查看开发历史。
+64bits下设计仅为探索，仍有缺陷（FPGA时序违例），32bits下为完整设计。
 
+## 注意
+1. 由于我们将两个RAM并成64位，故需要将BaseRAM跟ExtRAM烧录才能运行程序；我们在`convert.c`中对bin文件进行了劈裂
+2. 多次reset可能出现初始化失败，请`清空RAM之后`重新烧录(我们自己的做法是退出重新登陆)
+3. 我们64位总线的设计也能够通过之前的系统测试，但是由于对RAM进行了魔改，故可能无法直接通过线上的在线测试。
+4. 如果需要测试其他程序，请在`sdk`中`make`或者使用我们给您准备好的bin文件。（并对`两个RAM进行`烧录）
+ 
 ## Project Overview / 项目概述
 
 Circuit Breaker is an FPGA SoC platform built around the openLA500 LoongArch32R CPU core with a custom AI accelerator. The goal is to run common operating systems and AI workloads such as LLaMA2.
@@ -24,9 +35,9 @@ OpenLA500 处理器采用五级单发射流水线（取指、译码、执行、�
 
 
 ### bitstreams
-soc_top.bit是完整的SoC bitstream，能通过官方测试，也能完成LLaMA2的推理。
-soc_top1.bit为LED灯显示加速器状态的备份。
-
+soc_top.bit是完整32位的SoC bitstream，能通过官方测试，也能完成LLaMA2的推理。
+soc_top1.bit为完整32位的LED灯显示加速器状态的备份。
+soc_top64.bit 64bits是完成LLaMA2的推理。
 
 ## 硬件代码
 
