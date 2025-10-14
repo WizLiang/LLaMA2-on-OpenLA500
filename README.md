@@ -1,19 +1,30 @@
-# Circuit Breaker 
+# LLaMA2-on-OpenLA500
 
 队伍编号：CICC0900647
+队伍名称：Circuit Breakers
 
+## 🧩 Project Overview / 项目概述
 
-## Project Overview / 项目概述
+**LLaMA2-on-OpenLA500** is an **FPGA-based SoC platform** built around the **openLA500 LoongArch32R CPU core** with a **custom AI accelerator**.  
+The project aims to enable **LoongArch platforms** to run common operating systems and **AI workloads such as LLaMA2**.
+The system has successfully passed the **HelloWorld**, **system functionality**, **interrupt**, and **RT-Thread boot** tests as required in the competition.
 
-Circuit Breaker is an FPGA SoC platform built around the openLA500 LoongArch32R CPU core with a custom AI accelerator. The goal is to run common operating systems and AI workloads such as LLaMA2.
+---
 
-Circuit Breaker项目在FPGA上集成了openLA500处理器核和自定义AI加速器，目标是实现能够运行操作系统和AI应用（例如 LLaMA2）的LoongArch平台。
+**LLaMA2-on-OpenLA500** 项目基于 **openLA500 LoongArch32R CPU 核**，在 **FPGA** 上集成了 **自定义 AI 加速器**，旨在构建一个能够运行主流操作系统和 **AI 应用（如 LLaMA2）** 的 **LoongArch SoC 平台**。
 
+项目已通过比赛官方要求的 **HelloWorld 测试、系统功能测试、中断测试** 以及 **RT-Thread 启动测试**。
 
-已经按照复赛要求，通过了HelloWorld测试、系统功能测试、中断测试、启动RT-Thread。
-### Architecture / 系统架构
+本作品由 **Circuit Breakers 队（编号 CICC0900647）** 设计开发，参加 **第九届全国大学生集成电路创新创业大赛（龙芯中科杯）**，并荣获 **全国总决赛一等奖**。
+
+赛题链接：http://univ.ciciec.com/nd.jsp?id=882#_jcp=1
+
+## Architecture / 系统架构
+
 The CPU (OpenLA500) uses a single-issue five-stage pipeline (fetch, decode, execute, memory, write-back) with 2-way associative instruction and data caches, a 32-entry TLB and a simple branch predictor. Peripherals and the AI accelerator connect through an AXI bus. Accelerator RTL can be found under `rtl/ip/Co_processor`.
+
 OpenLA500 处理器采用五级单发射流水线（取指、译码、执行、访存、写回），配备2路组相联的指令和数据缓存、32项TLB和简易的分支预测器。外设与AI加速器通过AXI总线连接，加速器代码位于`rtl/ip/Co_processor`目录。
+
 系统加构图如下
 
 <img width="953" height="578" alt="image" src="https://github.com/user-attachments/assets/16e24b3e-ce03-4ada-97e2-af41a4afb115" />
