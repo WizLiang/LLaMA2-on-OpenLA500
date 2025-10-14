@@ -1,8 +1,5 @@
 # LLaMA2-on-OpenLA500
 
-队伍编号：CICC0900647
-队伍名称：Circuit Breakers
-
 ## 🧩 Project Overview / 项目概述
 
 **LLaMA2-on-OpenLA500** is an **FPGA-based SoC platform** built around the **openLA500 LoongArch32R CPU core** with a **custom AI accelerator**.  
