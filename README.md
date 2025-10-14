@@ -65,3 +65,9 @@ Setup Timing以及Hold Timing
 额，其实我们不太会后端，就象征性跑一个结果。贴上来就是留个念
 <img width="2463" height="1434" alt="Screenshot from 2025-08-18 09-58-17" src="https://github.com/user-attachments/assets/dd843904-ad96-496b-848a-f0f73df0520e" />
 
+# 🌟 Support Us / 支持我们
+
+If you find this project useful, please ⭐ Star it!  
+We’re continuously improving the LLaMA2-on-OpenLA500 platform and welcome all suggestions, issues, or pull requests.
+
+如果你觉得这个项目有趣，欢迎点个 Star 支持一下，也可以在 Issues 中提出建议或问题 🙌
