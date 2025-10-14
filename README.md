@@ -41,12 +41,27 @@ AI加速器代码位于 `rtl/ip/Co_processor` 目录，其余基本保持不变�
 
 
 ## Software Build / 软件编译
+我们的软件功能是对Karpathy的LlaMA2.c进行了移植，具体请看https://github.com/karpathy/llama2.c
+下面是大致的编译过程
 1. 安装 Loongson GNU toolchain `loongson-gnu-toolchain-8.3-x86_64-loongarch32r-linux-gnusf-v2.0` 及 Picolibc。
 2. 进入 `sdk/software/apps` 下的应用目录（例如 `runc`）。
 3. 执行 `make` 编译程序。
 llama2.c在sdk/software/apps/runc中，make即可
 
-# Tips of Dev
-1. 记得创建自己的分支，尽量有统一的命名规范
-1. 适当添加描述
-1. 注意 `git pull origin master` 
+# 最终效果
+挖个坑，各类技术报告晚些同步。
+## 综合结果
+我们在龙芯的云平台上面部署的，FPGA型号是Artix-7 XC7A200T
+<img width="1147" height="468" alt="image" src="https://github.com/user-attachments/assets/7b955440-0f89-4815-8601-1dc929571563" />
+Setup Timing以及Hold Timing
+<img width="1153" height="277" alt="image" src="https://github.com/user-attachments/assets/6acbf7a4-b0bb-44ba-b58f-fa457411a54a" />
+<img width="1153" height="265" alt="image" src="https://github.com/user-attachments/assets/d36ca6af-7631-46cb-bec7-9dba3f72ea29" />
+
+
+## 上板测试
+<img width="1189" height="567" alt="image" src="https://github.com/user-attachments/assets/26924b9c-05de-4a28-b19f-b3e6f8236f0c" />
+
+## 后端版图
+额，其实我们不太会后端，就象征性跑一个结果。贴上来就是留个念
+<img width="2463" height="1434" alt="Screenshot from 2025-08-18 09-58-17" src="https://github.com/user-attachments/assets/dd843904-ad96-496b-848a-f0f73df0520e" />
+
