@@ -6,9 +6,9 @@
 
 **LLaMA2-on-OpenLA500** 项目基于 **openLA500 LoongArch32R CPU 核**，在 **FPGA** 上集成了 **自定义 AI 加速器**，旨在构建一个能够运行主流操作系统和 **AI 应用（如 LLaMA2）** 的 **LoongArch SoC 平台**。
 
-The system has successfully passed the **HelloWorld**, **system functionality**, **interrupt**, and **RT-Thread boot** tests required by the competition. The design was created by **Circuit Breakers (team ID CICC0900647)** for the **9th National College IC Innovation & Entrepreneurship Contest (Loongson Cup)** and won **First Prize in the national finals**.
+The system has successfully passed the **HelloWorld**, **system functionality**, **interrupt**, and **RT-Thread boot** tests required by the competition. The design was created by **Circuit Breakers (team ID CICC0900647)** for the **9th China IC Competition (Loongson Cup)** and won **First Prize in the national finals**.
 
-项目已通过比赛官方要求的 **HelloWorld 测试、系统功能测试、中断测试** 以及 **RT-Thread 启动测试**。本作品由 **Circuit Breakers 队（编号 CICC0900647）** 设计开发，参加 **第九届全国大学生集成电路创新创业大赛（龙芯中科杯）**，并荣获 **全国总决赛一等奖**。
+项目已通过比赛官方要求的 **HelloWorld 测试、系统功能测试、中断测试** 以及 **RT-Thread 启动测试**。本作品由 **Circuit Breakers 队（编号 CICC0900647）** 设计开发，参加 **第九届全国大学生集成电路创新创业大赛（龙芯中科杯）**，并获 **全国总决赛一等奖**。
 
 赛题链接：http://univ.ciciec.com/nd.jsp?id=882#_jcp=1
 
@@ -23,12 +23,15 @@ The system has successfully passed the **HelloWorld**, **system functionality**,
 - [Project Status & TODO](#project-status--todo)
 - [Results / 项目成果](#results--项目成果)
 - [Support / 支持我们](#support--支持我们)
+- [Zhihu Write-up / 知乎文章](#zhihu-write-up--知乎文章)
+
 
 ## Architecture / 系统架构
+The CPU comes from the Loongson Community’s  [Open-LA500](https://github.com/loongson-community/open-la500). We applied minimal changes (interrupt/clock & constraints, cache ...) to attach our AI accelerator and pass competition tests.
+The OpenLA500 core uses a single-issue five-stage pipeline (fetch, decode, execute, memory, write-back) with 2-way associative instruction and data caches, a 32-entry TLB and a simple branch predictor. Peripherals and the AI accelerator connect through an AXI bus. Accelerator RTL can be found under `rtl/ip/Co_processor`.
 
-The CPU (OpenLA500) uses a single-issue five-stage pipeline (fetch, decode, execute, memory, write-back) with 2-way associative instruction and data caches, a 32-entry TLB and a simple branch predictor. Peripherals and the AI accelerator connect through an AXI bus. Accelerator RTL can be found under `rtl/ip/Co_processor`.
-
-OpenLA500 处理器采用五级单发射流水线（取指、译码、执行、访存、写回），配备 2 路组相联的指令和数据缓存、32 项 TLB 和简易分支预测器。外设与 AI 加速器通过 AXI 总线连接，加速器代码位于 `rtl/ip/Co_processor` 目录。
+CPU 实现来源于龙芯社区的 [Open-LA500](https://github.com/loongson-community/open-la500)；我们仅做了少量改动（中断/时钟与约束、Cache），用于接入自研 AI 加速器并通过比赛测试。
+处理器采用五级单发射流水线（取指、译码、执行、访存、写回），配备 2 路组相联的指令和数据缓存、32 项 TLB 和简易分支预测器。外设与 AI 加速器通过 AXI 总线连接，加速器代码位于 `rtl/ip/Co_processor` 目录。
 
 系统结构示意图如下：
 
@@ -112,3 +115,11 @@ OpenLA500 处理器采用五级单发射流水线（取指、译码、执行、�
 If you find this project useful, please ⭐ Star it! We’re continuously improving the LLaMA2-on-OpenLA500 platform and welcome all suggestions, issues, or pull requests.
 
 如果你觉得这个项目有趣，欢迎点个 Star 支持一下，也可以在 Issues 中提出建议或问题 🙌
+
+## Zhihu Write-up / 知乎文章
+
+我们在知乎专栏对项目做了更通俗完整的介绍，包含部分设计取舍、踩坑和性能细节，欢迎阅读与交流：
+
+- 《LLaMA2-on-OpenLA500：LoongArch SoC + 自研 AI 加速器在 FPGA 上跑 LLaMA2》  
+  https://zhuanlan.zhihu.com/p/1961830081061184854
+
