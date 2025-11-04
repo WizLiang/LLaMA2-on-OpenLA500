@@ -1,5 +1,4 @@
 #ignore dir
-/doc/
 /sdk/toolchains
 /sdk/software/examples
 /vivado24.2/
