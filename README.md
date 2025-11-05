@@ -120,6 +120,6 @@ If you find this project useful, please ⭐ Star it! We’re continuously improv
 
 我们在知乎专栏对项目做了更通俗完整的介绍，包含部分设计取舍、踩坑和性能细节，欢迎阅读与交流：
 
-- 《LLaMA2-on-OpenLA500：LoongArch SoC + 自研 AI 加速器在 FPGA 上跑 LLaMA2》  
+- 《【龙芯中科杯｜第九届集创赛】LoongArch SoC 跑 LLaMA2.c （含仓库链接）》  
   https://zhuanlan.zhihu.com/p/1961830081061184854
 
