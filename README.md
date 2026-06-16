@@ -106,6 +106,11 @@ CPU 实现来源于龙芯社区的 [Open-LA500](https://github.com/loongson-comm
 
 <img width="1189" height="567" alt="board-demo" src="https://github.com/user-attachments/assets/26924b9c-05de-4a28-b19f-b3e6f8236f0c" />
 
+加速前后token耗时/速度对比：
+
+<img width="1717" height="953" alt="b3e55067-dfa7-41ce-bf9f-7cdc856da32a" src="https://github.com/user-attachments/assets/014feee8-efd5-4052-86b8-66e99ce83df9" />
+<img width="1733" height="1061" alt="0e4ca43d-e1fb-42d9-ace2-740f07d692e6" src="https://github.com/user-attachments/assets/062c5247-a43d-4f75-80b6-82020c4e2326" />
+
 后端版图尝试：
 
 <img width="2463" height="1434" alt="layout" src="https://github.com/user-attachments/assets/dd843904-ad96-496b-848a-f0f73df0520e" />
