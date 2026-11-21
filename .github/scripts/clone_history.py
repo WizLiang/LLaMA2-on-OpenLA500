@@ -45,37 +45,56 @@ def daily_csv(rows, metric, unique_column):
     return output.getvalue()
 
 
-def render(rows):
-    days = list(rows)
-    first, last = days[0], days[-1]
+def metric_panel(rows, title, color, offset, first, last):
     total = sum(count for count, _ in rows.values())
+    week = [rows.get(last - timedelta(days=n)) for n in reversed(range(7))]
+    weekly = sum(item[0] for item in week if item)
+    week_label = f"近 7 日新增 {weekly:,}" if all(week) else "近 7 日记录不完整"
+    parts = [f'''<g transform="translate({offset},0)">
+      <rect x="1" y="1" width="438" height="326" rx="14" fill="white" stroke="#d5dee7"/>
+      <rect x="23" y="24" width="5" height="18" rx="2" fill="{color}"/>
+      <text x="38" y="39" class="label">{title}</text>
+      <text x="24" y="91" class="total">{total:,}</text>
+      <text x="413" y="85" text-anchor="end" class="label" fill="{color}">{week_label}</text>''']
+    # Calendar coordinates preserve gaps if collection ever stops for more than 14 days.
+    left, right, bottom, height = 46, 408, 212, 93
+    scale = max(total, 1)
+    for tick in sorted({0, scale // 2, scale}):
+        y = bottom - height * tick / scale
+        parts.append(f'<path d="M{left} {y} H{right}" stroke="#e4e9ed"/><text x="36" y="{y+4}" text-anchor="end" class="tick">{tick}</text>')
     running = 0
-    path = []
     previous = None
     for day, (count, _) in rows.items():
         running += count
-        x = 60 + 610 * (day - first).days / max(1, (last - first).days)
-        y = 155 - 100 * running / max(1, total)
-        consecutive = previous and (day - previous).days == 1
-        path.append(f"H{x:.2f} V{y:.2f}" if consecutive else f"M{x:.2f},{y:.2f} h0.1")
-        previous = day
-    missing = (last - first).days + 1 - len(days)
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img">
-  <title>{total} recorded clones from {first} through {last} UTC</title>
-  <rect width="720" height="200" rx="8" fill="#ffffff"/>
-  <g font-family="sans-serif" fill="#172f46">
-    <text x="24" y="30" font-size="20">Recorded clones: {total}</text>
-    <text x="688" y="30" text-anchor="end" font-size="14">Unobserved days: {missing}</text>
-    <path d="M60 55 V155 H670" fill="none" stroke="#a1afbc"/>
-    <text x="51" y="160" text-anchor="end">0</text>
-    <text x="51" y="60" text-anchor="end">{max(total, 1)}</text>
-    <path d="{' '.join(path)}" fill="none" stroke="#096b73" stroke-width="3" stroke-linecap="round"/>
-    <text x="60" y="183">{first}</text>
-    <text x="670" y="183" text-anchor="end">{last} UTC</text>
-  </g>
+        x = left + (right-left) * (day-first).days / max(1, (last-first).days)
+        y = bottom - height * running / scale
+        if previous and day - previous == timedelta(days=1):
+            parts.append(f'<path d="M{prev_x:.2f} {prev_y:.2f} H{x:.2f} V{y:.2f}" fill="none" stroke="{color}" stroke-width="3" stroke-linejoin="round"/>')
+        else:
+            parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="2.5" fill="{color}"/>')
+        previous, prev_x, prev_y = day, x, y
+    parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="4" fill="{color}" stroke="white" stroke-width="1.5"/>')
+    parts.append(f'<text x="{left}" y="235" class="tick">{first}</text><text x="{right}" y="235" text-anchor="end" class="tick">{last}</text>')
+    parts.append('<path d="M24 251 H414" stroke="#e4e9ed"/><text x="24" y="276" class="tick">每日新增</text>')
+    for index, item in enumerate(week):
+        day = last - timedelta(days=6-index)
+        x = 110 + 48 * index
+        count = item[0] if item else "–"
+        parts.append(f'<text x="{x}" y="276" text-anchor="middle" class="tick">{day:%m/%d}</text><text x="{x}" y="303" text-anchor="middle" font-size="18" font-weight="600" fill="{color}">{count}</text>')
+    return "".join(parts) + "</g>"
+
+
+def traffic_chart(clones, views):
+    first = min(min(clones), min(views))
+    last = max(max(clones), max(views))
+    panels = metric_panel(clones, "累计克隆次数", "#007b70", 0, first, last)
+    panels += metric_panel(views, "累计页面浏览量", "#465db2", 456, first, last)
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 896 328" role="img">
+<title>已记录的克隆次数与浏览量，{first} 至 {last} UTC</title>
+<style>text{{font-family:Inter,"Noto Sans CJK SC","Microsoft YaHei",sans-serif}} .label{{font-size:17px;font-weight:600}} .total{{font-size:50px;font-weight:700}} .tick{{font-size:13px;fill:#516276}}</style>
+<g fill="#192f45">{panels}</g>
 </svg>
 '''
-    return {CSV_PATH: daily_csv(rows, "clones", "unique_cloners"), CHART_PATH: svg}
 
 
 def summary(clones, views, paths, today):
@@ -121,10 +140,14 @@ def publish(clones, views, paths, today):
             return b64decode(api(f"contents/{path}?ref={head}")["content"]).decode()
         return ""
 
-    files = render(merge_window(read_file(CSV_PATH), clones, today))
+    clone_rows = merge_window(read_file(CSV_PATH), clones, today)
     views_path = f"{DIRECTORY}/views.csv"
     visits = merge_window(read_file(views_path), views, today, "views", "unique_visitors")
-    files[views_path] = daily_csv(visits, "views", "unique_visitors")
+    files = {
+        CSV_PATH: daily_csv(clone_rows, "clones", "unique_cloners"),
+        views_path: daily_csv(visits, "views", "unique_visitors"),
+        CHART_PATH: traffic_chart(clone_rows, visits),
+    }
     readme = f"{DIRECTORY}/README.md"
     start = "<!-- traffic:start -->"
     end = "<!-- traffic:end -->"
