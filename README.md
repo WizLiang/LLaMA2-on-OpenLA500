@@ -1,17 +1,22 @@
 # LLaMA2-on-OpenLA500
 
+简体中文 · [English](README.en.md)
+
 在龙芯云平台的 Artix-7 XC7A200T FPGA 上，OpenLA500 处理器运行由 [llama2.c](https://github.com/karpathy/llama2.c) 移植的推理程序，自研 AXI 协处理器负责矩阵与向量乘法。Circuit Breakers 队（CICC0900647）凭此项目获得第九届全国大学生集成电路创新创业大赛（龙芯中科杯） **全国总决赛一等奖**。[赛题说明](https://univ.ciciec.com/nd.jsp?id=882) · [团队技术复盘](https://zhuanlan.zhihu.com/p/1961830081061184854)
 
 LLaMA2-on-OpenLA500 runs a small llama2.c model on an FPGA using a LoongArch32R CPU and a custom matrix–vector accelerator. Circuit Breakers won first prize in the national finals of the 9th CICC (Loongson Cup).
 
-## 从哪里开始
+## 怎么使用这个仓库
 
-| 目的 | 入口 |
-| --- | --- |
-| 使用比赛版本 | [soc_top.bit](bitstream/soc_top.bit) 是运行官方测试和推理演示的完整 SoC 位流。[soc_top1.bit](bitstream/soc_top1.bit) 是用 LED 显示加速器状态的备份版本。软件镜像和加载方法见下文。 |
-| 阅读推理代码 | 从 [run.c](sdk/software/apps/runc/run.c) 的 `matmul` 看一次硬件调用，再对照[加速器寄存器接口](sdk/software/apps/runc/hw_accelerator.h)。 |
-| 阅读硬件实现 | [soc_top.sv](rtl/soc_top.sv) 连接 CPU、总线和外设。[CB_top.v](rtl/ip/Co_processor/CB_top.v) 是加速器入口。 |
-| 查看验证环境 | [mycpu_tb.v](sim/mycpu_tb.v) 是 SoC 仿真入口，[helloworld_test/](helloworld_test/) 提供 HelloWorld 验证文件。 |
+- **在比赛平台跑一次推理。** 用仓库里的 [soc_top.bit](bitstream/soc_top.bit) 配置 FPGA，再把自己编译的 `run.bin` 写入 BaseRAM，从串口观察生成文本。第一次复现可以直接使用现成位流。[编译推理程序](#编译推理程序) · [云平台操作步骤](#在比赛云平台运行演示)
+- **改硬件并观察结果。** SoC 顶层连接在 [soc_top.sv](rtl/soc_top.sv)，加速器入口是 [CB_top.v](rtl/ip/Co_processor/CB_top.v)。修改 RTL 后需要重新生成位流；仓库另有一份用 LED 显示加速器状态的[比赛备份位流](bitstream/soc_top1.bit)。[重建 FPGA 工程](#重建-fpga-工程)
+- **先检查基础环境。** 可以从 [HelloWorld 验证文件](helloworld_test/) 和 [SoC 仿真入口](sim/mycpu_tb.v) 入手，再接入推理程序。
+
+## 可以借鉴什么
+
+**把已有 C 程序移植到裸机。** 在 `run.c` 里从 `build_transformer` 和 `build_tokenizer` 开始读，看程序如何直接从编译进镜像的数组读取权重和词表。如果自己的应用也有固定的只读数据，可以参考这个做法。换模型时，先对照目标板的内存布局，确认权重、运行缓冲区和栈能同时放下。[推理程序](sdk/software/apps/runc/run.c) · [链接脚本](sdk/software/bsp/env/separate.lds)
+
+**给已有算子接一个硬件实现。** 可以只跟读一次 Q 投影：在 `run.c` 搜索 `matmul(s->q`，记下输入向量、权重和输出缓冲区，再到 `matmul` 看这些参数分别写入哪个寄存器。最后打开 `CB_top.v`，看控制器如何协调 DMA 和乘加单元。移植到自己的 SoC 时，这条调用顺序可以参考；寄存器基址、缓存维护和完成中断要按目标平台核对。[寄存器定义](sdk/software/apps/runc/hw_accelerator.h) · [加速器顶层](rtl/ip/Co_processor/CB_top.v) · [控制器状态机](rtl/ip/Co_processor/cb_controll.v)
 
 ## 演示模型
 
@@ -87,5 +92,9 @@ vivado -source create_project.tcl
 
 </details>
 
-OpenLA500 CPU 核采用[木兰宽松许可证第 2 版](rtl/ip/open-la500/LICENSE)。欢迎在 [Issues](https://github.com/WizLiang/la32r_soc_ciciec/issues) 中交流复现结果或提交改进建议。
+## 许可说明
+
+本仓库按组件说明许可，目前没有仓库级许可证。OpenLA500 CPU 核采用[木兰宽松许可证第 2 版](rtl/ip/open-la500/LICENSE)。推理程序移植自 llama2.c，上游代码采用 [MIT 许可证](sdk/software/apps/LICENSE.llama2.c)。stories260K 的发布者在[模型卡](https://huggingface.co/karpathy/tinyllamas)中标注了 MIT。团队自研加速器 RTL 尚未声明单独的开源许可证。
+
+欢迎在 [Issues](https://github.com/WizLiang/LLaMA2-on-OpenLA500/issues) 中交流复现结果或提交改进建议。
 
