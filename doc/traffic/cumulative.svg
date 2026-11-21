@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 72" role="img">
-  <title>Awaiting the first clone traffic snapshot</title>
-  <rect width="720" height="72" rx="8" fill="#f4f7fa"/>
-  <text x="24" y="44" font-family="sans-serif" font-size="19" fill="#172f46">Awaiting the first clone traffic snapshot</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img">
+  <title>13 recorded clones from 2026-11-08 through 2026-11-20 UTC</title>
+  <rect width="720" height="200" rx="8" fill="#ffffff"/>
+  <g font-family="sans-serif" fill="#172f46">
+    <text x="24" y="30" font-size="20">Recorded clones: 13</text>
+    <text x="688" y="30" text-anchor="end" font-size="14">Unobserved days: 0</text>
+    <path d="M60 55 V155 H670" fill="none" stroke="#a1afbc"/>
+    <text x="51" y="160" text-anchor="end">0</text>
+    <text x="51" y="60" text-anchor="end">13</text>
+    <path d="M60.00,147.31 h0.1 H110.83 V139.62 H161.67 V131.92 H212.50 V108.85 H263.33 V101.15 H314.17 V93.46 H365.00 V93.46 H415.83 V85.77 H466.67 V78.08 H517.50 V62.69 H568.33 V55.00 H619.17 V55.00 H670.00 V55.00" fill="none" stroke="#096b73" stroke-width="3" stroke-linecap="round"/>
+    <text x="60" y="183">2026-11-08</text>
+    <text x="670" y="183" text-anchor="end">2026-11-20 UTC</text>
+  </g>
 </svg>
