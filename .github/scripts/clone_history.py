@@ -8,6 +8,7 @@ import subprocess
 import sys
 from base64 import b64decode
 from datetime import date, datetime, timedelta, timezone
+from html import escape
 from pathlib import Path
 
 
@@ -16,16 +17,16 @@ CSV_PATH = f"{DIRECTORY}/daily.csv"
 CHART_PATH = f"{DIRECTORY}/cumulative.svg"
 
 
-def merge_window(previous, snapshot, today):
+def merge_window(previous, snapshot, today, metric="clones", unique_column="unique_cloners"):
     rows = {}
     for row in csv.DictReader(io.StringIO(previous)):
-        rows[date.fromisoformat(row["date_utc"])] = (int(row["clones"]), int(row["unique_cloners"]))
+        rows[date.fromisoformat(row["date_utc"])] = (int(row[metric]), int(row[unique_column]))
 
     # The current UTC day and the oldest edge of a rolling window can be partial.
     first = today - timedelta(days=13)
     for offset in range(13):
         rows[first + timedelta(days=offset)] = (0, 0)
-    for item in snapshot["clones"]:
+    for item in snapshot[metric]:
         day = date.fromisoformat(item["timestamp"][:10])
         if first <= day < today:
             count, uniques = item["count"], item["uniques"]
@@ -35,18 +36,23 @@ def merge_window(previous, snapshot, today):
     return dict(sorted(rows.items()))
 
 
-def render(rows):
+def daily_csv(rows, metric, unique_column):
     output = io.StringIO()
     writer = csv.writer(output, lineterminator="\n")
-    writer.writerow(["date_utc", "clones", "unique_cloners"])
+    writer.writerow(["date_utc", metric, unique_column])
+    for day, (count, uniques) in rows.items():
+        writer.writerow([day, count, uniques])
+    return output.getvalue()
+
+
+def render(rows):
     days = list(rows)
     first, last = days[0], days[-1]
     total = sum(count for count, _ in rows.values())
     running = 0
     path = []
     previous = None
-    for day, (count, uniques) in rows.items():
-        writer.writerow([day, count, uniques])
+    for day, (count, _) in rows.items():
         running += count
         x = 60 + 610 * (day - first).days / max(1, (last - first).days)
         y = 155 - 100 * running / max(1, total)
@@ -69,7 +75,30 @@ def render(rows):
   </g>
 </svg>
 '''
-    return {CSV_PATH: output.getvalue(), CHART_PATH: svg}
+    return {CSV_PATH: daily_csv(rows, "clones", "unique_cloners"), CHART_PATH: svg}
+
+
+def summary(clones, views, paths, today):
+    lines = [
+        f"最近 14 天（GitHub 滚动窗口，{today} UTC 采集）",
+        "",
+        "| 活动 | 次数 | 窗口内去重数 |",
+        "| --- | ---: | ---: |",
+        f"| 克隆仓库 | {clones['count']} | {clones['uniques']} 位克隆者 |",
+        f"| 浏览仓库页面 | {views['count']} | {views['uniques']} 位访客 |",
+        "",
+        "热门页面按浏览次数排列，最多展示五项。",
+        "",
+    ]
+    if paths:
+        lines.append("<table><tr><th>页面</th><th>浏览次数</th><th>独立访客</th></tr>")
+        for item in sorted(paths, key=lambda p: p["count"], reverse=True)[:5]:
+            path = escape(item["path"])
+            lines.append(f"<tr><td><code>{path}</code></td><td>{int(item['count'])}</td><td>{int(item['uniques'])}</td></tr>")
+        lines.append("</table>")
+    else:
+        lines.append("本次采集时 GitHub 尚无热门页面记录。")
+    return "\n".join(lines)
 
 
 def api(path, payload=None, method=None):
@@ -82,15 +111,26 @@ def api(path, payload=None, method=None):
     return json.loads(response)
 
 
-def publish(snapshot, today):
+def publish(clones, views, paths, today):
     branch = os.environ["GITHUB_REF_NAME"]
     head = api(f"git/ref/heads/{branch}")["object"]["sha"]
     tree = api(f"git/commits/{head}")["tree"]["sha"]
     entries = api(f"contents/{DIRECTORY}?ref={head}")
-    previous = ""
-    if any(entry["path"] == CSV_PATH for entry in entries):
-        previous = b64decode(api(f"contents/{CSV_PATH}?ref={head}")["content"]).decode()
-    files = render(merge_window(previous, snapshot, today))
+    def read_file(path):
+        if any(entry["path"] == path for entry in entries):
+            return b64decode(api(f"contents/{path}?ref={head}")["content"]).decode()
+        return ""
+
+    files = render(merge_window(read_file(CSV_PATH), clones, today))
+    views_path = f"{DIRECTORY}/views.csv"
+    visits = merge_window(read_file(views_path), views, today, "views", "unique_visitors")
+    files[views_path] = daily_csv(visits, "views", "unique_visitors")
+    readme = f"{DIRECTORY}/README.md"
+    start = "<!-- traffic:start -->"
+    end = "<!-- traffic:end -->"
+    before, rest = read_file(readme).split(start)
+    _, after = rest.split(end)
+    files[readme] = before + start + "\n\n" + summary(clones, views, paths, today) + "\n\n" + end + after
     changes = [dict(path=path, mode="100644", type="blob", content=data) for path, data in files.items()]
     updated = api("git/trees", {"base_tree": tree, "tree": changes})["sha"]
     if updated == tree:
@@ -101,4 +141,5 @@ def publish(snapshot, today):
 
 
 if __name__ == "__main__":
-    publish(json.loads(Path(sys.argv[1]).read_text()), datetime.now(timezone.utc).date())
+    clones, views, paths = (json.loads(Path(arg).read_text()) for arg in sys.argv[1:])
+    publish(clones, views, paths, datetime.now(timezone.utc).date())
