@@ -1,130 +1,91 @@
 # LLaMA2-on-OpenLA500
 
-## 🧩 Project Overview / 项目概述
+在龙芯云平台的 Artix-7 XC7A200T FPGA 上，OpenLA500 处理器运行由 [llama2.c](https://github.com/karpathy/llama2.c) 移植的推理程序，自研 AXI 协处理器负责矩阵与向量乘法。Circuit Breakers 队（CICC0900647）凭此项目获得第九届全国大学生集成电路创新创业大赛（龙芯中科杯） **全国总决赛一等奖**。[赛题说明](https://univ.ciciec.com/nd.jsp?id=882) · [团队技术复盘](https://zhuanlan.zhihu.com/p/1961830081061184854)
 
-**LLaMA2-on-OpenLA500** is an **FPGA-based SoC platform** built around the **openLA500 LoongArch32R CPU core** with a **custom AI accelerator**. The goal is to enable LoongArch platforms to run both common operating systems and **AI workloads such as LLaMA2**.
+LLaMA2-on-OpenLA500 runs a small llama2.c model on an FPGA using a LoongArch32R CPU and a custom matrix–vector accelerator. Circuit Breakers won first prize in the national finals of the 9th CICC (Loongson Cup).
 
-**LLaMA2-on-OpenLA500** 项目基于 **openLA500 LoongArch32R CPU 核**，在 **FPGA** 上集成了 **自定义 AI 加速器**，旨在构建一个能够运行主流操作系统和 **AI 应用（如 LLaMA2）** 的 **LoongArch SoC 平台**。
+## 从哪里开始
 
-The system has successfully passed the **HelloWorld**, **system functionality**, **interrupt**, and **RT-Thread boot** tests required by the competition. The design was created by **Circuit Breakers (team ID CICC0900647)** for the **9th China IC Competition (Loongson Cup)** and won **First Prize in the national finals**.
+| 目的 | 入口 |
+| --- | --- |
+| 使用比赛版本 | [soc_top.bit](bitstream/soc_top.bit) 是运行官方测试和推理演示的完整 SoC 位流。[soc_top1.bit](bitstream/soc_top1.bit) 是用 LED 显示加速器状态的备份版本。软件镜像和加载方法见下文。 |
+| 阅读推理代码 | 从 [run.c](sdk/software/apps/runc/run.c) 的 `matmul` 看一次硬件调用，再对照[加速器寄存器接口](sdk/software/apps/runc/hw_accelerator.h)。 |
+| 阅读硬件实现 | [soc_top.sv](rtl/soc_top.sv) 连接 CPU、总线和外设。[CB_top.v](rtl/ip/Co_processor/CB_top.v) 是加速器入口。 |
+| 查看验证环境 | [mycpu_tb.v](sim/mycpu_tb.v) 是 SoC 仿真入口，[helloworld_test/](helloworld_test/) 提供 HelloWorld 验证文件。 |
 
-项目已通过比赛官方要求的 **HelloWorld 测试、系统功能测试、中断测试** 以及 **RT-Thread 启动测试**。本作品由 **Circuit Breakers 队（编号 CICC0900647）** 设计开发，参加 **第九届全国大学生集成电路创新创业大赛（龙芯中科杯）**，并获 **全国总决赛一等奖**。
+## 演示模型
 
-赛题链接：http://univ.ciciec.com/nd.jsp?id=882#_jcp=1
+演示使用 Andrej Karpathy 为 llama2.c 发布的 **stories260K**。它采用 Llama 2 架构，在 TinyStories 英文短篇故事数据集上训练，约有 26 万个参数。模型有 5 层 Transformer，隐藏维度为 64，词表和最大序列长度均为 512。为在裸机上运行，团队把 FP32 权重和分词器转成 C 数组，随程序编译进镜像。[上游模型卡](https://huggingface.co/karpathy/tinyllamas) · [模型数据](sdk/software/apps/runc/stories_data.h) · [分词器数据](sdk/software/apps/runc/tok512.h)
 
-## Table of Contents / 目录
+## 一次矩阵运算如何执行
 
-- [Architecture / 系统架构](#architecture--系统架构)
-- [Repository Layout / 仓库结构](#repository-layout--仓库结构)
-- [Getting Started / 快速开始](#getting-started--快速开始)
-  - [Hardware Toolchain Setup / 硬件工具链配置](#hardware-toolchain-setup--硬件工具链配置)
-  - [Software Toolchain Setup / 软件工具链配置](#software-toolchain-setup--软件工具链配置)
-  - [Build Instructions / 编译步骤](#build-instructions--编译步骤)
-- [Project Status & TODO](#project-status--todo)
-- [Results / 项目成果](#results--项目成果)
-- [Support / 支持我们](#support--支持我们)
-- [Zhihu Write-up / 知乎文章](#zhihu-write-up--知乎文章)
+CPU 基于龙芯社区的 [Open-LA500](https://github.com/loongson-community/open-la500)，采用五级单发射流水线。团队在比赛 SoC 上调整了缓存、中断、时钟和约束，并通过 AXI 接入加速器。
 
+以注意力层的 Q、K、V 投影为例，推理程序分别调用 `matmul`。CPU 将权重矩阵、输入向量和输出缓冲区的地址写入寄存器，执行缓存维护，设置矩阵行列数并启动加速器。协处理器通过 DMA 访问内存，分块完成乘加并写回结果。CPU 等待完成中断，再继续执行推理。[推理程序](sdk/software/apps/runc/run.c) · [DMA 控制器](rtl/ip/Co_processor/axi_dma_controller.v) · [乘加单元](rtl/ip/Co_processor/mac_top.v)
 
-## Architecture / 系统架构
-The CPU comes from the Loongson Community’s  [Open-LA500](https://github.com/loongson-community/open-la500). We applied minimal changes (interrupt/clock & constraints, cache ...) to attach our AI accelerator and pass competition tests.
-The OpenLA500 core uses a single-issue five-stage pipeline (fetch, decode, execute, memory, write-back) with 2-way associative instruction and data caches, a 32-entry TLB and a simple branch predictor. Peripherals and the AI accelerator connect through an AXI bus. Accelerator RTL can be found under `rtl/ip/Co_processor`.
+![OpenLA500 SoC 与 AXI 协处理器系统架构](https://github.com/user-attachments/assets/16e24b3e-ce03-4ada-97e2-af41a4afb115)
 
-CPU 实现来源于龙芯社区的 [Open-LA500](https://github.com/loongson-community/open-la500)；我们仅做了少量改动（中断/时钟与约束、Cache），用于接入自研 AI 加速器并通过比赛测试。
-处理器采用五级单发射流水线（取指、译码、执行、访存、写回），配备 2 路组相联的指令和数据缓存、32 项 TLB 和简易分支预测器。外设与 AI 加速器通过 AXI 总线连接，加速器代码位于 `rtl/ip/Co_processor` 目录。
+## 编译推理程序
 
-系统结构示意图如下：
+在 x86-64 Linux 下准备 GNU Make 和宿主机 GCC。仓库已包含 LoongArch32R 交叉工具链和 Picolibc。从**仓库根目录**执行以下命令。构建规则会将生成的程序和内存镜像复制到 `sdk/`，覆盖其中的同名文件。
 
-<img width="953" height="578" alt="architecture" src="https://github.com/user-attachments/assets/16e24b3e-ce03-4ada-97e2-af41a4afb115" />
-
-## Repository Layout / 仓库结构
-
-```
-.
-├── bitstream/            # Pre-built FPGA bitstreams
-├── doc/                  # Official documentation and release notes
-├── fpga/                 # Vivado project scripts (create_project.tcl etc.)
-├── helloworld_test/      # Reference HelloWorld verification package
-├── rtl/                  # OpenLA500 SoC RTL sources and custom accelerator
-├── sdk/                  # LoongArch software stack, apps, and libraries
-└── sim/                  # Simulation environments and test benches
+```bash
+export CICIEC_WINDOWS_HOME="$PWD"
+export PATH="$PWD/sdk/toolchains/loongson-gnu-toolchain-8.3-x86_64-loongarch32r-linux-gnusf-v2.0/bin:$PATH"
+make -C sdk/software/apps/runc
 ```
 
-- `bitstream/soc_top.bit` 是完整的 SoC bitstream，可通过官方测试并运行 LLaMA2 推理。
-- `bitstream/soc_top1.bit` 为带 LED 指示功能的备份版本。
-- `rtl/ip/Co_processor` 保存 AI 加速器实现；其它 RTL 大体保持与官方初赛发布包一致。
+构建生成 `sdk/software/apps/runc/obj/run.elf`、`sdk/run.bin` 和 `sdk/axi_ram.mif`。推理应用的 Makefile 默认使用 `-DSIMU=1` 选择仿真串口配置；编译上板版本时按 Makefile 注释改为 `-DSIMU=0` 并重新构建。[应用 Makefile](sdk/software/apps/runc/Makefile) · [构建规则](sdk/software/bsp/common_runc.mk)
 
-## Getting Started / 快速开始
+## 在比赛云平台运行演示
 
-### Hardware Toolchain Setup / 硬件工具链配置
+1. 按上一节编译上板版本，准备好 `sdk/run.bin`。
+2. 在平台上传 [soc_top.bit](bitstream/soc_top.bit) 并启动 FPGA。
+3. 在 SRAM 下载区选择 BaseRAM，写入 `run.bin`，从串口窗口查看生成文本。官方文档第 1.3 节介绍平台流程，第 2 章的 HelloWorld 示例附有操作截图。[初赛 SoC 发布包说明](doc/集创赛龙芯中科杯初赛发布包说明.pdf)
 
-1. Install **Xilinx Vivado** (verified with 2019.2 and 2024.2).
-2. Clone or download this repository.
-3. Refer to the official release guide in `doc/集创赛龙芯中科杯初赛发布包说明.pdf` for environment prerequisites (OS, drivers, license setup).
-4. Launch Vivado and execute `vivado -source fpga/create_project.tcl` to recreate the project. Disable unused files such as `rtl/ip/Bus_interconnects/AxiCrossbar_1x4.v` to avoid synthesis issues.
+## 重建 FPGA 工程
 
-### Software Toolchain Setup / 软件工具链配置
+团队使用过 Vivado 2019.2 和 2024.2，工程目标器件为 `xc7a200tfbg676-1`。创建脚本按当前工作目录查找 RTL 和约束，并会先删除再重建 `fpga/project/`。如需保留已有工程，请先备份该目录。
 
-1. Install the **Loongson GNU toolchain** `loongson-gnu-toolchain-8.3-x86_64-loongarch32r-linux-gnusf-v2.0`.
-2. Install **Picolibc** per the guidance in `doc/集创赛龙芯中科杯初赛发布包说明.pdf` (toolchain path configuration and environment variables).
-3. Ensure the toolchain binaries are added to your `PATH` (e.g., `export PATH=/opt/loongson/bin:$PATH`).
+新克隆需先准备 `rtl/ip/PLL_2019_2/clk_pll.xci`，该目录被 Git 忽略。可在 Vivado Clocking Wizard 中按本地工程配置重建名为 `clk_pll` 的 PLL：单端输入 `clk_in1` 为 50 MHz，输出 `cpu_clk` 和 `sys_clk` 的目标频率分别为 33 MHz 和 50 MHz，启用低有效复位 `resetn` 和锁定输出 `locked`。将生成的 XCI 放到上述路径后，从仓库根目录执行以下命令。
 
-### Build Instructions / 编译步骤
+```bash
+cd fpga
+vivado -source create_project.tcl
+```
 
-**Hardware / 硬件**
+在 Vivado 中将综合顶层设为 `soc_top`，禁用当前设计未使用的 `rtl/ip/Bus_interconnects/AxiCrossbar_1x4.v`，然后依次运行 **Run Synthesis → Run Implementation → Generate Bitstream**。新位流位于工程的实现输出目录。[创建脚本](fpga/create_project.tcl) · [板级约束](fpga/constraints/)
 
-1. Run synthesis and implementation in Vivado.
-2. Generate the bitstream with `write_bitstream` to produce `bitstream/soc_top.bit`.
-3. Program the FPGA board with the generated bitstream.
+## 决赛资料
 
-**Software / 软件**
+初次了解项目，可以先看[答辩演示](doc/finals/CICC0900647PPT.pdf)或[设计分享论文](doc/finals/CICC0900647设计分享论文.pdf)。以下报告保留了决赛提交时的设计与实验记录。
 
-1. Navigate to an application, e.g. `sdk/software/apps/runc`.
-2. Build the application with `make` using the Loongson toolchain.
-3. Deploy the binary through the SDK workflow described in the official documentation.
+| 关注点 | 团队报告 |
+| --- | --- |
+| 模型移植、SoC 集成与系统验证 | [系统设计报告](doc/finals/CICC0900647系统设计报告.pdf) |
+| 自研矩阵运算加速器的接口与实现 | [自主 IP 报告](doc/finals/CICC0900647自主IP报告.pdf) |
+| 基础 SoC 和完整 SoC 的物理实现 | [基础 SoC 后端报告](doc/finals/CICC0900647基础SOC后端报告.pdf) · [完整 SoC 后端报告](doc/finals/CICC0900647完整SOC后端报告.pdf) |
 
-我们的软件功能是对 Karpathy 的 [llama2.c](https://github.com/karpathy/llama2.c) 进行移植，代码位于 `sdk/software/apps/runc`，执行 `make` 即可完成编译。
+## 验证与性能
 
-## Project Status & TODO
+团队在龙芯云 FPGA 平台完成了 HelloWorld、系统功能、中断和 RT-Thread 启动测试，并运行了 LLaMA2 推理演示。线下实体开发板的移植和部署验证仍是待办项。
 
-- ✅ FPGA bitstream validated on Loongson cloud platform (Artix-7 XC7A200T).
-- ✅ RT-Thread, interrupt, and system functionality tests completed.
-- ✅ LLaMA2 inference demo running on accelerator.
-- [ ] 移植并验证至线下实体开发板，完善部署流程。
+![云平台上板演示](https://github.com/user-attachments/assets/26924b9c-05de-4a28-b19f-b3e6f8236f0c)
 
-欢迎在 Issues 中补充新的 TODO 项目或提交 Pull Request！
+**推理性能。** 以下是团队记录的加速前后每个 token 的耗时与生成速度。
 
-## Results / 项目成果
+![推理性能对比记录一](https://github.com/user-attachments/assets/014feee8-efd5-4052-86b8-66e99ce83df9)
+![推理性能对比记录二](https://github.com/user-attachments/assets/062c5247-a43d-4f75-80b6-82020c4e2326)
 
-综合实现与时序结果：
+<details>
+<summary>查看综合实现、建立与保持时序，以及后端版图探索</summary>
 
-<img width="1147" height="468" alt="timing-summary" src="https://github.com/user-attachments/assets/7b955440-0f89-4815-8601-1dc929571563" />
-<img width="1153" height="277" alt="timing-setup" src="https://github.com/user-attachments/assets/6acbf7a4-b0bb-44ba-b58f-fa457411a54a" />
-<img width="1153" height="265" alt="timing-hold" src="https://github.com/user-attachments/assets/d36ca6af-7631-46cb-bec7-9dba3f72ea29" />
+![FPGA 综合实现结果](https://github.com/user-attachments/assets/7b955440-0f89-4815-8601-1dc929571563)
+![建立时序报告](https://github.com/user-attachments/assets/6acbf7a4-b0bb-44ba-b58f-fa457411a54a)
+![保持时序报告](https://github.com/user-attachments/assets/d36ca6af-7631-46cb-bec7-9dba3f72ea29)
+![后端版图探索](https://github.com/user-attachments/assets/dd843904-ad96-496b-848a-f0f73df0520e)
 
-上板测试与演示：
+</details>
 
-<img width="1189" height="567" alt="board-demo" src="https://github.com/user-attachments/assets/26924b9c-05de-4a28-b19f-b3e6f8236f0c" />
-
-加速前后token耗时/速度对比：
-
-<img width="1717" height="953" alt="b3e55067-dfa7-41ce-bf9f-7cdc856da32a" src="https://github.com/user-attachments/assets/014feee8-efd5-4052-86b8-66e99ce83df9" />
-<img width="1733" height="1061" alt="0e4ca43d-e1fb-42d9-ace2-740f07d692e6" src="https://github.com/user-attachments/assets/062c5247-a43d-4f75-80b6-82020c4e2326" />
-
-后端版图尝试：
-
-<img width="2463" height="1434" alt="layout" src="https://github.com/user-attachments/assets/dd843904-ad96-496b-848a-f0f73df0520e" />
-
-## Support / 支持我们
-
-If you find this project useful, please ⭐ Star it! We’re continuously improving the LLaMA2-on-OpenLA500 platform and welcome all suggestions, issues, or pull requests.
-
-如果你觉得这个项目有趣，欢迎点个 Star 支持一下，也可以在 Issues 中提出建议或问题 🙌
-
-## Zhihu Write-up / 知乎文章
-
-我们在知乎专栏对项目做了更通俗完整的介绍，包含部分设计取舍、踩坑和性能细节，欢迎阅读与交流：
-
-- 《【龙芯中科杯｜第九届集创赛】LoongArch SoC 跑 LLaMA2.c （含仓库链接）》  
-  https://zhuanlan.zhihu.com/p/1961830081061184854
+OpenLA500 CPU 核采用[木兰宽松许可证第 2 版](rtl/ip/open-la500/LICENSE)。欢迎在 [Issues](https://github.com/WizLiang/la32r_soc_ciciec/issues) 中交流复现结果或提交改进建议。
 
