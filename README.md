@@ -72,7 +72,7 @@ vivado -source create_project.tcl
 
 ![云平台上板演示](https://github.com/user-attachments/assets/26924b9c-05de-4a28-b19f-b3e6f8236f0c)
 
-**推理性能。** 以下是团队记录的加速前后每个 token 的耗时与生成速度。
+感谢 [@threepoint-s](https://github.com/threepoint-s) 在赛后实测加速前后每个 token 的耗时与生成速度（token/s），并提供了以下两张对比图。[原始 PR #11](https://github.com/WizLiang/LLaMA2-on-OpenLA500/pull/11)
 
 ![推理性能对比记录一](https://github.com/user-attachments/assets/014feee8-efd5-4052-86b8-66e99ce83df9)
 ![推理性能对比记录二](https://github.com/user-attachments/assets/062c5247-a43d-4f75-80b6-82020c4e2326)
