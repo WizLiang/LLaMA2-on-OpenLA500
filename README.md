@@ -98,3 +98,5 @@ vivado -source create_project.tcl
 
 欢迎在 [Issues](https://github.com/WizLiang/LLaMA2-on-OpenLA500/issues) 中交流复现结果或提交改进建议。
 
+[查看仓库 clone 记录](doc/traffic/)
+

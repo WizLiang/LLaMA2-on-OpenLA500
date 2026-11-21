@@ -89,3 +89,5 @@ After the competition, [@threepoint-s](https://github.com/threepoint-s) measured
 Licensing is documented per component. The repository has no project-wide license. The OpenLA500 CPU core uses [MulanPSL-2.0](rtl/ip/open-la500/LICENSE). The upstream llama2.c code used in the inference port carries the [MIT license](sdk/software/apps/LICENSE.llama2.c). The stories260K publisher lists MIT on the [model card](https://huggingface.co/karpathy/tinyllamas). The team has yet to specify an open-source license for its custom accelerator RTL.
 
 Share reproduction results or suggestions in [Issues](https://github.com/WizLiang/LLaMA2-on-OpenLA500/issues).
+
+[Repository clone history](doc/traffic/)
