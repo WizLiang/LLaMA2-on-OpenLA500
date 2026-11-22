@@ -154,6 +154,18 @@ def publish(clones, views, paths, today):
     before, rest = read_file(readme).split(start)
     _, after = rest.split(end)
     files[readme] = before + start + "\n\n" + summary(clones, views, paths, today) + "\n\n" + end + after
+    since = min(clone_rows)
+    view_count = sum(count for count, _ in visits.values())
+    clone_count = sum(count for count, _ in clone_rows.values())
+    headlines = {
+        "README.md": f"自 {since} 起累计 **{view_count:,} 次浏览 · {clone_count:,} 次克隆**。此前一年多的流量未归档。[统计明细](doc/traffic/)",
+        "README.en.md": f"Since {since}: **{view_count:,} page views · {clone_count:,} clones**. Traffic from the preceding year and a half was not archived. [Traffic details](doc/traffic/)",
+    }
+    for path, headline in headlines.items():
+        document = b64decode(api(f"contents/{path}?ref={head}")["content"]).decode()
+        before, rest = document.split(start)
+        _, after = rest.split(end)
+        files[path] = f"{before}{start}\n{headline}\n{end}{after}"
     changes = [dict(path=path, mode="100644", type="blob", content=data) for path, data in files.items()]
     updated = api("git/trees", {"base_tree": tree, "tree": changes})["sha"]
     if updated == tree:

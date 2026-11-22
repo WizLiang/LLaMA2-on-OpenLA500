@@ -6,6 +6,10 @@
 
 LLaMA2-on-OpenLA500 runs a small llama2.c model on an FPGA using a LoongArch32R CPU and a custom matrix–vector accelerator. Circuit Breakers won first prize in the national finals of the 9th CICC (Loongson Cup).
 
+<!-- traffic:start -->
+自 2026-11-08 起累计 **2 次浏览 · 13 次克隆**。此前一年多的流量未归档。[统计明细](doc/traffic/)
+<!-- traffic:end -->
+
 ## 怎么使用这个仓库
 
 - **在比赛平台跑一次推理。** 用仓库里的 [soc_top.bit](bitstream/soc_top.bit) 配置 FPGA，再把自己编译的 `run.bin` 写入 BaseRAM，从串口观察生成文本。第一次复现可以直接使用现成位流。[编译推理程序](#编译推理程序) · [云平台操作步骤](#在比赛云平台运行演示)
@@ -97,6 +101,4 @@ vivado -source create_project.tcl
 本仓库按组件说明许可，目前没有仓库级许可证。OpenLA500 CPU 核采用[木兰宽松许可证第 2 版](rtl/ip/open-la500/LICENSE)。推理程序移植自 llama2.c，上游代码采用 [MIT 许可证](sdk/software/apps/LICENSE.llama2.c)。stories260K 的发布者在[模型卡](https://huggingface.co/karpathy/tinyllamas)中标注了 MIT。团队自研加速器 RTL 尚未声明单独的开源许可证。
 
 欢迎在 [Issues](https://github.com/WizLiang/LLaMA2-on-OpenLA500/issues) 中交流复现结果或提交改进建议。
-
-[查看仓库 clone 记录](doc/traffic/)
 

@@ -4,6 +4,10 @@
 
 This project runs a small language model on the Loongson cloud platform's Artix-7 XC7A200T FPGA. An OpenLA500 LoongArch32R CPU runs a bare-metal port of llama2.c and offloads matrix–vector products to a custom AXI accelerator. Circuit Breakers (CICC0900647) won first prize in the national finals of the 9th CICC (Loongson Cup). [Competition brief](https://univ.ciciec.com/nd.jsp?id=882) · [Team write-up in Chinese](https://zhuanlan.zhihu.com/p/1961830081061184854)
 
+<!-- traffic:start -->
+Since 2026-11-08: **2 page views · 13 clones**. Traffic from the preceding year and a half was not archived. [Traffic details](doc/traffic/)
+<!-- traffic:end -->
+
 ## Using the repository
 
 - **Run the competition demo.** Use the supplied SoC bitstream, build the board version of the inference program and load it into BaseRAM. Generated text appears on the serial console. [Build the program](#build-the-inference-program) · [Run the demo](#run-on-the-competition-cloud-platform)
@@ -89,5 +93,3 @@ After the competition, [@threepoint-s](https://github.com/threepoint-s) measured
 Licensing is documented per component. The repository has no project-wide license. The OpenLA500 CPU core uses [MulanPSL-2.0](rtl/ip/open-la500/LICENSE). The upstream llama2.c code used in the inference port carries the [MIT license](sdk/software/apps/LICENSE.llama2.c). The stories260K publisher lists MIT on the [model card](https://huggingface.co/karpathy/tinyllamas). The team has yet to specify an open-source license for its custom accelerator RTL.
 
 Share reproduction results or suggestions in [Issues](https://github.com/WizLiang/LLaMA2-on-OpenLA500/issues).
-
-[Repository clone history](doc/traffic/)
