@@ -7,7 +7,7 @@
 LLaMA2-on-OpenLA500 runs a small llama2.c model on an FPGA using a LoongArch32R CPU and a custom matrix–vector accelerator. Circuit Breakers won first prize in the national finals of the 9th CICC (Loongson Cup).
 
 <!-- traffic:start -->
-自 2026-11-08 起累计 **33 次浏览 · 98 次克隆**。此前一年多的流量未归档。[统计明细](doc/traffic/)
+自 2026-11-08 起累计 **34 次浏览 · 118 次克隆**。此前一年多的流量未归档。[统计明细](doc/traffic/)
 <!-- traffic:end -->
 
 ## 怎么使用这个仓库

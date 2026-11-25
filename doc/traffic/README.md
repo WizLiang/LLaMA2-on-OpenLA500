@@ -8,17 +8,17 @@
 
 <!-- traffic:start -->
 
-最近 14 天（GitHub 滚动窗口，2026-11-24 UTC 采集）
+最近 14 天（GitHub 滚动窗口，2026-11-25 UTC 采集）
 
 | 活动 | 次数 | 窗口内去重数 |
 | --- | ---: | ---: |
-| 克隆仓库 | 96 | 55 位克隆者 |
-| 浏览仓库页面 | 33 | 3 位访客 |
+| 克隆仓库 | 115 | 65 位克隆者 |
+| 浏览仓库页面 | 34 | 4 位访客 |
 
 热门页面按浏览次数排列，最多展示五项。
 
 <table><tr><th>页面</th><th>浏览次数</th><th>独立访客</th></tr>
-<tr><td><code>/WizLiang/LLaMA2-on-OpenLA500</code></td><td>11</td><td>3</td></tr>
+<tr><td><code>/WizLiang/LLaMA2-on-OpenLA500</code></td><td>12</td><td>4</td></tr>
 <tr><td><code>/WizLiang/LLaMA2-on-OpenLA500/actions/workflows/clone-history.yml</code></td><td>4</td><td>1</td></tr>
 <tr><td><code>/WizLiang/LLaMA2-on-OpenLA500/actions/runs/44917700070</code></td><td>3</td><td>1</td></tr>
 <tr><td><code>/WizLiang/LLaMA2-on-OpenLA500/forks</code></td><td>3</td><td>1</td></tr>
