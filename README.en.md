@@ -5,7 +5,7 @@
 This project runs a small language model on the Loongson cloud platform's Artix-7 XC7A200T FPGA. An OpenLA500 LoongArch32R CPU runs a bare-metal port of llama2.c and offloads matrix–vector products to a custom AXI accelerator. Circuit Breakers (CICC0900647) won first prize in the national finals of the 9th CICC (Loongson Cup). [Competition brief](https://univ.ciciec.com/nd.jsp?id=882) · [Team write-up in Chinese](https://zhuanlan.zhihu.com/p/1961830081061184854)
 
 <!-- traffic:start -->
-Since 2026-11-08: **44 page views · 136 clones**. Traffic from the preceding year and a half was not archived. [Traffic details](doc/traffic/)
+Since 2026-11-08: **45 page views · 140 clones**. Traffic from the preceding year and a half was not archived. [Traffic details](doc/traffic/)
 <!-- traffic:end -->
 
 ## Using the repository
